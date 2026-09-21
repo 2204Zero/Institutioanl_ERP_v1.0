@@ -1,6 +1,6 @@
 # Institutional ERP v1.0
 
-> A modular, scalable, multi-tenant Enterprise Resource Planning platform designed for educational institutions.
+> A modular,  Resource Planning platform designed for educational institutions.
 
 ## 1. Overview
 
