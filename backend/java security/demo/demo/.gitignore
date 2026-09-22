@@ -56,13 +56,3 @@ bin/
 .postman/
 .DS_Store
 Thumbs.db
-
-node_modules/
-dist/
-.env
-<<<<<<< HEAD
-.vscode/
-.git/
-.git/
-=======
->>>>>>> 303f5da3922156218455cd74975c8bb75578f653
