@@ -156,7 +156,7 @@ export const ERPProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } else {
       studentObj = studentOrRoll;
     }
-    setSelectedStudent(studentObj);
+    setSelectedStudent(studentObj || null);
     setActiveModal('studentDetail');
   };
 

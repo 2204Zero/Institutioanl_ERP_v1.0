@@ -18,20 +18,8 @@ export interface Transaction {
   receiptUrl?: string;
 }
 
-export interface Student {
-  id: string;
-  name: string;
-  rollNo: string;
-  email: string;
-  phone: string;
-  department: string;
-  semester: string;
-  cgpa: number;
-  totalPaid: number;
-  totalDues: number;
-  status: 'Active' | 'Suspended' | 'Graduated';
-  avatarUrl?: string;
-}
+import { Student } from './studentTypes';
+export type { Student };
 
 export interface Teacher {
   id: string;
