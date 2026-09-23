@@ -1,8 +1,9 @@
-import { Token, DecodedToken } from '../types/authTypes';
+import { Token, DecodedToken, AuthResponse, User } from '../types/authTypes';
 
 const ACCESS_TOKEN_KEY = 'erp_access_token';
 const REFRESH_TOKEN_KEY = 'erp_refresh_token';
 const TOKEN_METADATA_KEY = 'erp_token_meta';
+const USER_SESSION_KEY = 'erp_user_session';
 
 export const tokenStorage = {
   getAccessToken(): string | null {
@@ -50,14 +51,52 @@ export const tokenStorage = {
     }
   },
 
+  saveAuthResponse(authResponse: AuthResponse, rememberMe: boolean = true): void {
+    this.setAccessToken(authResponse.accessToken, rememberMe);
+    this.setRefreshToken(authResponse.refreshToken, rememberMe);
+    try {
+      const storage = rememberMe ? localStorage : sessionStorage;
+      const tokenObj: Token = {
+        accessToken: authResponse.accessToken,
+        refreshToken: authResponse.refreshToken,
+        tokenType: authResponse.tokenType || 'Bearer',
+        expiresIn: authResponse.expiresIn || 86400,
+        issuedAt: Date.now(),
+      };
+      storage.setItem(TOKEN_METADATA_KEY, JSON.stringify(tokenObj));
+    } catch {
+      // Ignore storage error
+    }
+  },
+
+  getStoredUser(): User | null {
+    try {
+      const raw = localStorage.getItem(USER_SESSION_KEY) || sessionStorage.getItem(USER_SESSION_KEY);
+      return raw ? (JSON.parse(raw) as User) : null;
+    } catch {
+      return null;
+    }
+  },
+
+  setStoredUser(user: User, rememberMe: boolean = true): void {
+    try {
+      const storage = rememberMe ? localStorage : sessionStorage;
+      storage.setItem(USER_SESSION_KEY, JSON.stringify(user));
+    } catch (err) {
+      console.warn('Failed to save user in storage:', err);
+    }
+  },
+
   clearTokens(): void {
     try {
       localStorage.removeItem(ACCESS_TOKEN_KEY);
       localStorage.removeItem(REFRESH_TOKEN_KEY);
       localStorage.removeItem(TOKEN_METADATA_KEY);
+      localStorage.removeItem(USER_SESSION_KEY);
       sessionStorage.removeItem(ACCESS_TOKEN_KEY);
       sessionStorage.removeItem(REFRESH_TOKEN_KEY);
       sessionStorage.removeItem(TOKEN_METADATA_KEY);
+      sessionStorage.removeItem(USER_SESSION_KEY);
     } catch (err) {
       console.warn('Failed to clear tokens from storage:', err);
     }

@@ -27,6 +27,13 @@ export interface Student {
   updatedAt?: string;
 }
 
+/**
+ * Enterprise Single Student Response Contract
+ */
+export interface StudentResponse {
+  student: Student;
+}
+
 export interface CreateStudentDTO {
   rollNo: string;
   name: string;
