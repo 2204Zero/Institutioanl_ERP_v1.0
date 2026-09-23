@@ -56,3 +56,13 @@ bin/
 .postman/
 .DS_Store
 Thumbs.db
+
+# Frontend build & dependencies
+node_modules/
+frontend/node_modules/
+frontend/dist/
+dist/
+
+# Uploaded documents
+uploads/
+backend/uploads/
