@@ -166,7 +166,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess }) => {
               type="submit"
               variant="primary"
               className="w-full justify-center text-xs py-2.5 font-bold shadow-md shadow-brand-500/20 mt-2"
-              isLoading={isAuthenticating}
+              loading={isAuthenticating}
             >
               {isAuthenticating ? 'Authenticating with Backend...' : 'Authenticate & Enter Suite'}
             </Button>

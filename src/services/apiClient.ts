@@ -13,6 +13,7 @@ export interface RequestOptions extends AxiosRequestConfig {
   skipAuth?: boolean;
   skipErrorHandling?: boolean;
   retryCount?: number;
+  _retry?: boolean;
 }
 
 // Global subscribers for unauthorized / session expired events

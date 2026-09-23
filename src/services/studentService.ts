@@ -250,7 +250,7 @@ class StudentService {
     }
 
     const response = await apiClient.get<Blob>('/students/export', { format });
-    return response.data;
+    return (response.data as Blob) || new Blob([]);
   }
 }
 
