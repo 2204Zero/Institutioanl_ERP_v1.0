@@ -1,45 +1,31 @@
 package com.erp.student.service;
 
-import com.erp.common.exception.ResourceNotFoundException;
-import com.erp.student.dto.StudentCreateRequest;
-import com.erp.student.dto.StudentResponse;
-import org.springframework.stereotype.Service;
+import com.erp.common.response.PageResponse;
+import com.erp.student.dto.StudentRequestDto;
+import com.erp.student.dto.StudentResponseDto;
+import com.erp.student.dto.StudentStatusUpdateDto;
+import com.erp.student.entity.StudentStatus;
+import com.erp.student.entity.StudentStatusHistory;
 
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.List;
 
-@Service
-public class StudentService {
+public interface StudentService {
 
-    private final Map<Long, StudentResponse> studentStore = new ConcurrentHashMap<>();
-    private final AtomicLong idGenerator = new AtomicLong(100);
+    StudentResponseDto createStudent(StudentRequestDto requestDto);
 
-    public StudentService() {
-        // Pre-populate mock student records
-        studentStore.put(101L, new StudentResponse(101L, "STU-2026-001", "Manish Sharma", "student@erp.com", "Computer Science", "ACTIVE"));
-        studentStore.put(102L, new StudentResponse(102L, "STU-2026-002", "Aarav Gupta", "aarav@erp.com", "Electrical Engineering", "ACTIVE"));
-        studentStore.put(103L, new StudentResponse(103L, "STU-2026-003", "Priya Verma", "priya@erp.com", "Mechanical Engineering", "ACTIVE"));
-    }
+    StudentResponseDto getStudentById(Long id);
 
-    public StudentResponse getStudentById(Long id) {
-        StudentResponse student = studentStore.get(id);
-        if (student == null) {
-            throw new ResourceNotFoundException("Student", id);
-        }
-        return student;
-    }
+    StudentResponseDto getStudentByRollNumber(String rollNumber);
 
-    public List<StudentResponse> getAllStudents() {
-        return new ArrayList<>(studentStore.values());
-    }
+    PageResponse<StudentResponseDto> getAllStudents(int page, int size, String query,
+                                                   StudentStatus status, String department,
+                                                   String sortBy, String sortDir);
 
-    public StudentResponse createStudent(StudentCreateRequest request) {
-        long newId = idGenerator.incrementAndGet();
-        String enrollment = "STU-2026-" + String.format("%03d", newId);
-        StudentResponse student = new StudentResponse(newId, enrollment, request.name(), request.email(), request.department(), "ACTIVE");
-        studentStore.put(newId, student);
-        return student;
-    }
+    StudentResponseDto updateStudent(Long id, StudentRequestDto requestDto);
+
+    void deleteStudent(Long id);
+
+    StudentResponseDto updateStudentStatus(Long id, StudentStatusUpdateDto statusUpdateDto);
+
+    List<StudentStatusHistory> getStatusHistory(Long studentId);
 }
-
