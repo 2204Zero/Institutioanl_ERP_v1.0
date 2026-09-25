@@ -5,4 +5,5 @@
 export * from './apiTypes';
 export * from './authTypes';
 export * from './studentTypes';
+export * from './formTypes';
 export * from './erp';

@@ -1,5 +1,6 @@
 /**
  * Authentication & Authorization Types
+ * Fully aligned with Spring Boot JWT Security & Institutional ERP Roles
  */
 
 export type Role =
@@ -38,6 +39,18 @@ export interface User {
   isActive: boolean;
 }
 
+/**
+ * Spring Boot Direct Response DTO Contract
+ */
+export interface AuthResponse {
+  accessToken: string;
+  refreshToken: string;
+  tokenType?: string;
+  expiresIn?: number;
+}
+
+export type TokenResponse = AuthResponse;
+
 export interface Token {
   accessToken: string;
   refreshToken: string;
@@ -52,6 +65,10 @@ export interface LoginRequest {
   rememberMe?: boolean;
 }
 
+export interface RefreshTokenRequest {
+  refreshToken: string;
+}
+
 export interface LoginResponse {
   user: User;
   token: Token;
@@ -60,9 +77,9 @@ export interface LoginResponse {
 export interface DecodedToken {
   sub: string;
   username: string;
-  role: Role;
-  permissions: Permission[];
+  role?: Role;
+  permissions?: Permission[];
   iat: number;
   exp: number;
-  iss: string;
+  iss?: string;
 }

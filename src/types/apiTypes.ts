@@ -1,10 +1,20 @@
 /**
  * Enterprise API Generic Response Interfaces and System State Types
  * Scalable for 250+ Educational ERP Modules
+ * Strict TypeScript - No 'any'
  */
 
-export interface APIResponse<T = any> {
-  success: boolean;
+export interface ResponseMetadata {
+  requestId?: string;
+  correlationId?: string;
+  executionTimeMs?: number;
+  apiVersion?: string;
+  cacheHit?: boolean;
+  extra?: Record<string, string | number | boolean>;
+}
+
+export interface ApiSuccess<T> {
+  success: true;
   data: T;
   message: string;
   code: number;
@@ -12,15 +22,36 @@ export interface APIResponse<T = any> {
   meta?: ResponseMetadata;
 }
 
-export interface ResponseMetadata {
+export interface ApiError {
+  success: false;
+  code: string;
+  message: string;
+  status: number;
+  timestamp: string;
+  details?: Record<string, string[] | string> | null;
+  path?: string;
   requestId?: string;
-  executionTimeMs?: number;
-  apiVersion?: string;
-  cacheHit?: boolean;
-  [key: string]: any;
 }
 
-export interface PaginatedResponse<T = any> {
+export type APIResponse<T> =
+  | {
+      success: true;
+      data: T;
+      message: string;
+      code: number;
+      timestamp: string;
+      meta?: ResponseMetadata;
+    }
+  | {
+      success: false;
+      data?: null;
+      message: string;
+      code: number;
+      timestamp: string;
+      meta?: ResponseMetadata;
+    };
+
+export interface PaginatedResponse<T> {
   items: T[];
   total: number;
   page: number;
@@ -30,13 +61,17 @@ export interface PaginatedResponse<T = any> {
   hasPrevious: boolean;
 }
 
+// Enterprise alias requested in specification
+export type PaginationResponse<T> = PaginatedResponse<T>;
+
 export interface ErrorResponse {
   code: string;
   message: string;
   status: number;
   timestamp: string;
-  details?: Record<string, string[]> | any;
+  details?: Record<string, string[] | string> | null;
   path?: string;
+  requestId?: string;
 }
 
 export interface PaginationParams {
