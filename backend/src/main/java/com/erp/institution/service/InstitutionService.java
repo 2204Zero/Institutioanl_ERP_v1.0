@@ -1,33 +1,48 @@
 package com.erp.institution.service;
 
-import com.erp.institution.dto.InstitutionResponse;
+import com.erp.institution.dto.*;
+import com.erp.institution.entity.Institution;
+import com.erp.institution.exception.InstitutionNotFoundException;
+import com.erp.institution.mapper.InstitutionMapper;
+import com.erp.institution.repository.InstitutionRepository;
 import org.springframework.stereotype.Service;
+import lombok.RequiredArgsConstructor;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class InstitutionService {
+    private final InstitutionRepository repository;
+    private final InstitutionMapper mapper;
 
-    public InstitutionResponse getInstitutionDetails() {
-        return new InstitutionResponse(
-                1L,
-                "INST-ERP-01",
-                "Apex Institute of Technology and Management",
-                "Knowledge Park, Phase II, Sector 62",
-                "https://www.apexinstitute.edu",
-                List.of("Main Campus (North)", "City Center Campus (South)", "Innovation Tech Park")
-        );
+    public InstitutionResponse create(InstitutionCreateRequest request) {
+        Institution entity = mapper.toEntity(request);
+        return mapper.toResponse(repository.save(entity));
     }
 
-    public InstitutionResponse updateInstitution(String name, String address, String website) {
-        return new InstitutionResponse(
-                1L,
-                "INST-ERP-01",
-                name,
-                address,
-                website,
-                List.of("Main Campus (North)", "City Center Campus (South)", "Innovation Tech Park")
-        );
+    public List<InstitutionResponse> getAll() {
+        return repository.findAll().stream()
+                .map(mapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    public InstitutionResponse getById(Long id) {
+        Institution entity = repository.findById(id).orElseThrow(() -> new InstitutionNotFoundException(id));
+        return mapper.toResponse(entity);
+    }
+
+    public InstitutionResponse update(Long id, InstitutionUpdateRequest request) {
+        Institution entity = repository.findById(id).orElseThrow(() -> new InstitutionNotFoundException(id));
+        // map updates
+        return mapper.toResponse(repository.save(entity));
+    }
+
+    public void delete(Long id) {
+        if (!repository.existsById(id)) {
+            throw new InstitutionNotFoundException(id);
+        }
+        repository.deleteById(id);
     }
 }
-

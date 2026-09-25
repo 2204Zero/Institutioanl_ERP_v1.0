@@ -1,8 +1,11 @@
 package com.erp.common.exception;
 
-public class ResourceNotFoundException extends ApiException {
-    public ResourceNotFoundException(String resourceName, Object identifier) {
-        super("RESOURCE_NOT_FOUND", resourceName + " not found with id: " + identifier, 404);
+public class ResourceNotFoundException extends RuntimeException {
+    public ResourceNotFoundException(String message) {
+        super(message);
+    }
+
+    public ResourceNotFoundException(String resourceName, String fieldName, Object fieldValue) {
+        super(String.format("%s not found with %s: '%s'", resourceName, fieldName, fieldValue));
     }
 }
-
