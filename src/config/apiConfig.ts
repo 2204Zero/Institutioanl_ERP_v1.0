@@ -81,6 +81,16 @@ export const API_CONFIG = {
       FILTER: '/students/filter',
       EXPORT: '/students/export',
     },
+    DASHBOARD: {
+      METRICS: '/dashboard/metrics',
+      CHARTS: '/dashboard/charts',
+      ACTIVITIES: '/dashboard/activities',
+    },
+    NOTIFICATIONS: {
+      BASE: '/notifications',
+      MARK_READ: (id: string) => `/notifications/${id}/read`,
+      MARK_ALL_READ: '/notifications/mark-all-read',
+    },
     SYSTEM: {
       HEALTH: '/actuator/health',
       STATUS: '/api/status',

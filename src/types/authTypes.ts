@@ -42,14 +42,8 @@ export interface User {
 /**
  * Spring Boot Direct Response DTO Contract
  */
-export interface AuthResponse {
-  accessToken: string;
-  refreshToken: string;
-  tokenType?: string;
-  expiresIn?: number;
-}
-
-export type TokenResponse = AuthResponse;
+import { AuthResponse, TokenResponse } from './api';
+export type { AuthResponse, TokenResponse };
 
 export interface Token {
   accessToken: string;

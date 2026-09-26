@@ -75,7 +75,8 @@ export function useApi<T = any>(
           if (onSuccess) onSuccess(response.data);
           return response;
         } else {
-          const apiErr = createApiError(response.code || 500, response.message);
+          const statusCode = typeof response.code === 'number' ? response.code : parseInt(String(response.code), 10) || 500;
+          const apiErr = createApiError(statusCode, response.message);
           setError(apiErr);
           if (onError) onError(apiErr);
           return response;
