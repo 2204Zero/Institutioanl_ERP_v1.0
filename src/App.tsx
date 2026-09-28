@@ -1,11 +1,14 @@
 import React from 'react';
+import { BrowserRouter } from 'react-router-dom';
 import { AppProviders } from './providers/AppProviders';
-import { FinanceDashboardPage } from './pages/FinanceDashboardPage';
+import { AppRoutes } from './routes/AppRoutes';
 
 export const App: React.FC = () => {
   return (
     <AppProviders>
-      <FinanceDashboardPage />
+      <BrowserRouter>
+        <AppRoutes />
+      </BrowserRouter>
     </AppProviders>
   );
 };

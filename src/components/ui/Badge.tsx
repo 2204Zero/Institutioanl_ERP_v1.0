@@ -1,7 +1,7 @@
 import React from 'react';
 import { cn } from '../../utils/cn';
 
-export type BadgeVariant = 'success' | 'warning' | 'error' | 'info' | 'neutral' | 'purple';
+export type BadgeVariant = 'success' | 'warning' | 'error' | 'danger' | 'info' | 'neutral' | 'purple';
 
 export interface BadgeProps {
   variant?: BadgeVariant;
@@ -26,6 +26,10 @@ export const Badge: React.FC<BadgeProps> = ({
       dot: 'bg-amber-500',
     },
     error: {
+      bg: 'bg-rose-50 text-rose-700 border-rose-200',
+      dot: 'bg-rose-500',
+    },
+    danger: {
       bg: 'bg-rose-50 text-rose-700 border-rose-200',
       dot: 'bg-rose-500',
     },

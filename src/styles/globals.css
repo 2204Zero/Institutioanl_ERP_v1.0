@@ -3,8 +3,30 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --bg-main: #f8fafc;
+    --bg-card: #ffffff;
+    --bg-sidebar: #ffffff;
+    --border-color: #e2e8f0;
+    --text-primary: #0f172a;
+    --text-muted: #64748b;
+    --accent-primary: #2563eb;
+    --accent-highlight: #3b82f6;
+  }
+
+  .dark {
+    --bg-main: #090d16;
+    --bg-card: #111827;
+    --bg-sidebar: #0f172a;
+    --border-color: #1f2937;
+    --text-primary: #f8fafc;
+    --text-muted: #94a3b8;
+    --accent-primary: #9333ea;
+    --accent-highlight: #38bdf8;
+  }
+
   body {
-    @apply bg-slate-100 text-slate-800 font-sans antialiased selection:bg-brand-500 selection:text-white;
+    @apply bg-slate-50 dark:bg-[#090d16] text-slate-900 dark:text-slate-100 font-sans antialiased selection:bg-brand-600 selection:text-white transition-colors duration-200;
   }
 }
 
@@ -14,18 +36,30 @@
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 9999px;
 }
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+}
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #475569;
 }
 
 .glass-panel {
   background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.dark .glass-panel {
+  background: rgba(17, 24, 39, 0.85);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }

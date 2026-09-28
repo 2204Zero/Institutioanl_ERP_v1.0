@@ -22,10 +22,12 @@ import {
   PanelLeftOpen,
   GraduationCap,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useERP } from '../../hooks/useERP';
 import { ERPDomain } from '../../types/erp';
 
 export const Sidebar: React.FC = () => {
+  const navigate = useNavigate();
   const {
     isSidebarCollapsed,
     toggleSidebar,
@@ -35,6 +37,11 @@ export const Sidebar: React.FC = () => {
     toggleFavoriteModule,
     recentPages,
   } = useERP();
+
+  const handleModuleClick = (path: string) => {
+    setActivePath(path);
+    navigate(path);
+  };
 
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedCategory, setExpandedCategory] = useState<Record<ERPDomain, boolean>>({
@@ -136,7 +143,7 @@ export const Sidebar: React.FC = () => {
                 return (
                   <button
                     key={m.id}
-                    onClick={() => setActivePath(m.path)}
+                    onClick={() => handleModuleClick(m.path)}
                     className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                       isActive
                         ? 'bg-brand-600 text-white shadow-sm'
@@ -188,7 +195,7 @@ export const Sidebar: React.FC = () => {
                       return (
                         <div key={m.id} className="group relative flex items-center">
                           <button
-                            onClick={() => setActivePath(m.path)}
+                            onClick={() => handleModuleClick(m.path)}
                             className={`w-full flex items-center gap-3 px-2.5 py-2 rounded-lg text-xs font-medium transition-all ${
                               isActive
                                 ? 'bg-brand-600 text-white font-semibold shadow-md shadow-brand-600/30'
@@ -237,7 +244,7 @@ export const Sidebar: React.FC = () => {
                 return (
                   <button
                     key={path}
-                    onClick={() => setActivePath(path)}
+                    onClick={() => handleModuleClick(path)}
                     className="w-full text-left px-2.5 py-1 text-[11px] text-slate-400 hover:text-white hover:bg-slate-800/60 rounded truncate"
                   >
                     {moduleObj.name}

@@ -58,6 +58,14 @@ export const Topbar: React.FC = () => {
           <span className="text-slate-400 font-semibold">{currentModule.category}</span>
           <span>/</span>
           <span className="text-slate-900 font-bold">{currentModule.name}</span>
+          <span className="text-slate-300">|</span>
+          <a
+            href="/roles"
+            className="text-[10px] font-bold px-2 py-0.5 rounded bg-brand-50 text-brand-700 border border-brand-200 hover:bg-brand-100 transition-colors"
+            title="Switch User Role Persona"
+          >
+            Role: {localStorage.getItem('selectedRole') || 'Administrator'}
+          </a>
         </div>
 
         {/* Global Search Command Bar Trigger */}

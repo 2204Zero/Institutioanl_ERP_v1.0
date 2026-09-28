@@ -1,227 +1,278 @@
 import React, { useState } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
+import { useTheme } from '../context/ThemeContext';
 import {
   Lock,
-  User,
+  User as UserIcon,
   Eye,
   EyeOff,
-  Building2,
-  ShieldCheck,
+  ArrowRight,
+  Sun,
+  Moon,
   AlertCircle,
-  Server,
-  Zap,
+  CheckCircle2,
+  Sparkles,
 } from 'lucide-react';
-import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
-import { useAuthentication } from '../hooks/useAuthentication';
-import { API_CONFIG } from '../config/apiConfig';
+import { motion } from 'framer-motion';
 
-export interface LoginPageProps {
-  onSuccess?: () => void;
-}
+export const LoginPage: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { login, loginWithGoogle, loginWithMicrosoft, loginWithGitHub, isLoading, error } = useAuth();
+  const { resolvedTheme, toggleTheme } = useTheme();
 
-export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess }) => {
-  const { login, isAuthenticating, loginError, clearLoginError } = useAuthentication();
-
-  const [username, setUsername] = useState('user');
-  const [password, setPassword] = useState('password');
-  const [showPassword, setShowPassword] = useState(false);
+  const [username, setUsername] = useState('admin.rajesh');
+  const [password, setPassword] = useState('Admin@1234');
   const [rememberMe, setRememberMe] = useState(true);
-  const [formError, setFormError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
+
+  const from = (location.state as any)?.from?.pathname || '/finance';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setFormError(null);
-    clearLoginError();
-
-    if (!username.trim()) {
-      setFormError('Institutional Username is required.');
-      return;
-    }
-    if (!password.trim()) {
-      setFormError('Account Password is required.');
+    setLocalError(null);
+    if (!username || !password) {
+      setLocalError('Please enter both username and password.');
       return;
     }
 
-    const result = await login({
-      username: username.trim(),
-      password: password.trim(),
-      rememberMe,
-    });
-
-    if (result.success && onSuccess) {
-      onSuccess();
+    try {
+      const res = await login({ username, password, rememberMe });
+      if (res.success) {
+        navigate(from, { replace: true });
+      } else {
+        setLocalError(res.message || 'Authentication failed');
+      }
+    } catch (err: any) {
+      setLocalError(err?.message || 'Server authentication failure');
     }
   };
 
-  const handleQuickFill = (u: string, p: string) => {
-    setUsername(u);
-    setPassword(p);
-    setFormError(null);
-    clearLoginError();
+  const handleOAuth = async (provider: 'google' | 'microsoft' | 'github') => {
+    setLocalError(null);
+    try {
+      let res;
+      if (provider === 'google') res = await loginWithGoogle();
+      else if (provider === 'microsoft') res = await loginWithMicrosoft();
+      else res = await loginWithGitHub();
+
+      if (res?.success) {
+        navigate(from, { replace: true });
+      }
+    } catch (err: any) {
+      setLocalError(err?.message || `Failed to sign in with ${provider}`);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4 relative overflow-hidden text-left">
-      {/* Background Decorative Gradients */}
-      <div className="absolute -top-40 -left-40 w-96 h-96 bg-brand-600/20 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-emerald-600/15 rounded-full blur-3xl pointer-events-none" />
+    <div className="min-h-screen bg-slate-50 dark:bg-[#090d16] flex flex-col justify-center py-12 sm:px-6 lg:px-8 transition-colors duration-200 text-slate-900 dark:text-slate-100">
+      {/* Theme Toggle Button */}
+      <div className="absolute top-6 right-6">
+        <button
+          onClick={toggleTheme}
+          className="p-2.5 text-slate-500 dark:text-slate-400 hover:bg-slate-200/60 dark:hover:bg-slate-800 rounded-xl transition-colors"
+          title="Toggle Theme"
+        >
+          {resolvedTheme === 'dark' ? (
+            <Sun className="w-5 h-5 text-amber-400" />
+          ) : (
+            <Moon className="w-5 h-5 text-slate-600" />
+          )}
+        </button>
+      </div>
 
-      <div className="max-w-md w-full relative z-10">
-        {/* Institutional Branding Card Header */}
-        <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-brand-600 text-white shadow-xl shadow-brand-500/25 mb-3">
-            <Building2 className="w-8 h-8" />
+      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center space-y-3">
+        <Link to="/" className="inline-flex items-center gap-2.5">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-600 dark:from-purple-600 dark:to-blue-500 flex items-center justify-center text-white font-black text-base shadow-md">
+            ERP
           </div>
-          <h1 className="text-2xl font-black text-white tracking-tight">
-            Institutional ERP System
-          </h1>
-          <p className="text-xs text-slate-400 mt-1 font-medium">
-            Centralized Authentication & JWT Security Gateway
-          </p>
+          <span className="font-extrabold text-xl tracking-tight text-slate-900 dark:text-white">
+            Institutional Suite
+          </span>
+        </Link>
+        <h2 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+          Sign in to your account
+        </h2>
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          Enter credentials to access academic & financial modules
+        </p>
 
-          {/* Backend Status Pill */}
-          <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-slate-800/80 border border-slate-700 text-slate-300">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <Server className="w-3 h-3 text-brand-400 ml-0.5" />
-            <span>Target: Spring Boot REST API (:8080)</span>
-          </div>
+        <div className="pt-1">
+          <Link
+            to="/roles"
+            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-slate-200/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-brand-600 dark:text-purple-400" />
+            <span>Role Workspace: {localStorage.getItem('selectedRole') || 'Administrator'}</span>
+            <span className="text-[10px] text-brand-600 dark:text-purple-400 font-mono underline ml-1">Change</span>
+          </Link>
         </div>
+      </div>
 
-        {/* Main Login Card */}
-        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xl p-6 sm:p-8 backdrop-blur-xl">
-          <div className="mb-5 pb-4 border-b border-slate-100 flex items-center justify-between">
-            <div>
-              <h2 className="text-base font-bold text-slate-900">Sign In to Workspace</h2>
-              <p className="text-xs text-slate-500">Enter your official institutional credentials</p>
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4">
+        <div className="bg-white dark:bg-[#111827] py-8 px-6 sm:px-10 shadow-xl rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-6">
+          {/* Social Logins */}
+          <div className="space-y-3">
+            <button
+              onClick={() => handleOAuth('google')}
+              disabled={isLoading}
+              className="w-full flex items-center justify-center gap-3 py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-700/80 transition-all shadow-2xs"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24">
+                <path
+                  fill="#4285F4"
+                  d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.29v3.15C3.26 21.3 7.31 24 12 24z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.29C.47 8.21 0 10.05 0 12s.47 3.79 1.29 5.42l3.99-3.15z"
+                />
+                <path
+                  fill="#EA4335"
+                  d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.58l3.99 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
+                />
+              </svg>
+              <span>Continue with Google</span>
+            </button>
+
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => handleOAuth('microsoft')}
+                disabled={isLoading}
+                className="flex items-center justify-center gap-2 py-2 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-700/80 transition-colors"
+              >
+                <span className="font-bold text-blue-600">MS</span>
+                <span>Microsoft</span>
+              </button>
+              <button
+                onClick={() => handleOAuth('github')}
+                disabled={isLoading}
+                className="flex items-center justify-center gap-2 py-2 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-700/80 transition-colors"
+              >
+                <span className="font-bold">GH</span>
+                <span>GitHub</span>
+              </button>
             </div>
-            <ShieldCheck className="w-5 h-5 text-emerald-600" />
           </div>
 
-          {/* Error Banner */}
-          {(formError || loginError) && (
-            <div className="mb-5 p-3.5 rounded-xl bg-rose-50 border border-rose-200 flex items-start gap-2.5 text-xs text-rose-700 animate-in fade-in duration-200">
-              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
-              <div>
-                <span className="font-bold">Authentication Failed:</span>{' '}
-                <span>{formError || loginError}</span>
-              </div>
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-slate-200 dark:border-slate-800" />
+            </div>
+            <div className="relative flex justify-center text-xs">
+              <span className="bg-white dark:bg-[#111827] px-3 text-slate-400">
+                Or sign in with username
+              </span>
+            </div>
+          </div>
+
+          {/* Error Alert */}
+          {(localError || error) && (
+            <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900/60 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2.5">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{localError || error}</span>
             </div>
           )}
 
+          {/* Credentials Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
-              label="Username / ID"
-              placeholder="e.g. user"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              leftIcon={<User className="w-4 h-4" />}
-              autoComplete="username"
-              required
-            />
-
-            <div className="relative">
-              <Input
-                label="Password"
-                type={showPassword ? 'text' : 'password'}
-                placeholder="e.g. password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                leftIcon={<Lock className="w-4 h-4" />}
-                rightIcon={
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="text-slate-400 hover:text-slate-600 focus:outline-none p-1"
-                    tabIndex={-1}
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                }
-                autoComplete="current-password"
-                required
-              />
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1 text-left">
+                Username or Institutional Email
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="admin.rajesh"
+                  className="w-full pl-9 pr-3 py-2 rounded-xl text-xs border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/60 focus:bg-white dark:focus:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 dark:focus:ring-purple-500 outline-none transition-all"
+                  required
+                />
+                <UserIcon className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+              </div>
             </div>
 
-            <div className="flex items-center justify-between text-xs pt-1">
-              <label className="flex items-center gap-2 cursor-pointer select-none text-slate-600 font-medium">
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                  Password
+                </label>
+                <Link
+                  to="/forgot-password"
+                  className="text-[11px] font-semibold text-brand-600 dark:text-purple-400 hover:underline"
+                >
+                  Forgot password?
+                </Link>
+              </div>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full pl-9 pr-9 py-2 rounded-xl text-xs border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/60 focus:bg-white dark:focus:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-500 dark:focus:ring-purple-500 outline-none transition-all"
+                  required
+                />
+                <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-1">
+              <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="rounded border-slate-300 text-brand-600 focus:ring-brand-500 w-3.5 h-3.5"
+                  className="w-3.5 h-3.5 text-brand-600 rounded border-slate-300 focus:ring-brand-500"
                 />
-                Remember this device
+                <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">
+                  Remember my session
+                </span>
               </label>
-
-              <button
-                type="button"
-                className="text-brand-600 hover:text-brand-700 font-bold hover:underline"
-                onClick={() => handleQuickFill('user', 'password')}
-              >
-                Auto-Fill Defaults
-              </button>
             </div>
 
-            <Button
+            <button
               type="submit"
-              variant="primary"
-              className="w-full justify-center text-xs py-2.5 font-bold shadow-md shadow-brand-500/20 mt-2"
-              loading={isAuthenticating}
+              disabled={isLoading}
+              className="w-full py-2.5 px-4 bg-brand-600 dark:bg-purple-600 hover:bg-brand-700 dark:hover:bg-purple-700 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
             >
-              {isAuthenticating ? 'Authenticating with Backend...' : 'Authenticate & Enter Suite'}
-            </Button>
+              {isLoading ? (
+                <span>Authenticating Credentials...</span>
+              ) : (
+                <>
+                  <span>Sign In to Platform</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
           </form>
 
-          {/* Quick-Fill Demo Credentials Selector */}
-          <div className="mt-6 pt-5 border-t border-slate-100">
-            <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2.5">
-              <Zap className="w-3.5 h-3.5 text-amber-500" />
-              <span>Quick-Fill Backend Test Accounts</span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => handleQuickFill('user', 'password')}
-                className="p-2.5 rounded-lg border border-slate-200 hover:border-brand-500 hover:bg-brand-50/50 text-left transition-all group"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-800 group-hover:text-brand-600">
-                    Live Spring Boot
-                  </span>
-                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-1 rounded">
-                    Active
-                  </span>
-                </div>
-                <div className="text-[11px] text-slate-500 mt-0.5">
-                  <span className="font-mono">user</span> / <span className="font-mono">password</span>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleQuickFill('admin.rajesh', 'admin123')}
-                className="p-2.5 rounded-lg border border-slate-200 hover:border-brand-500 hover:bg-brand-50/50 text-left transition-all group"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-800 group-hover:text-brand-600">
-                    Dean / Admin
-                  </span>
-                  <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-1 rounded">
-                    Demo
-                  </span>
-                </div>
-                <div className="text-[11px] text-slate-500 mt-0.5">
-                  <span className="font-mono">admin.rajesh</span>
-                </div>
-              </button>
-            </div>
+          {/* New Account link */}
+          <div className="text-center pt-2">
+            <span className="text-xs text-slate-500 dark:text-slate-400">
+              Don't have an account?{' '}
+            </span>
+            <Link
+              to="/signup"
+              className="text-xs font-bold text-brand-600 dark:text-purple-400 hover:underline"
+            >
+              Create Account
+            </Link>
           </div>
-        </div>
-
-        {/* Footer */}
-        <div className="text-center mt-6 text-xs text-slate-400 font-medium">
-          Protected by Spring Security JWT Stateless Filter · Educational ERP v{API_CONFIG.DEFAULT_HEADERS['X-Client-Version']}
         </div>
       </div>
     </div>

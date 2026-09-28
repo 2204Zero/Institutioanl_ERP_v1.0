@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Search, GraduationCap, Users, DollarSign, ArrowRight, CornerDownLeft, Sparkles } from 'lucide-react';
 import { Modal } from '../ui/Modal';
 import { useERP } from '../../hooks/useERP';
 import { Badge } from '../ui/Badge';
 
 export const GlobalSearchModal: React.FC = () => {
+  const navigate = useNavigate();
   const {
     isGlobalSearchOpen,
     setGlobalSearchOpen,
@@ -39,6 +41,7 @@ export const GlobalSearchModal: React.FC = () => {
 
   const handleSelectModule = (path: string, name: string) => {
     setActivePath(path);
+    navigate(path);
     setGlobalSearchOpen(false);
     addToast('Navigated', `Navigated to ${name} module.`, 'info');
   };
