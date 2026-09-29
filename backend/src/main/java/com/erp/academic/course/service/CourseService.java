@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
+
 public class CourseService {
 
     private final CourseRepository repository;
@@ -108,5 +108,10 @@ public class CourseService {
             throw new CourseNotFoundException(id);
         }
         repository.deleteById(id);
+    }
+
+    public CourseService(CourseRepository repository, CourseMapper mapper) {
+        this.repository = repository;
+        this.mapper = mapper;
     }
 }

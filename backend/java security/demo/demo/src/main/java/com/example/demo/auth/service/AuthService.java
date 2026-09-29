@@ -4,75 +4,73 @@ import com.example.demo.auth.dto.AuthResponse;
 import com.example.demo.auth.dto.LoginRequest;
 import com.example.demo.auth.dto.RefreshTokenRequest;
 import com.example.demo.auth.dto.SessionResponse;
-import com.example.demo.auth.model.InMemoryUserRegistry;
-import com.example.demo.auth.model.Permission;
-import com.example.demo.auth.model.UserPrincipal;
 import com.example.demo.common.exception.InvalidTokenException;
 import com.example.demo.security.jwt.JwtProperties;
 import com.example.demo.security.jwt.JwtService;
+import com.example.demo.session.service.SessionService;
+import com.example.demo.user.entity.User;
+import com.example.demo.user.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.Date;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.HashSet;
 
 @Service
 public class AuthService {
 
     private static final Logger log = LoggerFactory.getLogger(AuthService.class);
 
-    private final InMemoryUserRegistry userRegistry;
-    private final PasswordEncoder passwordEncoder;
+    private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final JwtProperties jwtProperties;
     private final SessionService sessionService;
+    private final CustomUserDetailsService userDetailsService;
+    private final UserRepository userRepository;
 
-    public AuthService(InMemoryUserRegistry userRegistry,
-                       PasswordEncoder passwordEncoder,
+    public AuthService(AuthenticationManager authenticationManager,
                        JwtService jwtService,
                        JwtProperties jwtProperties,
-                       SessionService sessionService) {
-        this.userRegistry = userRegistry;
-        this.passwordEncoder = passwordEncoder;
+                       SessionService sessionService,
+                       CustomUserDetailsService userDetailsService,
+                       UserRepository userRepository) {
+        this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
         this.jwtProperties = jwtProperties;
         this.sessionService = sessionService;
+        this.userDetailsService = userDetailsService;
+        this.userRepository = userRepository;
     }
 
     public AuthResponse login(LoginRequest request, String clientIp) {
-        UserPrincipal user = userRegistry.findByUsername(request.username());
-        if (user == null || !passwordEncoder.matches(request.password(), user.getPassword())) {
-            log.warn("Login failed for username: {}", request.username());
-            throw new BadCredentialsException("Invalid username or password");
-        }
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.username(), request.password())
+        );
 
-        String accessToken = jwtService.generateAccessToken(user);
-        String refreshToken = jwtService.generateRefreshToken(user);
-        String tokenId = jwtService.extractTokenId(accessToken);
+        UserDetails userDetails = userDetailsService.loadUserByUsername(request.username());
+        User user = userRepository.findByUsername(request.username()).orElseThrow();
 
-        // Register active session (Day 05)
-        sessionService.registerSession(user.getUsername(), user.getRole().name(), tokenId, clientIp);
+        String accessToken = jwtService.generateAccessToken(userDetails);
+        String refreshToken = jwtService.generateRefreshToken(userDetails);
 
-        Set<String> permissionNames = user.getPermissions().stream()
-                .map(Permission::getValue)
-                .collect(Collectors.toSet());
+        sessionService.createSession(user.getId(), accessToken, jwtProperties.getAccessTokenExpiration());
 
-        log.info("User {} successfully logged in with role {}", user.getUsername(), user.getRole());
+        log.info("User {} successfully logged in", userDetails.getUsername());
 
         return new AuthResponse(
                 accessToken,
                 refreshToken,
                 "Bearer",
                 jwtProperties.getAccessTokenExpiration(),
-                user.getUsername(),
-                user.getRole().name(),
-                permissionNames
+                userDetails.getUsername(),
+                user.getRoles().isEmpty() ? "USER" : user.getRoles().iterator().next(),
+                user.getRoles()
         );
     }
 
@@ -80,12 +78,7 @@ public class AuthService {
         String refreshToken = request.refreshToken();
 
         if (jwtService.isTokenExpired(refreshToken)) {
-            throw new InvalidTokenException("Refresh token has expired. Please log in again.");
-        }
-
-        String tokenId = jwtService.extractTokenId(refreshToken);
-        if (sessionService.isTokenRevoked(tokenId)) {
-            throw new InvalidTokenException("Refresh token has been revoked. Please log in again.");
+            throw new InvalidTokenException("Refresh token has expired.");
         }
 
         String tokenType = jwtService.extractTokenType(refreshToken);
@@ -94,25 +87,13 @@ public class AuthService {
         }
 
         String username = jwtService.extractUsername(refreshToken);
-        UserPrincipal user = userRegistry.findByUsername(username);
-        if (user == null) {
-            throw new UsernameNotFoundException("User associated with refresh token not found.");
-        }
+        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+        User user = userRepository.findByUsername(username).orElseThrow();
 
-        // Revoke the old refresh token (Token rotation policy)
-        Date oldExpiry = jwtService.extractExpiration(refreshToken);
-        sessionService.revokeToken(tokenId, oldExpiry);
+        String newAccessToken = jwtService.generateAccessToken(userDetails);
+        String newRefreshToken = jwtService.generateRefreshToken(userDetails);
 
-        // Generate new tokens
-        String newAccessToken = jwtService.generateAccessToken(user);
-        String newRefreshToken = jwtService.generateRefreshToken(user);
-        String newTokenId = jwtService.extractTokenId(newAccessToken);
-
-        sessionService.registerSession(user.getUsername(), user.getRole().name(), newTokenId, "REFRESH_ROTATE");
-
-        Set<String> permissionNames = user.getPermissions().stream()
-                .map(Permission::getValue)
-                .collect(Collectors.toSet());
+        sessionService.createSession(user.getId(), newAccessToken, jwtProperties.getAccessTokenExpiration());
 
         log.info("Refreshed access token for user: {}", username);
 
@@ -121,53 +102,48 @@ public class AuthService {
                 newRefreshToken,
                 "Bearer",
                 jwtProperties.getAccessTokenExpiration(),
-                user.getUsername(),
-                user.getRole().name(),
-                permissionNames
+                userDetails.getUsername(),
+                user.getRoles().isEmpty() ? "USER" : user.getRoles().iterator().next(),
+                user.getRoles()
         );
     }
 
     public void logout(String bearerToken, String username) {
         if (bearerToken != null && bearerToken.startsWith(jwtProperties.getTokenPrefix())) {
             String token = bearerToken.substring(jwtProperties.getTokenPrefix().length()).trim();
-            String tokenId = jwtService.extractTokenId(token);
-            Date expiry = jwtService.extractExpiration(token);
-            sessionService.revokeToken(tokenId, expiry);
+            sessionService.invalidateSession(token);
         }
 
         if (username != null) {
-            sessionService.invalidateSession(username);
-            log.info("User {} logged out successfully and tokens revoked.", username);
+            userRepository.findByUsername(username).ifPresent(user -> {
+                sessionService.invalidateAllUserSessions(user.getId());
+            });
+            log.info("User {} logged out successfully and sessions invalidated.", username);
         }
     }
 
     public SessionResponse validateSession(String username, String bearerToken) {
-        UserPrincipal user = userRegistry.findByUsername(username);
-        if (user == null) {
-            throw new UsernameNotFoundException("User not found: " + username);
-        }
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
 
-        boolean active = sessionService.isSessionValid(username);
+        boolean active = false;
         Instant issuedAt = Instant.now();
         Instant expiresAt = Instant.now().plusMillis(jwtProperties.getAccessTokenExpiration());
 
         if (bearerToken != null && bearerToken.startsWith(jwtProperties.getTokenPrefix())) {
             String token = bearerToken.substring(jwtProperties.getTokenPrefix().length()).trim();
-            if (jwtService.isTokenExpired(token)) {
-                active = false;
-            } else {
+            active = sessionService.validateSession(token);
+            if (!jwtService.isTokenExpired(token)) {
                 expiresAt = jwtService.extractExpiration(token).toInstant();
+            } else {
+                active = false;
             }
         }
 
-        Set<String> permissionNames = user.getPermissions().stream()
-                .map(Permission::getValue)
-                .collect(Collectors.toSet());
-
         return new SessionResponse(
                 user.getUsername(),
-                user.getRole().name(),
-                permissionNames,
+                user.getRoles().isEmpty() ? "USER" : user.getRoles().iterator().next(),
+                user.getRoles(),
                 active,
                 issuedAt,
                 expiresAt,

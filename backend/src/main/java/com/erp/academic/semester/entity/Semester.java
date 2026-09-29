@@ -1,10 +1,8 @@
 package com.erp.academic.semester.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
 import java.time.Instant;
 
-@Data
 @Entity
 @Table(name = "semester")
 public class Semester {
@@ -24,4 +22,52 @@ public class Semester {
     
     @Column(name = "updated_at")
     private Instant updatedAt = Instant.now();
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public Long getAcademicYearId() { return academicYearId; }
+    public void setAcademicYearId(Long academicYearId) { this.academicYearId = academicYearId; }
+    public Boolean getIsActive() { return isActive; }
+    public void setIsActive(Boolean isActive) { this.isActive = isActive; }
+
+    public Integer getSemesterNumber() {
+        return semesterNumber;
+    }
+
+    public void setSemesterNumber(Integer semesterNumber) {
+        this.semesterNumber = semesterNumber;
+    }
+
+    public java.time.LocalDate getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(java.time.LocalDate startDate) {
+        this.startDate = startDate;
+    }
+
+    public java.time.LocalDate getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(java.time.LocalDate endDate) {
+        this.endDate = endDate;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Instant updatedAt) {
+        this.updatedAt = updatedAt;
+    }
 }

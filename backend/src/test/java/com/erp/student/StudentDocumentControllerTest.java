@@ -1,5 +1,10 @@
 package com.erp.student;
 
+import com.erp.student.dto.StudentRequestDto;
+import com.erp.student.entity.StudentStatus;
+import com.erp.student.entity.DocumentType;
+
+
 import com.erp.common.exception.GlobalExceptionHandler;
 import com.erp.student.controller.StudentController;
 import com.erp.student.controller.StudentDocumentController;

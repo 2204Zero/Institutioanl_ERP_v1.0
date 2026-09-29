@@ -1,6 +1,6 @@
 package com.example.demo.security.jwt;
 
-import com.example.demo.auth.service.SessionService;
+import com.example.demo.session.service.SessionService;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.security.SignatureException;
 import jakarta.servlet.FilterChain;
@@ -43,6 +43,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getServletPath();
         return path.equals("/auth/login") ||
+               path.equals("/api/password/forgot") ||
+               path.equals("/api/password/reset") ||
                path.equals("/auth/refresh") ||
                path.startsWith("/v3/api-docs") ||
                path.startsWith("/swagger-ui");
@@ -63,17 +65,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         final String jwt = authHeader.substring(jwtProperties.getTokenPrefix().length()).trim();
 
         try {
-            final String tokenId = jwtService.extractTokenId(jwt);
-
-            // Check Day 05: Session Validation & Token Revocation
-            if (sessionService.isTokenRevoked(tokenId)) {
-                log.warn("Rejected request with revoked token: tokenId={}", tokenId);
+            if (!sessionService.validateSession(jwt)) {
+                log.warn("Rejected request with invalid or revoked token.");
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 response.setContentType(org.springframework.http.MediaType.APPLICATION_JSON_VALUE);
                 com.example.demo.common.exception.ApiErrorResponse errorResponse = com.example.demo.common.exception.ApiErrorResponse.of(
                         HttpServletResponse.SC_UNAUTHORIZED,
-                        "TOKEN_REVOKED",
-                        "Token has been revoked. Please log in again.",
+                        "TOKEN_INVALID_OR_REVOKED",
+                        "Token is invalid, expired, or revoked. Please log in again.",
                         request.getRequestURI()
                 );
                 response.getWriter().write(new com.fasterxml.jackson.databind.ObjectMapper().registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule()).writeValueAsString(errorResponse));
@@ -94,7 +93,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
 
-                    sessionService.updateSessionAccess(username);
                     log.debug("Authenticated user {} with authorities: {}", username, userDetails.getAuthorities());
                 }
             }
