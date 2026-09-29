@@ -40,6 +40,10 @@ public class StudentServiceImpl implements StudentService {
 
     @Override
     public StudentResponseDto createStudent(StudentRequestDto requestDto) {
+        if (requestDto.getRollNumber() == null || requestDto.getRollNumber().trim().isEmpty()) {
+            requestDto.setRollNumber("ENR-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+        }
+        
         if (studentRepository.existsByRollNumber(requestDto.getRollNumber().trim())) {
             throw new BusinessException("A student with roll number '" + requestDto.getRollNumber() + "' already exists.");
         }
@@ -56,7 +60,8 @@ public class StudentServiceImpl implements StudentService {
                 null,
                 savedStudent.getStatus(),
                 "Initial student enrollment",
-                "system"
+                "system",
+                java.time.LocalDate.now()
         );
         statusHistoryRepository.save(history);
 
@@ -116,10 +121,11 @@ public class StudentServiceImpl implements StudentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Student", "id", id));
 
         // Check roll number uniqueness if changed
-        if (!student.getRollNumber().equalsIgnoreCase(requestDto.getRollNumber().trim())) {
+        if (requestDto.getRollNumber() != null && !requestDto.getRollNumber().trim().isEmpty() && !student.getRollNumber().equalsIgnoreCase(requestDto.getRollNumber().trim())) {
             if (studentRepository.existsByRollNumber(requestDto.getRollNumber().trim())) {
                 throw new BusinessException("A student with roll number '" + requestDto.getRollNumber() + "' already exists.");
             }
+            student.setRollNumber(requestDto.getRollNumber().trim());
         }
 
         // Check email uniqueness if changed
@@ -141,6 +147,22 @@ public class StudentServiceImpl implements StudentService {
         studentRepository.delete(student);
     }
 
+    private void validateStatusTransition(StudentStatus current, StudentStatus target) {
+        if (current == target) return;
+        boolean isValid = switch (current) {
+            case ACTIVE -> target == StudentStatus.GRADUATED || target == StudentStatus.SUSPENDED 
+                        || target == StudentStatus.TRANSFERRED || target == StudentStatus.DROPPED 
+                        || target == StudentStatus.INACTIVE;
+            case INACTIVE, SUSPENDED -> target == StudentStatus.ACTIVE || target == StudentStatus.DROPPED 
+                                     || target == StudentStatus.TRANSFERRED;
+            case GRADUATED -> target == StudentStatus.ALUMNI;
+            case ALUMNI, DROPPED, TRANSFERRED -> false; // Terminal states
+        };
+        if (!isValid) {
+            throw new BusinessException("Invalid status transition from " + current + " to " + target);
+        }
+    }
+
     @Override
     public StudentResponseDto updateStudentStatus(Long id, StudentStatusUpdateDto statusUpdateDto) {
         Student student = studentRepository.findById(id)
@@ -153,6 +175,8 @@ public class StudentServiceImpl implements StudentService {
             return studentMapper.toDto(student);
         }
 
+        validateStatusTransition(previousStatus, newStatus);
+
         student.setStatus(newStatus);
         Student savedStudent = studentRepository.save(student);
 
@@ -162,7 +186,8 @@ public class StudentServiceImpl implements StudentService {
                 previousStatus,
                 newStatus,
                 statusUpdateDto.getReason() != null ? statusUpdateDto.getReason() : "Status updated to " + newStatus,
-                statusUpdateDto.getChangedBy() != null ? statusUpdateDto.getChangedBy() : "admin"
+                statusUpdateDto.getChangedBy() != null ? statusUpdateDto.getChangedBy() : "admin",
+                statusUpdateDto.getEffectiveDate() != null ? statusUpdateDto.getEffectiveDate() : java.time.LocalDate.now()
         );
         statusHistoryRepository.save(history);
 

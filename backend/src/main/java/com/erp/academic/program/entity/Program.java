@@ -14,7 +14,10 @@ public class Program {
     
     private String name;
     private String code;
+    private String degree;
+    private Integer duration;
     private Long departmentId;
+    private Boolean isActive;
 
     @Column(name = "created_at", updatable = false)
     private Instant createdAt = Instant.now();

@@ -13,7 +13,10 @@ public class Semester {
     private Long id;
     
     private String name;
+    private Integer semesterNumber;
     private Long academicYearId;
+    private java.time.LocalDate startDate;
+    private java.time.LocalDate endDate;
     private Boolean isActive;
 
     @Column(name = "created_at", updatable = false)

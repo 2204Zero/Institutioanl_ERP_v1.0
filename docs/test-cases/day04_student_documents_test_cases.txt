@@ -1,0 +1,141 @@
+================================================================================
+INSTITUTIONAL ERP v1.0 — STUDENT INFORMATION SYSTEM (SIS)
+TEST CASES: DAY 04 — STUDENT DOCUMENTS MODULE
+Author: Palak Agarwal
+Module: Student Information System (Document Management)
+Supported Documents: Aadhaar, Transfer Certificate, Migration, Marksheet, Photograph
+================================================================================
+
+TC_DOC_001: Upload Document - Aadhaar Card
+--------------------------------------------------------------------------------
+Objective   : Upload student's Aadhaar PDF and store file on disk with DB record.
+Method / URI: POST /api/v1/students/{studentId}/documents
+Content-Type: multipart/form-data
+Function    : StudentDocumentController.uploadDocument(studentId, documentType, file)
+Input Form  :
+    - studentId   : 1
+    - documentType: AADHAAR
+    - file        : aadhaar_card_sample.pdf (Binary bytes)
+Expected HTTP Code  : 201 CREATED
+Expected Output Body:
+{
+  "success": true,
+  "message": "Document uploaded successfully",
+  "data": {
+    "id": 1,
+    "studentId": 1,
+    "documentType": "AADHAAR",
+    "fileName": "1_AADHAAR_3b8a1c92.pdf",
+    "originalFileName": "aadhaar_card_sample.pdf",
+    "fileType": "application/pdf",
+    "fileSize": 102400,
+    "formattedSize": "100.00 KB",
+    "downloadUrl": "/api/v1/documents/1/download",
+    "viewUrl": "/api/v1/documents/1/view",
+    "uploadedAt": "2026-09-27T19:45:59.781602"
+  }
+}
+Actual Result       : 201 Created. File saved under uploads/documents/, metadata in DB.
+Status              : PASS
+
+--------------------------------------------------------------------------------
+TC_DOC_002: Upload Document - Marksheet
+--------------------------------------------------------------------------------
+Objective   : Upload student's 12th standard marksheet.
+Method / URI: POST /api/v1/students/{studentId}/documents
+Content-Type: multipart/form-data
+Input Form  :
+    - studentId   : 1
+    - documentType: MARKSHEET
+    - file        : marksheet_class12.pdf
+Expected HTTP Code  : 201 CREATED
+Actual Result       : 201 Created. Document persisted.
+Status              : PASS
+
+--------------------------------------------------------------------------------
+TC_DOC_003: Upload Document - Photograph (Image JPG/PNG)
+--------------------------------------------------------------------------------
+Objective   : Upload passport size photograph for student identity card.
+Method / URI: POST /api/v1/students/{studentId}/documents
+Content-Type: multipart/form-data
+Input Form  :
+    - studentId   : 1
+    - documentType: PHOTOGRAPH
+    - file        : passport_photo.jpg
+Expected HTTP Code  : 201 CREATED
+Actual Result       : 201 Created.
+Status              : PASS
+
+--------------------------------------------------------------------------------
+TC_DOC_004: List Documents for Student
+--------------------------------------------------------------------------------
+Objective   : Retrieve all uploaded document records for a given student.
+Method / URI: GET /api/v1/students/{studentId}/documents (e.g. studentId = 1)
+Function    : StudentDocumentController.getDocumentsByStudent(Long studentId)
+Expected HTTP Code  : 200 OK
+Expected Output Body:
+{
+  "success": true,
+  "message": "Operation successful",
+  "data": [
+    {
+      "id": 1,
+      "studentId": 1,
+      "documentType": "AADHAAR",
+      "originalFileName": "aadhaar_card_sample.pdf",
+      "downloadUrl": "/api/v1/documents/1/download",
+      "viewUrl": "/api/v1/documents/1/view"
+    },
+    {
+      "id": 2,
+      "studentId": 1,
+      "documentType": "MARKSHEET",
+      "originalFileName": "marksheet_class12.pdf"
+    }
+  ]
+}
+Actual Result       : 200 OK with list of all student documents.
+Status              : PASS
+
+--------------------------------------------------------------------------------
+TC_DOC_005: View Document Inline Preview (Browser View)
+--------------------------------------------------------------------------------
+Objective   : Stream file with inline content-disposition for previewing in UI.
+Method / URI: GET /api/v1/documents/{id}/view  (e.g., id = 1)
+Function    : StudentDocumentController.viewDocument(Long id)
+Expected HTTP Code    : 200 OK
+Expected Headers      :
+    - Content-Type       : application/pdf
+    - Content-Disposition: inline; filename="aadhaar_card_sample.pdf"
+Expected Output Body  : Binary byte stream.
+Actual Result         : 200 OK. Browser can render PDF or image without forcing download.
+Status                : PASS
+
+--------------------------------------------------------------------------------
+TC_DOC_006: Download Document File (Attachment)
+--------------------------------------------------------------------------------
+Objective   : Download document file as attachment.
+Method / URI: GET /api/v1/documents/{id}/download  (e.g., id = 1)
+Function    : StudentDocumentController.downloadDocument(Long id)
+Expected HTTP Code    : 200 OK
+Expected Headers      :
+    - Content-Disposition: attachment; filename="aadhaar_card_sample.pdf"
+Actual Result         : 200 OK. Triggers browser file save dialog.
+Status                : PASS
+
+--------------------------------------------------------------------------------
+TC_DOC_007: Delete Document
+--------------------------------------------------------------------------------
+Objective   : Delete document record from database and delete physical file from disk.
+Method / URI: DELETE /api/v1/documents/{id}  (e.g., id = 1)
+Function    : StudentDocumentController.deleteDocument(Long id)
+Expected HTTP Code  : 200 OK
+Expected Output Body:
+{
+  "success": true,
+  "message": "Document deleted successfully",
+  "data": null
+}
+Actual Result       : 200 OK. Physical file unlinked and row removed.
+Status              : PASS
+================================================================================

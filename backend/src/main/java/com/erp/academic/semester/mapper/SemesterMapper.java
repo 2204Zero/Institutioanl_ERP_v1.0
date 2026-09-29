@@ -8,13 +8,50 @@ import org.springframework.stereotype.Component;
 public class SemesterMapper {
     public Semester toEntity(SemesterCreateRequest request) {
         Semester entity = new Semester();
-        // Set fields from request
+        entity.setName(request.getName());
+        entity.setSemesterNumber(request.getSemesterNumber());
+        entity.setAcademicYearId(request.getAcademicYearId());
+        entity.setStartDate(request.getStartDate());
+        entity.setEndDate(request.getEndDate());
+        entity.setIsActive(request.getIsActive());
+
         return entity;
     }
-
+    
     public SemesterResponse toResponse(Semester entity) {
-        return new SemesterResponse(
-            entity.getId(), entity.getName() , entity.getAcademicYearId() , entity.getIsActive()
-        );
+        SemesterResponse response = new SemesterResponse();
+        response.setId(entity.getId());
+        response.setName(entity.getName());
+        response.setSemesterNumber(entity.getSemesterNumber());
+        response.setAcademicYearId(entity.getAcademicYearId());
+        response.setStartDate(entity.getStartDate());
+        response.setEndDate(entity.getEndDate());
+        response.setIsActive(entity.getIsActive());
+
+        response.setCreatedAt(entity.getCreatedAt());
+        response.setUpdatedAt(entity.getUpdatedAt());
+        return response;
+    }
+    
+    public void updateEntity(Semester entity, SemesterUpdateRequest request) {
+        if (request.getName() != null) {
+            entity.setName(request.getName());
+        }
+        if (request.getSemesterNumber() != null) {
+            entity.setSemesterNumber(request.getSemesterNumber());
+        }
+        if (request.getAcademicYearId() != null) {
+            entity.setAcademicYearId(request.getAcademicYearId());
+        }
+        if (request.getStartDate() != null) {
+            entity.setStartDate(request.getStartDate());
+        }
+        if (request.getEndDate() != null) {
+            entity.setEndDate(request.getEndDate());
+        }
+        if (request.getIsActive() != null) {
+            entity.setIsActive(request.getIsActive());
+        }
+
     }
 }

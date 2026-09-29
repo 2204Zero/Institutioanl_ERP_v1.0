@@ -135,7 +135,8 @@ class StudentControllerTest {
         StudentStatusUpdateDto statusUpdate = new StudentStatusUpdateDto(
                 StudentStatus.SUSPENDED,
                 "Temporarily suspended due to attendance shortage",
-                "principal"
+                "principal",
+                java.time.LocalDate.now()
         );
 
         mockMvc.perform(patch("/api/v1/students/" + studentId + "/status")

@@ -19,13 +19,18 @@ public class StudentStatusUpdateDto {
     @Schema(description = "User or administrator making the change", example = "admin_user")
     private String changedBy;
 
+    @Schema(description = "Effective date of the status change", example = "2026-09-14")
+    @NotNull(message = "Effective date cannot be null")
+    private java.time.LocalDate effectiveDate;
+
     public StudentStatusUpdateDto() {
     }
 
-    public StudentStatusUpdateDto(StudentStatus status, String reason, String changedBy) {
+    public StudentStatusUpdateDto(StudentStatus status, String reason, String changedBy, java.time.LocalDate effectiveDate) {
         this.status = status;
         this.reason = reason;
         this.changedBy = changedBy;
+        this.effectiveDate = effectiveDate;
     }
 
     public StudentStatus getStatus() {
@@ -50,5 +55,13 @@ public class StudentStatusUpdateDto {
 
     public void setChangedBy(String changedBy) {
         this.changedBy = changedBy;
+    }
+
+    public java.time.LocalDate getEffectiveDate() {
+        return effectiveDate;
+    }
+
+    public void setEffectiveDate(java.time.LocalDate effectiveDate) {
+        this.effectiveDate = effectiveDate;
     }
 }
