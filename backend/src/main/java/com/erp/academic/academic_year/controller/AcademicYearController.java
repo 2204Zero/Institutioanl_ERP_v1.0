@@ -10,9 +10,13 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/academic-years")
-@RequiredArgsConstructor
 public class AcademicYearController {
     private final AcademicYearService service;
+
+
+    public AcademicYearController(AcademicYearService service) {
+        this.service = service;
+    }
 
     @PostMapping
     public ResponseEntity<AcademicYearResponse> create(@RequestBody AcademicYearCreateRequest request) {

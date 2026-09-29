@@ -12,10 +12,15 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class InstitutionService {
     private final InstitutionRepository repository;
     private final InstitutionMapper mapper;
+
+
+    public InstitutionService(InstitutionRepository repository, InstitutionMapper mapper) {
+        this.repository = repository;
+        this.mapper = mapper;
+    }
 
     public InstitutionResponse create(InstitutionCreateRequest request) {
         Institution entity = mapper.toEntity(request);
@@ -35,7 +40,12 @@ public class InstitutionService {
 
     public InstitutionResponse update(Long id, InstitutionUpdateRequest request) {
         Institution entity = repository.findById(id).orElseThrow(() -> new InstitutionNotFoundException(id));
-        // map updates
+        if (request.name() != null) {
+            entity.setName(request.name());
+        }
+        if (request.code() != null) {
+            entity.setCode(request.code());
+        }
         return mapper.toResponse(repository.save(entity));
     }
 

@@ -20,13 +20,17 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class BatchService {
 
     private final BatchRepository repository;
     private final ProgramRepository programRepository;
     private final AcademicYearRepository academicYearRepository;
     private final BatchMapper mapper;
+
+    public BatchService(BatchRepository repository, BatchMapper mapper) {
+        this.repository = repository;
+        this.mapper = mapper;
+    }
 
     @Transactional
     public BatchResponse create(BatchCreateRequest request) {

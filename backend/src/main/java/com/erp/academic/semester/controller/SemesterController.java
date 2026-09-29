@@ -14,10 +14,14 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/semesters")
-@RequiredArgsConstructor
 public class SemesterController {
 
     private final SemesterService service;
+
+
+    public SemesterController(SemesterService service) {
+        this.service = service;
+    }
 
     @PostMapping
     public ResponseEntity<SemesterResponse> create(@Valid @RequestBody SemesterCreateRequest request) {
