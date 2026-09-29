@@ -1,6 +1,5 @@
 package com.erp.security.jwt;
 
-import com.erp.auth.service.SessionService;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.security.SignatureException;
 import jakarta.servlet.FilterChain;
@@ -27,12 +26,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
     private final JwtProperties jwtProperties;
     private final UserDetailsService userDetailsService;
-    private final SessionService sessionService;
+    private final com.erp.auth.service.SessionService sessionService;
 
     public JwtAuthenticationFilter(JwtService jwtService,
                                    JwtProperties jwtProperties,
                                    UserDetailsService userDetailsService,
-                                   SessionService sessionService) {
+                                   com.erp.auth.service.SessionService sessionService) {
         this.jwtService = jwtService;
         this.jwtProperties = jwtProperties;
         this.userDetailsService = userDetailsService;
@@ -43,6 +42,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getServletPath();
         return path.equals("/auth/login") ||
+               path.equals("/api/password/forgot") ||
+               path.equals("/api/password/reset") ||
                path.equals("/auth/refresh") ||
                path.startsWith("/v3/api-docs") ||
                path.startsWith("/swagger-ui");
@@ -63,24 +64,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         final String jwt = authHeader.substring(jwtProperties.getTokenPrefix().length()).trim();
 
         try {
+            final String username = jwtService.extractUsername(jwt);
             final String tokenId = jwtService.extractTokenId(jwt);
 
-            // Check Day 05: Session Validation & Token Revocation
             if (sessionService.isTokenRevoked(tokenId)) {
-                log.warn("Rejected request with revoked token: tokenId={}", tokenId);
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.setContentType(org.springframework.http.MediaType.APPLICATION_JSON_VALUE);
-                com.erp.common.exception.ApiErrorResponse errorResponse = com.erp.common.exception.ApiErrorResponse.of(
-                        HttpServletResponse.SC_UNAUTHORIZED,
-                        "TOKEN_REVOKED",
-                        "Token has been revoked. Please log in again.",
-                        request.getRequestURI()
-                );
-                response.getWriter().write(new com.fasterxml.jackson.databind.ObjectMapper().registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule()).writeValueAsString(errorResponse));
+                log.warn("JWT token has been revoked for token ID: {}", tokenId);
+                request.setAttribute("auth_error_code", "TOKEN_REVOKED");
+                request.setAttribute("auth_error_message", "JWT token has been revoked.");
+                filterChain.doFilter(request, response);
                 return;
             }
-
-            final String username = jwtService.extractUsername(jwt);
 
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
@@ -94,7 +87,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
 
-                    sessionService.updateSessionAccess(username);
                     log.debug("Authenticated user {} with authorities: {}", username, userDetails.getAuthorities());
                 }
             }
@@ -115,4 +107,3 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 }
-

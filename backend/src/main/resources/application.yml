@@ -1,31 +1,31 @@
 server:
   port: 8080
+  servlet:
+    context-path: /
 
 spring:
   application:
     name: institutional-erp-backend
-  datasource:
-    url: jdbc:h2:mem:erpdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
-    driver-class-name: org.h2.Driver
-    username: sa
-    password: 
-  jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
-    hibernate:
-      ddl-auto: update
-    show-sql: false
+  profiles:
+    active: dev
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 15MB
 
-jwt:
-  secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
-  access-token-expiration: 900000
-  refresh-token-expiration: 604800000
-  token-prefix: "Bearer "
-  header-string: "Authorization"
+# Storage configuration
+app:
+  storage:
+    document-dir: uploads/documents
 
+# SpringDoc OpenAPI / Swagger Configuration
 springdoc:
   api-docs:
     path: /v3/api-docs
+    enabled: true
   swagger-ui:
     path: /swagger-ui.html
-    operations-sorter: method
-    tags-sorter: alpha
+    enabled: true
+    operationsSorter: method
+    tagsSorter: alpha

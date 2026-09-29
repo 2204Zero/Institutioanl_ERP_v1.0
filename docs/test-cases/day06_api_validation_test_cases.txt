@@ -1,0 +1,122 @@
+================================================================================
+INSTITUTIONAL ERP v1.0 — STUDENT INFORMATION SYSTEM (SIS)
+TEST CASES: DAY 06 — API TESTING, VALIDATION & EXCEPTION HANDLING
+Author: Palak Agarwal
+Module: Student Information System (Testing & Quality Assurance)
+================================================================================
+
+TC_VAL_001: Input Validation Failure - Missing Required Fields
+--------------------------------------------------------------------------------
+Objective   : Verify that submitting a Student profile with missing required fields
+              triggers a 400 Bad Request with granular field validation errors.
+Method / URI: POST /api/v1/students
+Input Body  :
+{
+  "rollNumber": "",
+  "firstName": null,
+  "lastName": null,
+  "email": "invalid-email-string",
+  "phone": null,
+  "department": null,
+  "batch": null
+}
+Expected HTTP Code  : 400 BAD REQUEST
+Expected Output Body:
+{
+  "status": 400,
+  "error": "Validation Failed",
+  "message": "Input payload contains validation errors",
+  "path": "/api/v1/students",
+  "validationErrors": {
+    "rollNumber": "Roll number is required",
+    "firstName": "First name is required",
+    "lastName": "Last name is required",
+    "email": "Invalid email format",
+    "phone": "Phone number is required",
+    "department": "Department is required",
+    "batch": "Batch is required",
+    "dateOfBirth": "Date of birth is required",
+    "enrollmentDate": "Enrollment date is required",
+    "gender": "Gender is required"
+  }
+}
+Actual Result       : 400 Bad Request with exact field level messages from GlobalExceptionHandler.
+Status              : PASS
+
+--------------------------------------------------------------------------------
+TC_VAL_002: Unique Constraint Conflict - Duplicate Roll Number
+--------------------------------------------------------------------------------
+Objective   : Verify that attempting to register an existing roll number returns
+              a 409 Conflict exception.
+Method / URI: POST /api/v1/students
+Input Body  : Payload with "rollNumber": "2024-CSE-001" (already registered)
+Expected HTTP Code  : 409 CONFLICT
+Expected Output Body:
+{
+  "status": 409,
+  "error": "Conflict",
+  "message": "Roll number already exists: 2024-CSE-001",
+  "path": "/api/v1/students"
+}
+Actual Result       : 409 Conflict. Duplicate entry prevented.
+Status              : PASS
+
+--------------------------------------------------------------------------------
+TC_VAL_003: Unique Constraint Conflict - Duplicate Email
+--------------------------------------------------------------------------------
+Objective   : Verify that duplicate email throws 409 Conflict.
+Method / URI: POST /api/v1/students
+Input Body  : Payload with "email": "aarav.sharma@college.edu" (already registered)
+Expected HTTP Code  : 409 CONFLICT
+Expected Output Body:
+{
+  "status": 409,
+  "error": "Conflict",
+  "message": "Email already registered: aarav.sharma@college.edu",
+  "path": "/api/v1/students"
+}
+Actual Result       : 409 Conflict.
+Status              : PASS
+
+--------------------------------------------------------------------------------
+TC_VAL_004: Resource Not Found Exception (404)
+--------------------------------------------------------------------------------
+Objective   : Verify querying a non-existent student ID returns a structured 404 response.
+Method / URI: GET /api/v1/students/999999
+Expected HTTP Code  : 404 NOT FOUND
+Expected Output Body:
+{
+  "status": 404,
+  "error": "Not Found",
+  "message": "Student not found with id: '999999'",
+  "path": "/api/v1/students/999999",
+  "validationErrors": null
+}
+Actual Result       : 404 Not Found returned by ResourceNotFoundException handler.
+Status              : PASS
+
+--------------------------------------------------------------------------------
+TC_VAL_005: File Upload Size Limit Validation (413 Payload Too Large)
+--------------------------------------------------------------------------------
+Objective   : Verify uploading file exceeding 10MB limit is rejected.
+Method / URI: POST /api/v1/students/1/documents
+Input       : Multipart file > 10MB
+Expected HTTP Code  : 413 PAYLOAD TOO LARGE
+Expected Output Body:
+{
+  "status": 413,
+  "error": "Payload Too Large",
+  "message": "Maximum upload size exceeded. Maximum allowed file size is 10MB."
+}
+Actual Result       : 413 Payload Too Large caught by MaxUploadSizeExceededException.
+Status              : PASS
+
+--------------------------------------------------------------------------------
+TC_VAL_006: Swagger / OpenAPI Documentation Availability
+--------------------------------------------------------------------------------
+Objective   : Verify Swagger UI and OpenAPI v3 JSON endpoints render all schemas.
+Method / URI: GET /swagger-ui.html & GET /v3/api-docs
+Expected HTTP Code  : 200 OK / 302 Redirect to Swagger UI
+Expected Output     : Complete interactive documentation for Student, Guardian, and Document APIs.
+Status              : PASS
+================================================================================

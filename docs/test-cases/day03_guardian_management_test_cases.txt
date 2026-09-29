@@ -1,0 +1,137 @@
+================================================================================
+INSTITUTIONAL ERP v1.0 — STUDENT INFORMATION SYSTEM (SIS)
+TEST CASES: DAY 03 — GUARDIAN MANAGEMENT MODULE
+Author: Palak Agarwal
+Module: Student Information System (Guardian Management)
+================================================================================
+
+TC_GRD_001: Add Guardian and Link to Student
+--------------------------------------------------------------------------------
+Objective   : Add a new guardian record directly linked to an existing student.
+Method / URI: POST /api/v1/students/{studentId}/guardians  (e.g., studentId = 1)
+Function    : GuardianController.addGuardianToStudent(studentId, GuardianRequestDto)
+Input Body  :
+{
+  "firstName": "Sunil",
+  "lastName": "Agarwal",
+  "relation": "FATHER",
+  "phone": "+919811229988",
+  "email": "sunil.agarwal@example.com",
+  "occupation": "Chartered Accountant",
+  "address": "Tower 4, Green Glades, Gurugram",
+  "isEmergencyContact": true
+}
+Expected HTTP Code  : 201 CREATED
+Expected Output Body:
+{
+  "success": true,
+  "message": "Guardian added and linked to student",
+  "data": {
+    "id": 1,
+    "studentId": 1,
+    "studentName": "Aarav Sharma",
+    "firstName": "Sunil",
+    "lastName": "Agarwal",
+    "fullName": "Sunil Agarwal",
+    "relation": "FATHER",
+    "phone": "+919811229988",
+    "email": "sunil.agarwal@example.com",
+    "occupation": "Chartered Accountant",
+    "address": "Tower 4, Green Glades, Gurugram",
+    "isEmergencyContact": true,
+    "createdAt": "2026-09-27T19:45:59.735324"
+  }
+}
+Actual Result       : 201 Created. Foreign key relationship persisted in guardians table.
+Status              : PASS
+
+--------------------------------------------------------------------------------
+TC_GRD_002: Add Guardian (Standalone endpoint POST /guardians)
+--------------------------------------------------------------------------------
+Objective   : Create guardian using top-level endpoint with studentId in body.
+Method / URI: POST /guardians
+Function    : GuardianController.createGuardian(GuardianRequestDto)
+Input Body  :
+{
+  "studentId": 1,
+  "firstName": "Sunita",
+  "lastName": "Agarwal",
+  "relation": "MOTHER",
+  "phone": "+919811229977",
+  "email": "sunita.agarwal@example.com",
+  "occupation": "Professor",
+  "isEmergencyContact": false
+}
+Expected HTTP Code  : 201 CREATED
+Actual Result       : 201 Created.
+Status              : PASS
+
+--------------------------------------------------------------------------------
+TC_GRD_003: Get Guardians for a Specific Student
+--------------------------------------------------------------------------------
+Objective   : Retrieve all guardian contacts (e.g. father, mother) for a student.
+Method / URI: GET /api/v1/students/{studentId}/guardians (e.g., studentId = 1)
+Function    : GuardianController.getGuardiansByStudent(Long studentId)
+Expected HTTP Code  : 200 OK
+Expected Output Body:
+{
+  "success": true,
+  "message": "Operation successful",
+  "data": [
+    {
+      "id": 1,
+      "studentId": 1,
+      "relation": "FATHER",
+      "fullName": "Sunil Agarwal",
+      "isEmergencyContact": true
+    }
+  ]
+}
+Actual Result       : 200 OK with list of linked guardians.
+Status              : PASS
+
+--------------------------------------------------------------------------------
+TC_GRD_004: Get All Guardians (GET /guardians)
+--------------------------------------------------------------------------------
+Objective   : Retrieve directory of all guardians in the system.
+Method / URI: GET /guardians
+Function    : GuardianController.getAllGuardians()
+Expected HTTP Code  : 200 OK
+Status              : PASS
+
+--------------------------------------------------------------------------------
+TC_GRD_005: Edit Guardian (PUT /guardians/{id})
+--------------------------------------------------------------------------------
+Objective   : Update details of an existing guardian.
+Method / URI: PUT /guardians/{id}
+Function    : GuardianController.updateGuardian(Long id, GuardianRequestDto)
+Input Body  : Updated occupation: "Chief Financial Officer"
+Expected HTTP Code  : 200 OK
+Expected Output Body:
+{
+  "success": true,
+  "message": "Guardian updated successfully",
+  "data": {
+    "id": 1,
+    "occupation": "Chief Financial Officer"
+  }
+}
+Actual Result       : 200 OK.
+Status              : PASS
+
+--------------------------------------------------------------------------------
+TC_GRD_006: Delete Guardian (DELETE /guardians/{id})
+--------------------------------------------------------------------------------
+Objective   : Remove guardian record.
+Method / URI: DELETE /guardians/{id}
+Function    : GuardianController.deleteGuardian(Long id)
+Expected HTTP Code  : 200 OK
+Expected Output Body:
+{
+  "success": true,
+  "message": "Guardian deleted successfully",
+  "data": null
+}
+Actual Result       : 200 OK. Record removed from database.
+Status              : PASS
+================================================================================

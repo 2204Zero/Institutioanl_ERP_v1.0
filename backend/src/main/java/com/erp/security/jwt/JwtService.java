@@ -1,12 +1,11 @@
 package com.erp.security.jwt;
 
-import com.erp.auth.model.Permission;
-import com.erp.auth.model.UserPrincipal;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
@@ -29,33 +28,23 @@ public class JwtService {
         return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateAccessToken(UserPrincipal userPrincipal) {
+    public String generateAccessToken(UserDetails userDetails) {
         Map<String, Object> extraClaims = new HashMap<>();
-        extraClaims.put("role", userPrincipal.getRole().name());
-        extraClaims.put("permissions", userPrincipal.getPermissions().stream()
-                .map(Permission::getValue)
-                .collect(Collectors.toList()));
+        List<String> authorities = userDetails.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList());
+                
+        extraClaims.put("authorities", authorities);
         extraClaims.put("token_type", "ACCESS");
 
-        return buildToken(extraClaims, userPrincipal.getUsername(), jwtProperties.getAccessTokenExpiration());
+        return buildToken(extraClaims, userDetails.getUsername(), jwtProperties.getAccessTokenExpiration());
     }
 
-    public String generateRefreshToken(UserPrincipal userPrincipal) {
+    public String generateRefreshToken(UserDetails userDetails) {
         Map<String, Object> extraClaims = new HashMap<>();
         extraClaims.put("token_type", "REFRESH");
-        extraClaims.put("role", userPrincipal.getRole().name());
 
-        return buildToken(extraClaims, userPrincipal.getUsername(), jwtProperties.getRefreshTokenExpiration());
-    }
-
-    // Convenience method for simple username string token generation
-    public String generateAccessToken(String username, String role, Set<String> permissions) {
-        Map<String, Object> extraClaims = new HashMap<>();
-        extraClaims.put("role", role);
-        extraClaims.put("permissions", new ArrayList<>(permissions));
-        extraClaims.put("token_type", "ACCESS");
-
-        return buildToken(extraClaims, username, jwtProperties.getAccessTokenExpiration());
+        return buildToken(extraClaims, userDetails.getUsername(), jwtProperties.getRefreshTokenExpiration());
     }
 
     private String buildToken(Map<String, Object> extraClaims, String subject, long expiration) {
@@ -81,13 +70,9 @@ public class JwtService {
         return extractClaim(token, claims -> claims.get("token_type", String.class));
     }
 
-    public String extractRole(String token) {
-        return extractClaim(token, claims -> claims.get("role", String.class));
-    }
-
     @SuppressWarnings("unchecked")
-    public List<String> extractPermissions(String token) {
-        return extractClaim(token, claims -> claims.get("permissions", List.class));
+    public List<String> extractAuthorities(String token) {
+        return extractClaim(token, claims -> claims.get("authorities", List.class));
     }
 
     public Date extractExpiration(String token) {
@@ -116,4 +101,3 @@ public class JwtService {
         return extractExpiration(token).before(new Date());
     }
 }
-

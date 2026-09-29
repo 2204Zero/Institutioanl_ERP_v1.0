@@ -57,12 +57,12 @@ bin/
 .DS_Store
 Thumbs.db
 
+# Frontend build & dependencies
 node_modules/
+frontend/node_modules/
+frontend/dist/
 dist/
-.env
-<<<<<<< HEAD
-.vscode/
-.git/
-.git/
-=======
->>>>>>> 303f5da3922156218455cd74975c8bb75578f653
+
+# Uploaded documents
+uploads/
+backend/uploads/

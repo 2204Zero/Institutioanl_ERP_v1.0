@@ -1,0 +1,9 @@
+CREATE TABLE campus (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255),
+    address VARCHAR(255),
+    institution_id BIGINT,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
