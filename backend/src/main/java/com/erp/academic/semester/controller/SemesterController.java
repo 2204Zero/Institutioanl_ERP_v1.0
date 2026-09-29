@@ -5,6 +5,7 @@ import com.erp.academic.semester.service.SemesterService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -15,7 +16,7 @@ public class SemesterController {
     private final SemesterService service;
 
     @PostMapping
-    public ResponseEntity<SemesterResponse> create(@RequestBody SemesterCreateRequest request) {
+    public ResponseEntity<SemesterResponse> create(@Valid @RequestBody SemesterCreateRequest request) {
         return ResponseEntity.ok(service.create(request));
     }
 
@@ -30,7 +31,7 @@ public class SemesterController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<SemesterResponse> update(@PathVariable Long id, @RequestBody SemesterUpdateRequest request) {
+    public ResponseEntity<SemesterResponse> update(@PathVariable Long id, @Valid @RequestBody SemesterUpdateRequest request) {
         return ResponseEntity.ok(service.update(id, request));
     }
 

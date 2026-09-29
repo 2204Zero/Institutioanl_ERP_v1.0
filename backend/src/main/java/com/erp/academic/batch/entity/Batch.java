@@ -13,7 +13,10 @@ public class Batch {
     private Long id;
     
     private String name;
+    private String code;
     private Long programId;
+    private Integer admissionYear;
+    private Integer graduationYear;
     private Long academicYearId;
     private Boolean isActive;
 

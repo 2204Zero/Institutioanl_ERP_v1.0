@@ -1,9 +1,11 @@
 package com.erp.academic.program.exception;
 
-import com.erp.common.exception.ResourceNotFoundException;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
-public class ProgramNotFoundException extends ResourceNotFoundException {
+@ResponseStatus(HttpStatus.NOT_FOUND)
+public class ProgramNotFoundException extends RuntimeException {
     public ProgramNotFoundException(Long id) {
-        super("Program with ID " + id + " was not found", "PROGRAM_NOT_FOUND");
+        super("Program not found with id: " + id);
     }
 }

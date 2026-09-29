@@ -8,7 +8,10 @@ import org.springframework.stereotype.Component;
 public class AcademicYearMapper {
     public AcademicYear toEntity(AcademicYearCreateRequest request) {
         AcademicYear entity = new AcademicYear();
-        // Set fields from request
+        entity.setName(request.name());
+        entity.setStartDate(request.startDate());
+        entity.setEndDate(request.endDate());
+        entity.setIsActive(request.isActive());
         return entity;
     }
 

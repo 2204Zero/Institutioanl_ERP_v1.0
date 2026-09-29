@@ -1,9 +1,11 @@
 package com.erp.academic.batch.exception;
 
-import com.erp.common.exception.ResourceNotFoundException;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
-public class BatchNotFoundException extends ResourceNotFoundException {
+@ResponseStatus(HttpStatus.NOT_FOUND)
+public class BatchNotFoundException extends RuntimeException {
     public BatchNotFoundException(Long id) {
-        super("Batch with ID " + id + " was not found", "BATCH_NOT_FOUND");
+        super("Batch not found with id: " + id);
     }
 }

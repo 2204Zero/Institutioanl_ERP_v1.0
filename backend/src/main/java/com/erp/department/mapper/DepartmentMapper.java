@@ -8,7 +8,9 @@ import org.springframework.stereotype.Component;
 public class DepartmentMapper {
     public Department toEntity(DepartmentCreateRequest request) {
         Department entity = new Department();
-        // Set fields from request
+        entity.setName(request.name());
+        entity.setCode(request.code());
+        entity.setCampusId(request.campusId());
         return entity;
     }
 

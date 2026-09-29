@@ -5,6 +5,7 @@ import com.erp.academic.program.service.ProgramService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -15,7 +16,7 @@ public class ProgramController {
     private final ProgramService service;
 
     @PostMapping
-    public ResponseEntity<ProgramResponse> create(@RequestBody ProgramCreateRequest request) {
+    public ResponseEntity<ProgramResponse> create(@Valid @RequestBody ProgramCreateRequest request) {
         return ResponseEntity.ok(service.create(request));
     }
 
@@ -30,7 +31,7 @@ public class ProgramController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ProgramResponse> update(@PathVariable Long id, @RequestBody ProgramUpdateRequest request) {
+    public ResponseEntity<ProgramResponse> update(@PathVariable Long id, @Valid @RequestBody ProgramUpdateRequest request) {
         return ResponseEntity.ok(service.update(id, request));
     }
 
