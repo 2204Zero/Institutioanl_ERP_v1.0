@@ -1,61 +1,34 @@
 package com.erp.academic.program.dto;
 
-import java.time.Instant;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ProgramCreateRequest {
-    private String name;
+
+    @NotBlank(message = "Program code is required")
     private String code;
+
+    @NotBlank(message = "Program name is required")
+    private String name;
+
+    @NotBlank(message = "Degree is required")
     private String degree;
-    private Integer duration;
+
+    @NotNull(message = "Department ID is required")
     private Long departmentId;
+
+    @NotNull(message = "Duration is required")
+    @Min(value = 1, message = "Duration must be at least 1 year")
+    private Integer duration;
+
     private Boolean isActive;
-
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getCode() {
-        return code;
-    }
-
-    public void setCode(String code) {
-        this.code = code;
-    }
-
-    public String getDegree() {
-        return degree;
-    }
-
-    public void setDegree(String degree) {
-        this.degree = degree;
-    }
-
-    public Integer getDuration() {
-        return duration;
-    }
-
-    public void setDuration(Integer duration) {
-        this.duration = duration;
-    }
-
-    public Long getDepartmentId() {
-        return departmentId;
-    }
-
-    public void setDepartmentId(Long departmentId) {
-        this.departmentId = departmentId;
-    }
-
-    public Boolean getIsActive() {
-        return isActive;
-    }
-
-    public void setIsActive(Boolean isActive) {
-        this.isActive = isActive;
-    }
 }

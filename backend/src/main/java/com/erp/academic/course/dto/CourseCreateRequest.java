@@ -1,70 +1,36 @@
 package com.erp.academic.course.dto;
 
-import java.time.Instant;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class CourseCreateRequest {
+
+    @NotBlank(message = "Course code is required")
     private String code;
+
+    @NotBlank(message = "Course name is required")
     private String name;
+
+    @NotBlank(message = "Course type is required")
     private String courseType;
+
+    @NotNull(message = "Credits are required")
+    @Min(value = 1, message = "Credits must be at least 1")
     private Integer credits;
+
+    @NotNull(message = "Department ID is required")
     private Long departmentId;
+
     private Long programId;
+
     private Boolean isActive;
-
-
-    public String getCode() {
-        return code;
-    }
-
-    public void setCode(String code) {
-        this.code = code;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getCourseType() {
-        return courseType;
-    }
-
-    public void setCourseType(String courseType) {
-        this.courseType = courseType;
-    }
-
-    public Integer getCredits() {
-        return credits;
-    }
-
-    public void setCredits(Integer credits) {
-        this.credits = credits;
-    }
-
-    public Long getDepartmentId() {
-        return departmentId;
-    }
-
-    public void setDepartmentId(Long departmentId) {
-        this.departmentId = departmentId;
-    }
-
-    public Long getProgramId() {
-        return programId;
-    }
-
-    public void setProgramId(Long programId) {
-        this.programId = programId;
-    }
-
-    public Boolean getIsActive() {
-        return isActive;
-    }
-
-    public void setIsActive(Boolean isActive) {
-        this.isActive = isActive;
-    }
 }
