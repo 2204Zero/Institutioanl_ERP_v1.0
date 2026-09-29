@@ -9,8 +9,7 @@ import java.time.LocalDate;
 @Schema(description = "Request payload for creating or updating a student")
 public class StudentRequestDto {
 
-    @Schema(description = "Unique roll number", example = "2026-CS-101")
-    @NotBlank(message = "Roll number is required")
+    @Schema(description = "Unique roll number (system generated if left blank)", example = "2026-CS-101")
     @Size(max = 50, message = "Roll number cannot exceed 50 characters")
     private String rollNumber;
 

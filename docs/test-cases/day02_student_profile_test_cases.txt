@@ -1,0 +1,158 @@
+================================================================================
+INSTITUTIONAL ERP v1.0 — STUDENT INFORMATION SYSTEM (SIS)
+TEST CASES: DAY 02 — STUDENT PROFILE MODULE (CRUD)
+Author: Palak Agarwal
+Module: Student Information System (Profile Management)
+================================================================================
+
+TC_STU_001: Add Student (Create Profile)
+--------------------------------------------------------------------------------
+Objective   : Successfully register a new student profile in the system.
+Method / URI: POST /api/v1/students
+Function    : StudentController.createStudent(StudentRequestDto) -> StudentService.createStudent()
+Input Body  :
+{
+  "rollNumber": "2024-CSE-001",
+  "firstName": "Aarav",
+  "lastName": "Sharma",
+  "email": "aarav.sharma@college.edu",
+  "phone": "+919876543210",
+  "dateOfBirth": "2004-06-15",
+  "gender": "MALE",
+  "bloodGroup": "O+",
+  "address": "Flat 402, Sunshine Heights",
+  "city": "New Delhi",
+  "state": "Delhi",
+  "pincode": "110001",
+  "department": "Computer Science and Engineering",
+  "program": "B.Tech CSE",
+  "batch": "2024-2028",
+  "enrollmentDate": "2024-08-01",
+  "status": "ACTIVE"
+}
+Expected HTTP Code  : 201 CREATED
+Expected Output Body:
+{
+  "success": true,
+  "message": "Student created successfully",
+  "data": {
+    "id": 1,
+    "rollNumber": "2024-CSE-001",
+    "firstName": "Aarav",
+    "lastName": "Sharma",
+    "fullName": "Aarav Sharma",
+    "email": "aarav.sharma@college.edu",
+    "phone": "+919876543210",
+    "dateOfBirth": "2004-06-15",
+    "gender": "MALE",
+    "bloodGroup": "O+",
+    "address": "Flat 402, Sunshine Heights",
+    "city": "New Delhi",
+    "state": "Delhi",
+    "pincode": "110001",
+    "department": "Computer Science and Engineering",
+    "program": "B.Tech CSE",
+    "batch": "2024-2028",
+    "enrollmentDate": "2024-08-01",
+    "status": "ACTIVE",
+    "guardians": [],
+    "documents": []
+  }
+}
+Actual Result       : Matches expected. Status 201 Created. Return DTO includes generated ID and computed fields.
+Status              : PASS
+
+--------------------------------------------------------------------------------
+TC_STU_002: View Student by Primary ID
+--------------------------------------------------------------------------------
+Objective   : Retrieve complete student profile including linked guardians and documents.
+Method / URI: GET /api/v1/students/{id}  (e.g., id = 1)
+Function    : StudentController.getStudentById(Long id) -> StudentService.getStudentById()
+Input Param : Path Variable id = 1
+Expected HTTP Code  : 200 OK
+Expected Output Body:
+{
+  "success": true,
+  "message": "Operation successful",
+  "data": {
+    "id": 1,
+    "rollNumber": "2024-CSE-001",
+    "fullName": "Aarav Sharma",
+    "email": "aarav.sharma@college.edu",
+    "status": "ACTIVE",
+    "guardians": [...],
+    "documents": [...]
+  }
+}
+Actual Result       : 200 OK with full aggregated entity graph.
+Status              : PASS
+
+--------------------------------------------------------------------------------
+TC_STU_003: View Student by Roll Number
+--------------------------------------------------------------------------------
+Objective   : Fetch student details using institution roll number.
+Method / URI: GET /api/v1/students/roll/{rollNumber} (e.g. rollNumber = "2024-CSE-001")
+Function    : StudentController.getStudentByRollNumber(String rollNumber)
+Expected HTTP Code  : 200 OK
+Status              : PASS
+
+--------------------------------------------------------------------------------
+TC_STU_004: Edit Student (Update Profile)
+--------------------------------------------------------------------------------
+Objective   : Update mutable details such as address, phone number, and city.
+Method / URI: PUT /api/v1/students/{id}
+Function    : StudentController.updateStudent(Long id, StudentRequestDto)
+Input Body  : Updated address and contact details with id = 1
+Expected HTTP Code  : 200 OK
+Expected Output Body:
+{
+  "success": true,
+  "message": "Student updated successfully",
+  "data": {
+    "id": 1,
+    "address": "Penthouse 12, Sky Villas, Sector 56",
+    "updatedAt": "2026-09-27T19:45:59.670297"
+  }
+}
+Actual Result       : 200 OK. Student record updated in database and returned.
+Status              : PASS
+
+--------------------------------------------------------------------------------
+TC_STU_005: List Students (Filtered & Paginated)
+--------------------------------------------------------------------------------
+Objective   : Query student profiles with search query, pagination, and sorting.
+Method / URI: GET /api/v1/students?search=Aarav&page=0&size=10&sortBy=id&sortDir=desc
+Function    : StudentController.getAllStudents(...) -> StudentService.getAllStudents()
+Expected HTTP Code  : 200 OK
+Expected Output Body:
+{
+  "success": true,
+  "message": "Operation successful",
+  "data": {
+    "content": [ ... ],
+    "page": 0,
+    "size": 10,
+    "totalElements": 1,
+    "totalPages": 1,
+    "last": true
+  }
+}
+Actual Result       : 200 OK with PageResponse structure.
+Status              : PASS
+
+--------------------------------------------------------------------------------
+TC_STU_006: Delete Student
+--------------------------------------------------------------------------------
+Objective   : Delete an existing student profile along with associated records.
+Method / URI: DELETE /api/v1/students/{id}
+Function    : StudentController.deleteStudent(Long id) -> StudentService.deleteStudent()
+Expected HTTP Code  : 200 OK
+Expected Output Body:
+{
+  "success": true,
+  "message": "Student deleted successfully",
+  "data": null
+}
+Actual Result       : 200 OK. Student record removed.
+Status              : PASS
+================================================================================

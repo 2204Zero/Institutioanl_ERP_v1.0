@@ -1,0 +1,113 @@
+================================================================================
+INSTITUTIONAL ERP v1.0 — STUDENT INFORMATION SYSTEM (SIS)
+TEST CASES: DAY 05 — STUDENT STATUS & AUDIT LOG MODULE
+Author: Palak Agarwal
+Module: Student Information System (Status Workflow)
+Supported Statuses: ACTIVE, INACTIVE, SUSPENDED, GRADUATED, ALUMNI
+================================================================================
+
+TC_STS_001: Status Transition - ACTIVE to SUSPENDED
+--------------------------------------------------------------------------------
+Objective   : Update student status from ACTIVE to SUSPENDED with mandatory reason.
+Method / URI: PATCH /api/v1/students/{id}/status  (e.g., id = 1)
+Function    : StudentController.updateStudentStatus(Long id, StudentStatusUpdateDto)
+Input Body  :
+{
+  "status": "SUSPENDED",
+  "reason": "Attendance shortage below minimum 60% requirement in Semester 2",
+  "changedBy": "dean_academics"
+}
+Expected HTTP Code  : 200 OK
+Expected Output Body:
+{
+  "success": true,
+  "message": "Student status updated successfully",
+  "data": {
+    "id": 1,
+    "rollNumber": "2024-CSE-001",
+    "fullName": "Aarav Sharma",
+    "status": "SUSPENDED",
+    "updatedAt": "2026-09-27T19:45:59.817476"
+  }
+}
+Actual Result       : 200 OK. Student status updated to SUSPENDED. New audit record created.
+Status              : PASS
+
+--------------------------------------------------------------------------------
+TC_STS_002: Status Transition - SUSPENDED back to ACTIVE
+--------------------------------------------------------------------------------
+Objective   : Reinstate student to ACTIVE upon clearing shortage or disciplinary review.
+Method / URI: PATCH /api/v1/students/{id}/status
+Input Body  :
+{
+  "status": "ACTIVE",
+  "reason": "Completed compensatory academic assignment, reinstatement approved",
+  "changedBy": "disciplinary_committee"
+}
+Expected HTTP Code  : 200 OK
+Actual Result       : 200 OK. Status returned ACTIVE.
+Status              : PASS
+
+--------------------------------------------------------------------------------
+TC_STS_003: Status Transition - ACTIVE to GRADUATED
+--------------------------------------------------------------------------------
+Objective   : Mark student as GRADUATED upon successful completion of degree curriculum.
+Method / URI: PATCH /api/v1/students/{id}/status
+Input Body  :
+{
+  "status": "GRADUATED",
+  "reason": "Completed all 8 semesters with cumulative CGPA 8.75",
+  "changedBy": "controller_of_examinations"
+}
+Expected HTTP Code  : 200 OK
+Actual Result       : 200 OK.
+Status              : PASS
+
+--------------------------------------------------------------------------------
+TC_STS_004: Status Transition - GRADUATED to ALUMNI
+--------------------------------------------------------------------------------
+Objective   : Transition graduated student to official alumni association directory.
+Method / URI: PATCH /api/v1/students/{id}/status
+Input Body  :
+{
+  "status": "ALUMNI",
+  "reason": "Convocation ceremony completed, enrolled in Alumni Portal",
+  "changedBy": "alumni_relations_cell"
+}
+Expected HTTP Code  : 200 OK
+Actual Result       : 200 OK.
+Status              : PASS
+
+--------------------------------------------------------------------------------
+TC_STS_005: View Status Audit History Trail
+--------------------------------------------------------------------------------
+Objective   : Retrieve immutable chronological history of all status transitions for a student.
+Method / URI: GET /api/v1/students/{id}/status-history (e.g., id = 1)
+Function    : StudentController.getStatusHistory(Long id)
+Expected HTTP Code  : 200 OK
+Expected Output Body:
+{
+  "success": true,
+  "message": "Operation successful",
+  "data": [
+    {
+      "id": 2,
+      "previousStatus": "ACTIVE",
+      "newStatus": "SUSPENDED",
+      "reason": "Attendance shortage below minimum 60% requirement in Semester 2",
+      "changedBy": "dean_academics",
+      "changedAt": "2026-09-27T19:45:59.817476"
+    },
+    {
+      "id": 1,
+      "previousStatus": null,
+      "newStatus": "ACTIVE",
+      "reason": "Initial student enrollment",
+      "changedBy": "system",
+      "changedAt": "2026-09-27T19:45:59.551478"
+    }
+  ]
+}
+Actual Result       : 200 OK with ordered audit trail (newest first).
+Status              : PASS
+================================================================================

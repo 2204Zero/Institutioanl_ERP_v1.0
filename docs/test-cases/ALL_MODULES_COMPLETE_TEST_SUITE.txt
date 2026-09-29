@@ -1,0 +1,53 @@
+====================================================================================================
+INSTITUTIONAL ERP v1.0 — STUDENT INFORMATION SYSTEM (SIS)
+CONSOLIDATED MASTER TEST SUITE & TRACEABILITY MATRIX
+Author: Palak Agarwal
+Modules: Student Profile, Guardian Management, Student Documents, Student Status, SQL Schema & API Testing
+====================================================================================================
+
++---------------+-----------------------+------------------------------------------+-----------------------+-------------+
+| Test Case ID  | Module / Day          | Test Case Summary                        | HTTP URI / Operation  | Status      |
++---------------+-----------------------+------------------------------------------+-----------------------+-------------+
+| TC_DB_001     | Day 01 - DB Schema    | students table creation & constraints    | SQL DDL execution     | PASSED (OK) |
+| TC_DB_002     | Day 01 - DB Schema    | guardians table & foreign key CASCADE    | SQL DDL execution     | PASSED (OK) |
+| TC_DB_003     | Day 01 - DB Schema    | student_documents table & enum index     | SQL DDL execution     | PASSED (OK) |
+| TC_DB_004     | Day 01 - DB Schema    | student_status_history audit table       | SQL DDL execution     | PASSED (OK) |
+| TC_DB_005     | Day 01 - DB Schema    | Initial seed data insertion              | 01_student_seeds.sql  | PASSED (OK) |
++---------------+-----------------------+------------------------------------------+-----------------------+-------------+
+| TC_STU_001    | Day 02 - Student CRUD | Add new student profile                  | POST /api/v1/students | PASSED (OK) |
+| TC_STU_002    | Day 02 - Student CRUD | View student by Primary Key ID           | GET /api/v1/students/1| PASSED (OK) |
+| TC_STU_003    | Day 02 - Student CRUD | View student by Unique Roll Number       | GET /roll/{rollNo}    | PASSED (OK) |
+| TC_STU_004    | Day 02 - Student CRUD | Edit student personal & contact info     | PUT /api/v1/students/1| PASSED (OK) |
+| TC_STU_005    | Day 02 - Student CRUD | List students with search & pagination   | GET /api/v1/students  | PASSED (OK) |
+| TC_STU_006    | Day 02 - Student CRUD | Delete student record                    | DELETE /students/1    | PASSED (OK) |
++---------------+-----------------------+------------------------------------------+-----------------------+-------------+
+| TC_GRD_001    | Day 03 - Guardian     | Add & link guardian to student           | POST /students/1/guard| PASSED (OK) |
+| TC_GRD_002    | Day 03 - Guardian     | Create guardian via /guardians endpoint  | POST /guardians       | PASSED (OK) |
+| TC_GRD_003    | Day 03 - Guardian     | Get all guardians for a specific student | GET /students/1/guard | PASSED (OK) |
+| TC_GRD_004    | Day 03 - Guardian     | List all guardians in the institution    | GET /guardians        | PASSED (OK) |
+| TC_GRD_005    | Day 03 - Guardian     | Edit guardian details                    | PUT /guardians/1      | PASSED (OK) |
+| TC_GRD_006    | Day 03 - Guardian     | Delete guardian record                   | DELETE /guardians/1   | PASSED (OK) |
++---------------+-----------------------+------------------------------------------+-----------------------+-------------+
+| TC_DOC_001    | Day 04 - Documents    | Upload Aadhaar document (PDF)            | POST /documents       | PASSED (OK) |
+| TC_DOC_002    | Day 04 - Documents    | Upload Marksheet document (PDF)          | POST /documents       | PASSED (OK) |
+| TC_DOC_003    | Day 04 - Documents    | Upload Photograph (JPG/PNG)              | POST /documents       | PASSED (OK) |
+| TC_DOC_004    | Day 04 - Documents    | List all documents for a student         | GET /documents        | PASSED (OK) |
+| TC_DOC_005    | Day 04 - Documents    | View document inline for browser preview | GET /documents/1/view | PASSED (OK) |
+| TC_DOC_006    | Day 04 - Documents    | Download document as attachment          | GET /download         | PASSED (OK) |
+| TC_DOC_007    | Day 04 - Documents    | Delete document and clean up disk file   | DELETE /documents/1   | PASSED (OK) |
++---------------+-----------------------+------------------------------------------+-----------------------+-------------+
+| TC_STS_001    | Day 05 - Status       | Transition status: ACTIVE -> SUSPENDED   | PATCH /students/1/stat| PASSED (OK) |
+| TC_STS_002    | Day 05 - Status       | Transition status: SUSPENDED -> ACTIVE   | PATCH /students/1/stat| PASSED (OK) |
+| TC_STS_003    | Day 05 - Status       | Transition status: ACTIVE -> GRADUATED   | PATCH /students/1/stat| PASSED (OK) |
+| TC_STS_004    | Day 05 - Status       | Transition status: GRADUATED -> ALUMNI   | PATCH /students/1/stat| PASSED (OK) |
+| TC_STS_005    | Day 05 - Status       | View immutable status audit trail        | GET /status-history   | PASSED (OK) |
++---------------+-----------------------+------------------------------------------+-----------------------+-------------+
+| TC_VAL_001    | Day 06 - Validation   | 400 Bad Request on missing fields        | POST /api/v1/students | PASSED (OK) |
+| TC_VAL_002    | Day 06 - Validation   | 409 Conflict on duplicate roll number    | POST /api/v1/students | PASSED (OK) |
+| TC_VAL_003    | Day 06 - Validation   | 409 Conflict on duplicate email address  | POST /api/v1/students | PASSED (OK) |
+| TC_VAL_004    | Day 06 - Validation   | 404 Not Found on non-existent student ID | GET /students/999999  | PASSED (OK) |
+| TC_VAL_005    | Day 06 - Validation   | 413 Payload Too Large on > 10MB file     | POST /documents       | PASSED (OK) |
+| TC_VAL_006    | Day 06 - Validation   | Swagger UI documentation available       | /swagger-ui.html      | PASSED (OK) |
++---------------+-----------------------+------------------------------------------+-----------------------+-------------+
+TOTAL TEST CASES: 35 | PASSED: 35 | FAILED: 0 | SKIPPED: 0 | PASS RATE: 100%
+====================================================================================================

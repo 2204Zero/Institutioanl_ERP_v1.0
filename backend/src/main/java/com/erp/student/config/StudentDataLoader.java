@@ -86,7 +86,7 @@ public class StudentDataLoader implements CommandLineRunner {
         documentRepository.save(d1);
 
         StudentStatusHistory sh1 = new StudentStatusHistory(s1, null, StudentStatus.ACTIVE,
-                "Initial student enrollment confirmed", "admissions_office");
+                "Initial student enrollment confirmed", "admissions_office", java.time.LocalDate.now());
         statusHistoryRepository.save(sh1);
 
         // Student 2: Diya Mehta (Active)
@@ -110,7 +110,7 @@ public class StudentDataLoader implements CommandLineRunner {
         guardianRepository.save(g3);
 
         StudentStatusHistory sh2 = new StudentStatusHistory(s2, null, StudentStatus.ACTIVE,
-                "Initial student enrollment confirmed", "admissions_office");
+                "Initial student enrollment confirmed", "admissions_office", java.time.LocalDate.now());
         statusHistoryRepository.save(sh2);
 
         // Student 3: Rohan Iyer (Suspended)
@@ -134,9 +134,9 @@ public class StudentDataLoader implements CommandLineRunner {
         guardianRepository.save(g4);
 
         StudentStatusHistory sh3_1 = new StudentStatusHistory(s3, null, StudentStatus.ACTIVE,
-                "Initial student enrollment confirmed", "admissions_office");
+                "Initial student enrollment confirmed", "admissions_office", java.time.LocalDate.now());
         StudentStatusHistory sh3_2 = new StudentStatusHistory(s3, StudentStatus.ACTIVE, StudentStatus.SUSPENDED,
-                "Attendance shortage below 60% requirement", "dean_academics");
+                "Attendance shortage below 60% requirement", "dean_academics", java.time.LocalDate.now());
         statusHistoryRepository.save(sh3_1);
         statusHistoryRepository.save(sh3_2);
 
