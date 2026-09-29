@@ -37,6 +37,9 @@ public class StudentStatusHistory {
     @Column(length = 100)
     private String changedBy;
 
+    @Column(nullable = false)
+    private java.time.LocalDate effectiveDate;
+
     @CreatedDate
     @Column(updatable = false)
     private LocalDateTime changedAt;
@@ -44,12 +47,13 @@ public class StudentStatusHistory {
     public StudentStatusHistory() {
     }
 
-    public StudentStatusHistory(Student student, StudentStatus previousStatus, StudentStatus newStatus, String reason, String changedBy) {
+    public StudentStatusHistory(Student student, StudentStatus previousStatus, StudentStatus newStatus, String reason, String changedBy, java.time.LocalDate effectiveDate) {
         this.student = student;
         this.previousStatus = previousStatus;
         this.newStatus = newStatus;
         this.reason = reason;
         this.changedBy = changedBy;
+        this.effectiveDate = effectiveDate;
     }
 
     public Long getId() {
@@ -106,5 +110,13 @@ public class StudentStatusHistory {
 
     public void setChangedAt(LocalDateTime changedAt) {
         this.changedAt = changedAt;
+    }
+
+    public java.time.LocalDate getEffectiveDate() {
+        return effectiveDate;
+    }
+
+    public void setEffectiveDate(java.time.LocalDate effectiveDate) {
+        this.effectiveDate = effectiveDate;
     }
 }
