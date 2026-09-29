@@ -4,14 +4,13 @@ import com.erp.academic.section.dto.*;
 import com.erp.academic.section.service.SectionService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import lombok.RequiredArgsConstructor;
 import jakarta.validation.Valid;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/sections")
-@RequiredArgsConstructor
+
 public class SectionController {
     private final SectionService service;
 
@@ -39,5 +38,9 @@ public class SectionController {
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.delete(id);
         return ResponseEntity.ok().build();
+    }
+
+    public SectionController(SectionService service) {
+        this.service = service;
     }
 }

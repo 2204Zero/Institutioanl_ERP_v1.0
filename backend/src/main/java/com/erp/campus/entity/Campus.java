@@ -1,10 +1,8 @@
 package com.erp.campus.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
 import java.time.Instant;
 
-@Data
 @Entity
 @Table(name = "campus")
 public class Campus {
@@ -29,4 +27,20 @@ public class Campus {
     public void setAddress(String address) { this.address = address; }
     public Long getInstitutionId() { return institutionId; }
     public void setInstitutionId(Long institutionId) { this.institutionId = institutionId; }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Instant updatedAt) {
+        this.updatedAt = updatedAt;
+    }
 }

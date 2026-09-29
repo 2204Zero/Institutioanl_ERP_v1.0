@@ -40,7 +40,12 @@ public class InstitutionService {
 
     public InstitutionResponse update(Long id, InstitutionUpdateRequest request) {
         Institution entity = repository.findById(id).orElseThrow(() -> new InstitutionNotFoundException(id));
-        // map updates
+        if (request.name() != null) {
+            entity.setName(request.name());
+        }
+        if (request.code() != null) {
+            entity.setCode(request.code());
+        }
         return mapper.toResponse(repository.save(entity));
     }
 

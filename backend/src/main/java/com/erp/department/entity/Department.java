@@ -1,10 +1,8 @@
 package com.erp.department.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
 import java.time.Instant;
 
-@Data
 @Entity
 @Table(name = "department")
 public class Department {
@@ -29,4 +27,20 @@ public class Department {
     public void setCode(String code) { this.code = code; }
     public Long getCampusId() { return campusId; }
     public void setCampusId(Long campusId) { this.campusId = campusId; }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Instant updatedAt) {
+        this.updatedAt = updatedAt;
+    }
 }

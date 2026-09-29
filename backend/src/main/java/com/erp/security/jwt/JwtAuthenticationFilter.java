@@ -26,13 +26,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
     private final JwtProperties jwtProperties;
     private final UserDetailsService userDetailsService;
+    private final com.erp.auth.service.SessionService sessionService;
 
     public JwtAuthenticationFilter(JwtService jwtService,
                                    JwtProperties jwtProperties,
-                                   UserDetailsService userDetailsService) {
+                                   UserDetailsService userDetailsService,
+                                   com.erp.auth.service.SessionService sessionService) {
         this.jwtService = jwtService;
         this.jwtProperties = jwtProperties;
         this.userDetailsService = userDetailsService;
+        this.sessionService = sessionService;
     }
 
     @Override
@@ -62,6 +65,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         try {
             final String username = jwtService.extractUsername(jwt);
+            final String tokenId = jwtService.extractTokenId(jwt);
+
+            if (sessionService.isTokenRevoked(tokenId)) {
+                log.warn("JWT token has been revoked for token ID: {}", tokenId);
+                request.setAttribute("auth_error_code", "TOKEN_REVOKED");
+                request.setAttribute("auth_error_message", "JWT token has been revoked.");
+                filterChain.doFilter(request, response);
+                return;
+            }
 
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);

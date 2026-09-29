@@ -7,13 +7,12 @@ import com.erp.academic.course.mapper.CourseMapper;
 import com.erp.academic.course.repository.CourseRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
+
 public class CourseService {
     private final CourseRepository repository;
     private final CourseMapper mapper;
@@ -50,5 +49,10 @@ public class CourseService {
             throw new CourseNotFoundException(id);
         }
         repository.deleteById(id);
+    }
+
+    public CourseService(CourseRepository repository, CourseMapper mapper) {
+        this.repository = repository;
+        this.mapper = mapper;
     }
 }

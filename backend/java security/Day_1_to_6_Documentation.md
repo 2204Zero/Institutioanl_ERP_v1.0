@@ -104,3 +104,13 @@
 
 **What I learned:**
 - Never returning plain text passwords in DTOs and keeping reset token lifecycle short and single-use is essential to preventing account takeovers.
+
+
+## Final Review & Fixes
+**What I have done:**
+- Resolved test failures in \RbacAndPermissionIntegrationTest\ by updating DTO formats to match the new structure (StudentRequestDto instead of StudentCreateRequest).
+- Ensured \InstitutionService\ correctly applies update fields before saving.
+- Configured \maven-surefire-plugin\ to support JDK 25 Mockito issues using -XX:+EnableDynamicAgentLoading.
+
+**What I learned:**
+- Integration tests are brittle to DTO changes; whenever refactoring requests, the tests must be carefully updated to pass JSON paths.

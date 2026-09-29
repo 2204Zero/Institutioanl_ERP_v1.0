@@ -60,14 +60,34 @@ class RbacAndPermissionIntegrationTest {
     @Test
     @DisplayName("Day 04 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Student: Should allow viewing student profile with STUDENT_PROFILE_READ authority")
     void shouldAllowStudentToViewProfile() throws Exception {
+        String adminToken = obtainAccessToken("admin", "Admin@123");
+        com.erp.student.dto.StudentRequestDto request = new com.erp.student.dto.StudentRequestDto();
+        request.setFirstName("Manish");
+        request.setLastName("Sharma");
+        request.setEmail("manish@erp.com");
+        request.setPhone("+919876543210");
+        request.setDateOfBirth(LocalDate.of(2000, 1, 1));
+        request.setGender("MALE");
+        request.setDepartment("Computer Science");
+        request.setBatch("2021-2025");
+        request.setEnrollmentDate(LocalDate.of(2021, 8, 1));
+
+        MvcResult res = mockMvc.perform(post("/api/v1/students")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andReturn();
+        Long studentId = objectMapper.readTree(res.getResponse().getContentAsString()).get("data").get("id").asLong();
+
         String token = obtainAccessToken("student", "Student@123");
 
-        mockMvc.perform(get("/api/v1/students/101")
+        mockMvc.perform(get("/api/v1/students/" + studentId)
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(101))
-                .andExpect(jsonPath("$.name").value("Manish Sharma"))
-                .andExpect(jsonPath("$.department").value("Computer Science"));
+                .andExpect(jsonPath("$.data.id").value(studentId))
+                .andExpect(jsonPath("$.data.firstName").value("Manish"))
+                .andExpect(jsonPath("$.data.department").value("Computer Science"));
     }
 
     @Test
@@ -142,24 +162,41 @@ class RbacAndPermissionIntegrationTest {
     @DisplayName("Day 06 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Admin: Should allow creating new student records")
     void shouldAllowAdminToCreateStudent() throws Exception {
         String token = obtainAccessToken("admin", "Admin@123");
-        StudentCreateRequest request = new StudentCreateRequest("Rohan Verma", "rohan@erp.com", "Information Technology");
+        com.erp.student.dto.StudentRequestDto request = new com.erp.student.dto.StudentRequestDto();
+        request.setFirstName("Rohan");
+        request.setLastName("Verma");
+        request.setEmail("rohan@erp.com");
+        request.setPhone("+919876543210");
+        request.setDateOfBirth(LocalDate.of(2000, 1, 1));
+        request.setGender("MALE");
+        request.setDepartment("Information Technology");
+        request.setBatch("2021-2025");
+        request.setEnrollmentDate(LocalDate.of(2021, 8, 1));
 
         mockMvc.perform(post("/api/v1/students")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.name").value("Rohan Verma"))
-                .andExpect(jsonPath("$.department").value("Information Technology"));
+                .andExpect(jsonPath("$.data.firstName").value("Rohan"))
+                .andExpect(jsonPath("$.data.department").value("Information Technology"));
     }
 
     @Test
     @DisplayName("Day 06 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Admin: Should allow managing institution settings")
     void shouldAllowAdminToManageInstitution() throws Exception {
         String token = obtainAccessToken("admin", "Admin@123");
-        Map<String, String> payload = Map.of("name", "Apex Institute - Updated Campus");
+        com.erp.institution.dto.InstitutionCreateRequest createReq = new com.erp.institution.dto.InstitutionCreateRequest("Apex Institute", "APEX");
+        MvcResult res = mockMvc.perform(post("/api/v1/institutions")
+            .header("Authorization", "Bearer " + token)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(createReq)))
+            .andReturn();
+        Long id = objectMapper.readTree(res.getResponse().getContentAsString()).get("id").asLong();
 
-        mockMvc.perform(put("/api/v1/institutions/details")
+        Map<String, String> payload = Map.of("name", "Apex Institute - Updated Campus", "code", "APEX");
+
+        mockMvc.perform(put("/api/v1/institutions/" + id)
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(payload)))
@@ -184,7 +221,7 @@ class RbacAndPermissionIntegrationTest {
     }
 
     @Test
-    @DisplayName("Day 03 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Super Admin: Should have unrestricted access across all modules")
+    @DisplayName("Day 03 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â  Super Admin: Should have unrestricted access across all modules")
     void shouldAllowSuperAdminAccessToAllProtectedApis() throws Exception {
         String token = obtainAccessToken("superadmin", "Admin@123");
 
@@ -198,11 +235,19 @@ class RbacAndPermissionIntegrationTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk());
 
+        com.erp.institution.dto.InstitutionCreateRequest createReq = new com.erp.institution.dto.InstitutionCreateRequest("Super Admin Inst", "SA");
+        MvcResult res = mockMvc.perform(post("/api/v1/institutions")
+            .header("Authorization", "Bearer " + token)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(createReq)))
+            .andReturn();
+        Long id = objectMapper.readTree(res.getResponse().getContentAsString()).get("id").asLong();
+
         // Super Admin can update institution
-        mockMvc.perform(put("/api/v1/institutions/details")
+        mockMvc.perform(put("/api/v1/institutions/" + id)
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Map.of("name", "Apex Global University"))))
+                        .content(objectMapper.writeValueAsString(Map.of("name", "Apex Global University", "code", "SA"))))
                 .andExpect(status().isOk());
     }
 }

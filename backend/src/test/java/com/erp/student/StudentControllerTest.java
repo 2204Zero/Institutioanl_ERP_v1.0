@@ -98,7 +98,7 @@ class StudentControllerTest {
                         .content(objectMapper.writeValueAsString(invalidRequest)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status", is(400)))
-                .andExpect(jsonPath("$.validationErrors.rollNumber", notNullValue()))
+                .andExpect(jsonPath("$.validationErrors.firstName", notNullValue()))
                 .andExpect(jsonPath("$.validationErrors.email", notNullValue()));
     }
 

@@ -7,13 +7,12 @@ import com.erp.academic.subject.mapper.SubjectMapper;
 import com.erp.academic.subject.repository.SubjectRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
+
 public class SubjectService {
     private final SubjectRepository repository;
     private final SubjectMapper mapper;
@@ -50,5 +49,10 @@ public class SubjectService {
             throw new SubjectNotFoundException(id);
         }
         repository.deleteById(id);
+    }
+
+    public SubjectService(SubjectRepository repository, SubjectMapper mapper) {
+        this.repository = repository;
+        this.mapper = mapper;
     }
 }
