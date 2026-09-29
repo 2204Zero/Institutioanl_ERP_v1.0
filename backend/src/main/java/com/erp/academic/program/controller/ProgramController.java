@@ -1,11 +1,14 @@
 package com.erp.academic.program.controller;
 
-import com.erp.academic.program.dto.*;
+import com.erp.academic.program.dto.ProgramCreateRequest;
+import com.erp.academic.program.dto.ProgramResponse;
+import com.erp.academic.program.dto.ProgramUpdateRequest;
 import com.erp.academic.program.service.ProgramService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import lombok.RequiredArgsConstructor;
-import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -13,16 +16,21 @@ import java.util.List;
 @RequestMapping("/api/v1/programs")
 @RequiredArgsConstructor
 public class ProgramController {
+
     private final ProgramService service;
 
     @PostMapping
     public ResponseEntity<ProgramResponse> create(@Valid @RequestBody ProgramCreateRequest request) {
-        return ResponseEntity.ok(service.create(request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.create(request));
     }
 
     @GetMapping
-    public ResponseEntity<List<ProgramResponse>> getAll() {
-        return ResponseEntity.ok(service.getAll());
+    public ResponseEntity<List<ProgramResponse>> getAll(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Long departmentId,
+            @RequestParam(required = false) String degree,
+            @RequestParam(required = false) Boolean isActive) {
+        return ResponseEntity.ok(service.getAll(search, departmentId, degree, isActive));
     }
 
     @GetMapping("/{id}")
@@ -31,13 +39,25 @@ public class ProgramController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ProgramResponse> update(@PathVariable Long id, @Valid @RequestBody ProgramUpdateRequest request) {
+    public ResponseEntity<ProgramResponse> update(
+            @PathVariable Long id,
+            @Valid @RequestBody ProgramUpdateRequest request) {
         return ResponseEntity.ok(service.update(id, request));
+    }
+
+    @PatchMapping("/{id}/deactivate")
+    public ResponseEntity<ProgramResponse> deactivate(@PathVariable Long id) {
+        return ResponseEntity.ok(service.deactivate(id));
+    }
+
+    @PatchMapping("/{id}/activate")
+    public ResponseEntity<ProgramResponse> activate(@PathVariable Long id) {
+        return ResponseEntity.ok(service.activate(id));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.delete(id);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
     }
 }

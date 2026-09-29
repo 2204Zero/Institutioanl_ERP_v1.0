@@ -1,9 +1,14 @@
 package com.erp.academic.curriculum.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
-import java.time.Instant;
+import lombok.NoArgsConstructor;
 
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class CurriculumUpdateRequest {
     private String version;
     private Long programId;
@@ -11,5 +16,4 @@ public class CurriculumUpdateRequest {
     private Long effectiveAcademicYearId;
     private Integer totalCredits;
     private Boolean isActive;
-
 }

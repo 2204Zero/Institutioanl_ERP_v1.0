@@ -6,12 +6,14 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class SectionMapper {
+
     public Section toEntity(SectionCreateRequest request) {
         Section entity = new Section();
         entity.setName(request.getName());
         entity.setBatchId(request.getBatchId());
         entity.setSemesterId(request.getSemesterId());
         entity.setCapacity(request.getCapacity());
+        entity.setCurrentEnrollment(0);
         entity.setIsActive(request.getIsActive());
 
         return entity;
@@ -24,6 +26,7 @@ public class SectionMapper {
         response.setBatchId(entity.getBatchId());
         response.setSemesterId(entity.getSemesterId());
         response.setCapacity(entity.getCapacity());
+        response.setCurrentEnrollment(entity.getCurrentEnrollment() != null ? entity.getCurrentEnrollment() : 0);
         response.setIsActive(entity.getIsActive());
 
         response.setCreatedAt(entity.getCreatedAt());
@@ -47,6 +50,5 @@ public class SectionMapper {
         if (request.getIsActive() != null) {
             entity.setIsActive(request.getIsActive());
         }
-
     }
 }
