@@ -8,7 +8,9 @@ import org.springframework.stereotype.Component;
 public class CampusMapper {
     public Campus toEntity(CampusCreateRequest request) {
         Campus entity = new Campus();
-        // Set fields from request
+        entity.setName(request.name());
+        entity.setAddress(request.address());
+        entity.setInstitutionId(request.institutionId());
         return entity;
     }
 

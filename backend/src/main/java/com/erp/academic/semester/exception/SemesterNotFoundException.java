@@ -1,9 +1,11 @@
 package com.erp.academic.semester.exception;
 
-import com.erp.common.exception.ResourceNotFoundException;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
-public class SemesterNotFoundException extends ResourceNotFoundException {
+@ResponseStatus(HttpStatus.NOT_FOUND)
+public class SemesterNotFoundException extends RuntimeException {
     public SemesterNotFoundException(Long id) {
-        super("Semester with ID " + id + " was not found", "SEMESTER_NOT_FOUND");
+        super("Semester not found with id: " + id);
     }
 }

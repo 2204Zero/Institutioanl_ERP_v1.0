@@ -8,7 +8,8 @@ import org.springframework.stereotype.Component;
 public class InstitutionMapper {
     public Institution toEntity(InstitutionCreateRequest request) {
         Institution entity = new Institution();
-        // Set fields from request
+        entity.setName(request.name());
+        entity.setCode(request.code());
         return entity;
     }
 
