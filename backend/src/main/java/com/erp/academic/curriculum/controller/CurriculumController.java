@@ -4,14 +4,13 @@ import com.erp.academic.curriculum.dto.*;
 import com.erp.academic.curriculum.service.CurriculumService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import lombok.RequiredArgsConstructor;
 import jakarta.validation.Valid;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/curriculums")
-@RequiredArgsConstructor
+
 public class CurriculumController {
     private final CurriculumService service;
 
@@ -39,5 +38,9 @@ public class CurriculumController {
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.delete(id);
         return ResponseEntity.ok().build();
+    }
+
+    public CurriculumController(CurriculumService service) {
+        this.service = service;
     }
 }

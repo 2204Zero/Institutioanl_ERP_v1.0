@@ -12,10 +12,15 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class DepartmentService {
     private final DepartmentRepository repository;
     private final DepartmentMapper mapper;
+
+
+    public DepartmentService(DepartmentRepository repository, DepartmentMapper mapper) {
+        this.repository = repository;
+        this.mapper = mapper;
+    }
 
     public DepartmentResponse create(DepartmentCreateRequest request) {
         Department entity = mapper.toEntity(request);

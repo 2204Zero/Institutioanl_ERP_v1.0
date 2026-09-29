@@ -11,9 +11,13 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/programs")
-@RequiredArgsConstructor
 public class ProgramController {
     private final ProgramService service;
+
+
+    public ProgramController(ProgramService service) {
+        this.service = service;
+    }
 
     @PostMapping
     public ResponseEntity<ProgramResponse> create(@Valid @RequestBody ProgramCreateRequest request) {

@@ -10,9 +10,13 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/institutions")
-@RequiredArgsConstructor
 public class InstitutionController {
     private final InstitutionService service;
+
+
+    public InstitutionController(InstitutionService service) {
+        this.service = service;
+    }
 
     @PostMapping
     public ResponseEntity<InstitutionResponse> create(@RequestBody InstitutionCreateRequest request) {

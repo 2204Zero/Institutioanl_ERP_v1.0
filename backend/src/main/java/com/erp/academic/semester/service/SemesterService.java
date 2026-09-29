@@ -13,10 +13,14 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class SemesterService {
     private final SemesterRepository repository;
     private final SemesterMapper mapper;
+
+    public SemesterService(SemesterRepository repository, SemesterMapper mapper) {
+        this.repository = repository;
+        this.mapper = mapper;
+    }
 
     @Transactional
     public SemesterResponse create(SemesterCreateRequest request) {

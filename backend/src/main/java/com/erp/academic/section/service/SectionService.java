@@ -7,13 +7,12 @@ import com.erp.academic.section.mapper.SectionMapper;
 import com.erp.academic.section.repository.SectionRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
+
 public class SectionService {
     private final SectionRepository repository;
     private final SectionMapper mapper;
@@ -50,5 +49,10 @@ public class SectionService {
             throw new SectionNotFoundException(id);
         }
         repository.deleteById(id);
+    }
+
+    public SectionService(SectionRepository repository, SectionMapper mapper) {
+        this.repository = repository;
+        this.mapper = mapper;
     }
 }

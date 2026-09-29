@@ -1,5 +1,10 @@
 package com.erp.student;
 
+import com.erp.student.dto.StudentRequestDto;
+import com.erp.student.entity.StudentStatus;
+import com.erp.student.dto.StudentStatusUpdateDto;
+
+
 import com.erp.common.exception.GlobalExceptionHandler;
 import com.erp.student.controller.StudentController;
 import com.erp.student.dto.StudentRequestDto;
@@ -93,7 +98,7 @@ class StudentControllerTest {
                         .content(objectMapper.writeValueAsString(invalidRequest)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status", is(400)))
-                .andExpect(jsonPath("$.validationErrors.rollNumber", notNullValue()))
+                .andExpect(jsonPath("$.validationErrors.firstName", notNullValue()))
                 .andExpect(jsonPath("$.validationErrors.email", notNullValue()));
     }
 

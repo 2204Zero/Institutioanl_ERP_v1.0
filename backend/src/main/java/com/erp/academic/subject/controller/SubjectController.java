@@ -4,14 +4,13 @@ import com.erp.academic.subject.dto.*;
 import com.erp.academic.subject.service.SubjectService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import lombok.RequiredArgsConstructor;
 import jakarta.validation.Valid;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/subjects")
-@RequiredArgsConstructor
+
 public class SubjectController {
     private final SubjectService service;
 
@@ -39,5 +38,9 @@ public class SubjectController {
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.delete(id);
         return ResponseEntity.ok().build();
+    }
+
+    public SubjectController(SubjectService service) {
+        this.service = service;
     }
 }

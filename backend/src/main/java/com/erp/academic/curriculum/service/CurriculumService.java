@@ -7,13 +7,12 @@ import com.erp.academic.curriculum.mapper.CurriculumMapper;
 import com.erp.academic.curriculum.repository.CurriculumRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
+
 public class CurriculumService {
     private final CurriculumRepository repository;
     private final CurriculumMapper mapper;
@@ -50,5 +49,10 @@ public class CurriculumService {
             throw new CurriculumNotFoundException(id);
         }
         repository.deleteById(id);
+    }
+
+    public CurriculumService(CurriculumRepository repository, CurriculumMapper mapper) {
+        this.repository = repository;
+        this.mapper = mapper;
     }
 }
