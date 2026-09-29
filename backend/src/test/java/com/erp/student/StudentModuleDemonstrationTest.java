@@ -240,7 +240,8 @@ public class StudentModuleDemonstrationTest {
         StudentStatusUpdateDto statusUpdate = new StudentStatusUpdateDto(
                 StudentStatus.SUSPENDED,
                 "Attendance shortage below minimum 60% requirement in Semester 2",
-                "dean_academics"
+                "dean_academics",
+                java.time.LocalDate.now()
         );
 
         MvcResult updateStatusRes = studentMvc.perform(patch("/api/v1/students/" + studentId + "/status")
