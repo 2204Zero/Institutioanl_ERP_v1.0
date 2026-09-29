@@ -12,10 +12,15 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class InstitutionService {
     private final InstitutionRepository repository;
     private final InstitutionMapper mapper;
+
+
+    public InstitutionService(InstitutionRepository repository, InstitutionMapper mapper) {
+        this.repository = repository;
+        this.mapper = mapper;
+    }
 
     public InstitutionResponse create(InstitutionCreateRequest request) {
         Institution entity = mapper.toEntity(request);

@@ -12,10 +12,15 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class CampusService {
     private final CampusRepository repository;
     private final CampusMapper mapper;
+
+
+    public CampusService(CampusRepository repository, CampusMapper mapper) {
+        this.repository = repository;
+        this.mapper = mapper;
+    }
 
     public CampusResponse create(CampusCreateRequest request) {
         Campus entity = mapper.toEntity(request);

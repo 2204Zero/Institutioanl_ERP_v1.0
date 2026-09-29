@@ -12,10 +12,15 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class ProgramService {
     private final ProgramRepository repository;
     private final ProgramMapper mapper;
+
+
+    public ProgramService(ProgramRepository repository, ProgramMapper mapper) {
+        this.repository = repository;
+        this.mapper = mapper;
+    }
 
     public ProgramResponse create(ProgramCreateRequest request) {
         Program entity = mapper.toEntity(request);

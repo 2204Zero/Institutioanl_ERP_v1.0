@@ -12,10 +12,15 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class AcademicYearService {
     private final AcademicYearRepository repository;
     private final AcademicYearMapper mapper;
+
+
+    public AcademicYearService(AcademicYearRepository repository, AcademicYearMapper mapper) {
+        this.repository = repository;
+        this.mapper = mapper;
+    }
 
     public AcademicYearResponse create(AcademicYearCreateRequest request) {
         AcademicYear entity = mapper.toEntity(request);
