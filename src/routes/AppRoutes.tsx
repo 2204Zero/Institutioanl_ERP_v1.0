@@ -22,6 +22,7 @@ import { TransportPage } from '../pages/TransportPage';
 import { UserAuthPage } from '../pages/UserAuthPage';
 import { OrgStructurePage } from '../pages/OrgStructurePage';
 import { LMSPage } from '../pages/LMSPage';
+import { AnalyticsPage } from '../pages/AnalyticsPage';
 import { UnauthorizedPage } from '../pages/UnauthorizedPage';
 import { ProtectedRoute } from './ProtectedRoute';
 import { RoleRoute } from './RoleRoute';
@@ -53,6 +54,7 @@ export const AppRoutes: React.FC = () => {
         <Route path="/library" element={<LibraryPage />} />
         <Route path="/hostel" element={<HostelPage />} />
         <Route path="/transport" element={<TransportPage />} />
+        <Route path="/analytics" element={<AnalyticsPage />} />
         <Route path="/auth" element={<UserAuthPage />} />
         <Route path="/org" element={<OrgStructurePage />} />
         <Route path="/settings/account" element={<AccountSettingsPage />} />

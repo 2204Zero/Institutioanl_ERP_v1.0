@@ -133,6 +133,7 @@ export const initialModules: ModuleItem[] = [
   { id: 'm-11', name: 'User & Role Authorization', path: '/auth', category: 'Foundation', description: 'RBAC permissions, OAuth & security policy setup', iconName: 'Shield', isFavorite: false },
   { id: 'm-12', name: 'Institutional Org Structure', path: '/org', category: 'Foundation', description: 'Campus campuses, departments & degree programs', iconName: 'Building', isFavorite: false },
   { id: 'm-13', name: 'Learning Management System (LMS)', path: '/lms', category: 'Academic', description: 'Course materials, assignments, quizzes & discussion forums', iconName: 'BookOpen', isFavorite: true },
+  { id: 'm-14', name: 'BI & AI Analytics Platform', path: '/analytics', category: 'Enterprise', description: 'Institutional analytics, machine learning predictions & custom reports', iconName: 'TrendingUp', isFavorite: true },
 ];
 
 export const monthlyCollectionChartData = [

@@ -21,6 +21,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   GraduationCap,
+  TrendingUp,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useERP } from '../../hooks/useERP';
@@ -63,6 +64,7 @@ export const Sidebar: React.FC = () => {
     Bus: <Bus className="w-4 h-4 shrink-0" />,
     Shield: <Shield className="w-4 h-4 shrink-0" />,
     Building: <Building className="w-4 h-4 shrink-0" />,
+    TrendingUp: <TrendingUp className="w-4 h-4 shrink-0" />,
   };
 
   const toggleCategory = (cat: ERPDomain) => {
