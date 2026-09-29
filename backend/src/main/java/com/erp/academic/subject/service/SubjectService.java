@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-
+@RequiredArgsConstructor
 public class SubjectService {
 
     private final SubjectRepository repository;
@@ -120,8 +120,4 @@ public class SubjectService {
         repository.deleteById(id);
     }
 
-    public SubjectService(SubjectRepository repository, SubjectMapper mapper) {
-        this.repository = repository;
-        this.mapper = mapper;
-    }
 }

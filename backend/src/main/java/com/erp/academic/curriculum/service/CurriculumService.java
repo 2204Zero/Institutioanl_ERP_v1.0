@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-
+@RequiredArgsConstructor
 public class CurriculumService {
 
     private final CurriculumRepository repository;
@@ -185,8 +185,4 @@ public class CurriculumService {
         repository.deleteById(id);
     }
 
-    public CurriculumService(CurriculumRepository repository, CurriculumMapper mapper) {
-        this.repository = repository;
-        this.mapper = mapper;
-    }
 }
