@@ -1,63 +1,39 @@
 package com.erp.academic.semester.dto;
 
-import java.time.Instant;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class SemesterCreateRequest {
+
+    @NotBlank(message = "Semester name is required")
     private String name;
+
+    @NotNull(message = "Semester number is required")
+    @Min(value = 1, message = "Semester number must be at least 1")
     private Integer semesterNumber;
+
+    @NotNull(message = "Academic year ID is required")
     private Long academicYearId;
-    @com.fasterxml.jackson.annotation.JsonFormat(pattern = "yyyy-MM-dd")
-    private java.time.LocalDate startDate;
-    @com.fasterxml.jackson.annotation.JsonFormat(pattern = "yyyy-MM-dd")
-    private java.time.LocalDate endDate;
+
+    @NotNull(message = "Start date is required")
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate startDate;
+
+    @NotNull(message = "End date is required")
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate endDate;
+
     private Boolean isActive;
-
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public Integer getSemesterNumber() {
-        return semesterNumber;
-    }
-
-    public void setSemesterNumber(Integer semesterNumber) {
-        this.semesterNumber = semesterNumber;
-    }
-
-    public Long getAcademicYearId() {
-        return academicYearId;
-    }
-
-    public void setAcademicYearId(Long academicYearId) {
-        this.academicYearId = academicYearId;
-    }
-
-    public java.time.LocalDate getStartDate() {
-        return startDate;
-    }
-
-    public void setStartDate(java.time.LocalDate startDate) {
-        this.startDate = startDate;
-    }
-
-    public java.time.LocalDate getEndDate() {
-        return endDate;
-    }
-
-    public void setEndDate(java.time.LocalDate endDate) {
-        this.endDate = endDate;
-    }
-
-    public Boolean getIsActive() {
-        return isActive;
-    }
-
-    public void setIsActive(Boolean isActive) {
-        this.isActive = isActive;
-    }
 }

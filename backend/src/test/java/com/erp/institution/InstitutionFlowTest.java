@@ -71,6 +71,9 @@ public class InstitutionFlowTest {
         // 5. Create Semester
         SemesterCreateRequest semesterReq = new SemesterCreateRequest();
         semesterReq.setName("Fall 2026");
+        semesterReq.setSemesterNumber(1);
+        semesterReq.setStartDate(LocalDate.of(2026, 9, 1));
+        semesterReq.setEndDate(LocalDate.of(2026, 12, 15));
         semesterReq.setAcademicYearId(academicYear.id());
         semesterReq.setIsActive(true);
         SemesterResponse semester = semesterService.create(semesterReq);
@@ -88,6 +91,9 @@ public class InstitutionFlowTest {
         // 7. Create Batch
         BatchCreateRequest batchReq = new BatchCreateRequest();
         batchReq.setName("Class of 2030");
+        batchReq.setCode("BATCH-2030");
+        batchReq.setAdmissionYear(2026);
+        batchReq.setGraduationYear(2030);
         batchReq.setProgramId(program.getId());
         batchReq.setAcademicYearId(academicYear.id());
         batchReq.setIsActive(true);

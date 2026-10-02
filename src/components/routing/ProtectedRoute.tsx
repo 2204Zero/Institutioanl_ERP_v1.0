@@ -1,24 +1,17 @@
 import React from 'react';
-import { useAuthentication } from '../../hooks/useAuthentication';
-import { LoginPage } from '../../pages/LoginPage';
+import { Navigate, useLocation } from 'react-router-dom';
+import { useGlobalStore } from '../../store/StoreContext';
 
 export interface ProtectedRouteProps {
   children: React.ReactNode;
-  fallback?: React.ReactNode;
 }
 
-/**
- * Authentication Guard protecting internal ERP pages
- * Renders LoginPage if the user is unauthenticated or session has expired
- */
-export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
-  children,
-  fallback,
-}) => {
-  const { isAuthenticated } = useAuthentication();
+export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+  const { state } = useGlobalStore();
+  const location = useLocation();
 
-  if (!isAuthenticated) {
-    return <>{fallback || <LoginPage />}</>;
+  if (!state.isAuthenticated) {
+    return <Navigate to="/" state={{ from: location }} replace />;
   }
 
   return <>{children}</>;
