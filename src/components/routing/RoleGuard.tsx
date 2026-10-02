@@ -1,62 +1,18 @@
 import React from 'react';
-import { useAuthentication } from '../../hooks/useAuthentication';
-import { Role, Permission } from '../../types/authTypes';
-import { UnauthorizedPage } from '../../pages/UnauthorizedPage';
+import { Navigate } from 'react-router-dom';
+import { useGlobalStore } from '../../store/StoreContext';
 
 export interface RoleGuardProps {
   children: React.ReactNode;
-  allowedRoles?: Role[];
-  requiredPermissions?: Permission[];
-  fallback?: React.ReactNode;
-  onNavigateHome?: () => void;
+  allowedRoles: string[];
 }
 
-/**
- * Enterprise RBAC Guard ensuring user possesses required roles or permissions
- */
-export const RoleGuard: React.FC<RoleGuardProps> = ({
-  children,
-  allowedRoles,
-  requiredPermissions,
-  fallback,
-  onNavigateHome,
-}) => {
-  const { user, hasRole, hasPermission } = useAuthentication();
+export const RoleGuard: React.FC<RoleGuardProps> = ({ children, allowedRoles }) => {
+  const { state } = useGlobalStore();
+  const userRole = state.user?.role || 'STUDENT';
 
-  // 1. Role verification
-  if (allowedRoles && allowedRoles.length > 0) {
-    const roleMatches = hasRole(allowedRoles);
-    if (!roleMatches) {
-      return (
-        <>
-          {fallback || (
-            <UnauthorizedPage
-              requiredRoles={allowedRoles}
-              userRole={user?.role}
-              onNavigateHome={onNavigateHome}
-            />
-          )}
-        </>
-      );
-    }
-  }
-
-  // 2. Fine-grained permissions verification
-  if (requiredPermissions && requiredPermissions.length > 0) {
-    const permissionMatches = hasPermission(requiredPermissions);
-    if (!permissionMatches) {
-      return (
-        <>
-          {fallback || (
-            <UnauthorizedPage
-              requiredRoles={allowedRoles || ['Admin']}
-              userRole={user?.role}
-              onNavigateHome={onNavigateHome}
-            />
-          )}
-        </>
-      );
-    }
+  if (!allowedRoles.includes(userRole)) {
+    return <Navigate to="/unauthorized" replace />;
   }
 
   return <>{children}</>;

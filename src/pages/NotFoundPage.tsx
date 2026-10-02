@@ -1,22 +1,22 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShieldAlert, ArrowLeft, Home } from 'lucide-react';
+import { FileQuestion, ArrowLeft, Home } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 
-export const UnauthorizedPage: React.FC = () => {
+export const NotFoundPage: React.FC = () => {
   const navigate = useNavigate();
 
   return (
     <div className="min-h-[80vh] flex flex-col items-center justify-center text-center p-6">
-      <div className="w-16 h-16 rounded-3xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 flex items-center justify-center text-rose-600 dark:text-rose-400 mb-6 shadow-lg">
-        <ShieldAlert className="w-8 h-8" />
+      <div className="w-16 h-16 rounded-3xl bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-900 flex items-center justify-center text-blue-600 dark:text-blue-400 mb-6 shadow-lg">
+        <FileQuestion className="w-8 h-8" />
       </div>
-      <span className="px-3 py-1 rounded-full bg-rose-100 dark:bg-rose-900/50 text-rose-700 dark:text-rose-300 text-xs font-semibold mb-3">
-        Error Code 403
+      <span className="px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-xs font-semibold mb-3">
+        Error Code 404
       </span>
-      <h1 className="text-3xl font-extrabold text-slate-900 dark:text-slate-100 mb-2">Access Forbidden</h1>
+      <h1 className="text-3xl font-extrabold text-slate-900 dark:text-slate-100 mb-2">Page Not Found</h1>
       <p className="text-sm text-slate-600 dark:text-slate-400 max-w-md mb-8">
-        Your current user role does not possess the requisite RBAC permissions to access this institutional resource.
+        The requested URL path does not exist on this institutional server or has been relocated to another workspace.
       </p>
 
       <div className="flex items-center gap-3">
