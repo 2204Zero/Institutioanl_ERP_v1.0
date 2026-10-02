@@ -1,0 +1,251 @@
+FacultyID,FacultyName,DepartmentID,Designation,Salary,Experience
+5000,Gautam Chaudhary,3,Assistant Professor,59704,17
+5001,Henry Bhasin,15,Professor,174843,32
+5002,Chatresh Sahota,3,Assistant Professor,166619,23
+5003,Kai Sane,6,Professor,178540,15
+5004,Benjamin Nagi,3,Assistant Professor,101989,21
+5005,Ayaan Amble,15,Professor,91577,1
+5006,Zehaan Mahajan,3,HOD,157976,19
+5007,Yochana Suresh,13,Professor,51801,23
+5008,Chaitaly Tailor,9,Associate Professor,145324,26
+5009,Ekta Samra,1,HOD,70837,10
+5010,Gaurika Pai,9,Professor,152460,13
+5011,Rajata Manda,10,Associate Professor,153981,35
+5012,Nilima Sarraf,11,HOD,164883,25
+5013,Watika Dewan,9,Assistant Professor,62839,2
+5014,Arjun Shroff,7,Professor,173286,12
+5015,Indali Nagar,9,Professor,87368,20
+5016,Oliver Sabharwal,12,Associate Professor,54192,21
+5017,Ishanvi Chaudhuri,3,Associate Professor,147885,28
+5018,Caleb Brahmbhatt,2,Professor,163788,7
+5019,Vyanjana Shenoy,7,Associate Professor,135538,29
+5020,Peter Ratta,1,HOD,133621,11
+5021,Chavvi Kumer,8,Professor,142464,9
+5022,Sathvik Oza,15,Assistant Professor,55908,23
+5023,Lopa Dayal,1,Associate Professor,135174,19
+5024,Sara Sha,13,Assistant Professor,166200,29
+5025,Eshana Lala,10,Associate Professor,128918,29
+5026,Ira Apte,8,Assistant Professor,56180,17
+5027,Aarna Raval,9,Professor,126768,7
+5028,Anirudh Misra,6,Assistant Professor,147145,23
+5029,Chakrika Nagi,14,Professor,72368,19
+5030,Laksh Lala,9,HOD,118513,19
+5031,Sanya Garg,11,Assistant Professor,90411,7
+5032,Ishanvi Kamdar,13,Professor,115461,7
+5033,Aditya Lala,5,Assistant Professor,139113,33
+5034,Gayathri Thakur,14,HOD,113958,23
+5035,Omya Bhasin,14,Assistant Professor,92371,26
+5036,Chasmum Saraf,10,Associate Professor,67537,8
+5037,Victor Modi,15,Associate Professor,109782,3
+5038,Amol Rajan,11,Assistant Professor,102162,34
+5039,Oscar Bal,5,Assistant Professor,90390,31
+5040,Nilima Narang,14,HOD,140390,16
+5041,Sai Kumer,4,Assistant Professor,152327,20
+5042,Gopal Sibal,8,Assistant Professor,89946,7
+5043,Mitesh Chauhan,15,Professor,135782,12
+5044,Pallavi Hari,13,Professor,68164,30
+5045,Anusha Salvi,15,HOD,114268,30
+5046,Bishakha Ramanathan,5,Assistant Professor,106809,22
+5047,Patrick Verma,4,HOD,86690,27
+5048,Ekaja Rattan,12,HOD,150050,29
+5049,Robert Kuruvilla,9,Professor,158437,27
+5050,Yug Mody,4,HOD,63281,25
+5051,Brinda Subramanian,5,Associate Professor,102044,5
+5052,Victor Arora,11,Assistant Professor,62372,26
+5053,Ladli Deshpande,13,Professor,127025,24
+5054,Agastya Mohan,15,Associate Professor,90725,5
+5055,Yashasvi Apte,15,HOD,65423,28
+5056,Aahana Nagarajan,9,HOD,89426,32
+5057,Panini Varkey,9,Associate Professor,91223,27
+5058,Rachit Naik,11,Associate Professor,85767,14
+5059,Gopal Yogi,3,Professor,61508,1
+5060,Andrew De,2,Assistant Professor,53548,11
+5061,Ekanta Venkatesh,11,Associate Professor,140915,8
+5062,Naksh Grewal,13,Professor,124922,5
+5063,Libni Bahl,5,Assistant Professor,56976,6
+5064,Jasmit Palla,2,Associate Professor,55956,6
+5065,Thomas Muni,11,HOD,156462,20
+5066,Wahab Jain,8,Professor,141785,6
+5067,Veer Kurian,6,HOD,124535,28
+5068,Udyati Shanker,2,Professor,166145,9
+5069,Jai Pau,4,Assistant Professor,74392,5
+5070,Ekani Kota,3,Professor,92220,35
+5071,Nitesh Pai,3,Professor,162176,31
+5072,Christopher Shukla,12,Assistant Professor,116705,2
+5073,Chasmum Goel,12,HOD,55662,12
+5074,Ranveer Jaggi,8,Professor,108800,18
+5075,Zashil Natarajan,12,Associate Professor,103703,19
+5076,Krisha Taneja,3,Professor,85980,12
+5077,Damyanti Bajaj,11,Professor,138990,30
+5078,Unni Banerjee,1,Associate Professor,100616,7
+5079,Vansha Lala,11,Professor,157989,19
+5080,Gaurav Kala,7,HOD,107196,9
+5081,Ojas Verma,15,Assistant Professor,113411,12
+5082,Raghav Murthy,10,HOD,69546,9
+5083,Pushti Vohra,13,Associate Professor,141853,8
+5084,Aarna Vasa,12,HOD,177972,2
+5085,Bahadurjit Basak,9,HOD,173470,16
+5086,Charles Rana,4,Professor,148946,18
+5087,Ayushman Bail,6,Associate Professor,126306,29
+5088,Urishilla Sachar,6,Assistant Professor,121950,12
+5089,Jasmit Konda,10,Assistant Professor,140204,13
+5090,Kashish Sekhon,9,Professor,101037,33
+5091,Alexander Karan,1,Associate Professor,123023,20
+5092,Jonathan Mangal,5,Assistant Professor,172338,10
+5093,Peter Subramanian,8,Associate Professor,105036,9
+5094,Tanish Dar,11,HOD,122375,18
+5095,Unnati Gopal,10,Professor,64259,19
+5096,Anita Char,13,HOD,128573,4
+5097,Hritik Dua,5,Professor,109728,21
+5098,Kamya Misra,2,Professor,80728,32
+5099,Chavvi Dave,11,Associate Professor,102533,2
+5100,Bahadurjit Balan,14,HOD,52761,35
+5101,Kashish Hora,13,Associate Professor,82653,34
+5102,Idika Behl,3,Assistant Professor,175567,2
+5103,Jonathan Sidhu,1,Associate Professor,127866,31
+5104,Gauri Khatri,9,Assistant Professor,105213,31
+5105,Ranbir Kala,12,Associate Professor,132033,18
+5106,Anika Gaba,7,Professor,132775,21
+5107,Ekalinga Rajan,4,Assistant Professor,129903,10
+5108,Advik Sahota,3,Associate Professor,174858,11
+5109,Balvan Bahl,2,Associate Professor,117373,7
+5110,Chaitanya Bava,7,Assistant Professor,76843,21
+5111,Chanchal Parsa,14,Associate Professor,151395,12
+5112,Ubika Dhar,12,Associate Professor,79837,11
+5113,Rachita Tank,8,Associate Professor,79556,20
+5114,Meghana Wable,5,Associate Professor,85117,5
+5115,Andrew Narain,15,HOD,161366,4
+5116,Baljiwan Lal,9,Associate Professor,122901,34
+5117,Bhavya Patla,15,Assistant Professor,83330,35
+5118,Baljiwan Sheth,10,Professor,121033,11
+5119,Advika Sha,11,Associate Professor,78129,13
+5120,Daksha Sanghvi,3,Associate Professor,115812,20
+5121,Anay Taneja,7,HOD,65658,29
+5122,Oscar Bose,2,Assistant Professor,116626,7
+5123,Janaki Sarkar,13,HOD,75795,10
+5124,Nilima Hayer,15,Assistant Professor,81442,15
+5125,Ikshita Banik,8,Professor,143805,12
+5126,Wishi Kurian,2,Professor,95185,23
+5127,Jagat Ramesh,14,Professor,83732,29
+5128,Jagdish Kurian,3,Associate Professor,112662,2
+5129,Frederick Kanda,12,Assistant Professor,164464,17
+5130,Kabir Khanna,9,HOD,155138,17
+5131,Jagdish Suresh,13,Professor,71666,12
+5132,Caleb Deshpande,11,Professor,130388,29
+5133,Karan Parekh,4,Assistant Professor,78623,32
+5134,Jeevika Hora,5,Professor,134902,4
+5135,Devansh Patil,9,Associate Professor,152667,29
+5136,Ekansh Raju,14,Professor,160966,15
+5137,Nathaniel Balan,3,Assistant Professor,148534,4
+5138,Udant Nigam,7,Assistant Professor,158885,16
+5139,Vasudha Chaudhuri,1,HOD,113899,16
+5140,Riya Deep,7,HOD,113305,24
+5141,Falguni Mangat,9,Professor,126226,34
+5142,Praneel Nagar,8,HOD,175169,6
+5143,Ayush Sur,12,Professor,111316,15
+5144,Vasatika Sethi,4,Associate Professor,93567,15
+5145,Krishna Baral,9,Associate Professor,115380,3
+5146,Edhitha Deshpande,3,Associate Professor,120014,19
+5147,Wishi Nayak,13,Assistant Professor,92797,28
+5148,Ekalinga Brar,10,Professor,139003,30
+5149,Aahana Chahal,7,Assistant Professor,174773,11
+5150,Amaira Dugar,8,Assistant Professor,70105,3
+5151,Wishi Bobal,8,HOD,70282,18
+5152,Jeremiah Tata,9,Assistant Professor,165251,23
+5153,Nachiket Ganguly,3,Associate Professor,84364,9
+5154,Pranit Sampath,13,HOD,92955,28
+5155,Jagat Hans,2,HOD,143930,16
+5156,Laksh Bal,15,HOD,69821,4
+5157,Ayushman Parsa,2,HOD,161553,2
+5158,Chakradev Raj,2,Assistant Professor,108485,21
+5159,Yashasvi Kumar,11,Professor,93639,26
+5160,Yasti Ratti,8,HOD,164360,19
+5161,Zashil Dutt,8,Associate Professor,98283,8
+5162,Rishi Badal,1,HOD,109414,20
+5163,Vaishnavi Loyal,14,Professor,84134,33
+5164,Ganga Borde,10,Assistant Professor,152955,32
+5165,Liam Kunda,2,HOD,113989,32
+5166,Ekalinga Kumar,9,Assistant Professor,80807,2
+5167,Idika Dhaliwal,13,Associate Professor,178067,19
+5168,Kiaan Lanka,13,Associate Professor,78719,1
+5169,Ganga Dyal,15,Assistant Professor,123408,14
+5170,Oeshi Iyer,4,Professor,65815,35
+5171,Vansha Dutt,8,Assistant Professor,152157,21
+5172,Balendra Sahni,12,Professor,153547,2
+5173,Ekta Vyas,13,Associate Professor,130875,13
+5174,Adya Merchant,1,Associate Professor,116788,1
+5175,Nandini Bhatnagar,4,Professor,85320,14
+5176,Yauvani Viswanathan,2,Associate Professor,107805,15
+5177,Harish Goel,2,Associate Professor,172119,24
+5178,Quincy Joshi,13,Assistant Professor,154169,18
+5179,Omkaar Talwar,9,Assistant Professor,151076,35
+5180,Watika Bedi,8,Professor,124075,30
+5181,Sudiksha Raval,4,Associate Professor,140990,12
+5182,Gagan Natt,11,Associate Professor,164656,31
+5183,Radhika Patel,9,Assistant Professor,131518,10
+5184,Watika Palan,15,Associate Professor,165677,35
+5185,Hemani Kothari,7,Associate Professor,164586,7
+5186,Saumya Jaggi,11,Assistant Professor,104991,12
+5187,Bina Ratti,1,Professor,174682,28
+5188,Jason Thaman,14,HOD,123635,27
+5189,Sanaya Mangal,15,Associate Professor,168986,3
+5190,Faqid Dugar,13,Associate Professor,121151,5
+5191,Ishani Sekhon,14,HOD,125864,5
+5192,Tanay Kothari,15,Professor,121477,26
+5193,Ekapad Warrior,8,Assistant Professor,111301,25
+5194,Anjali Grover,12,HOD,160983,17
+5195,Ranbir Khanna,5,Professor,126887,5
+5196,Bhavini Lata,2,Professor,60729,3
+5197,Lohit Nayar,2,Professor,84435,11
+5198,Zarna Bhalla,8,Associate Professor,92326,22
+5199,Falguni Mishra,15,HOD,79957,1
+5200,Upadhriti Batra,12,Assistant Professor,116073,3
+5201,Pranit Reddy,9,HOD,67769,22
+5202,Arjun Mistry,9,Professor,72992,15
+5203,Lakshit Solanki,1,Associate Professor,71150,31
+5204,Neel Prashad,15,Associate Professor,113543,24
+5205,Hiral Bassi,3,Assistant Professor,140078,23
+5206,Pavani Bajwa,14,Associate Professor,113852,10
+5207,Maanas Bhandari,4,Assistant Professor,163414,8
+5208,Lila Tailor,12,Professor,79046,19
+5209,Jacob Thaman,2,HOD,100293,15
+5210,Gautami Gola,9,Associate Professor,104781,30
+5211,Bhavna Arora,8,Professor,154153,29
+5212,Ojas Gade,3,HOD,107770,30
+5213,Dipta Lad,2,Professor,103397,2
+5214,Ethan Sabharwal,6,Associate Professor,142072,20
+5215,Udyati Deol,7,Professor,133678,29
+5216,Manthan Cherian,5,Assistant Professor,130446,25
+5217,Darika Majumdar,13,Associate Professor,84021,35
+5218,Upasna Bedi,7,HOD,62300,28
+5219,Ekaja Agate,12,Professor,149174,26
+5220,Devika Bhattacharyya,13,Associate Professor,130510,9
+5221,Chatura Kala,10,Assistant Professor,150044,32
+5222,Panini Ramanathan,8,Associate Professor,101064,2
+5223,Unnati Singh,6,Associate Professor,149107,1
+5224,Patrick Hegde,15,Assistant Professor,61192,1
+5225,Dakshesh Nayak,1,Assistant Professor,113194,31
+5226,Wazir Bail,9,Associate Professor,177493,8
+5227,Aarav Lata,14,Associate Professor,146003,27
+5228,Darika Oza,4,HOD,133803,17
+5229,Jeremiah Pandya,2,HOD,138979,4
+5230,Hemang Nadkarni,4,Associate Professor,74375,21
+5231,Faqid Patil,1,Assistant Professor,131853,13
+5232,Rachana Badal,4,Associate Professor,71089,31
+5233,Radhika Kumar,14,Professor,134995,19
+5234,Krishna Nori,14,Professor,84745,23
+5235,Oni Rai,12,Professor,150758,19
+5236,Isha Maharaj,15,HOD,174151,11
+5237,Rachit Bhavsar,8,HOD,142931,12
+5238,Advika Mohan,5,Professor,154472,29
+5239,Jagat Dey,14,HOD,170873,5
+5240,Ekantika Sridhar,8,Professor,53110,27
+5241,Neelima Jain,15,HOD,123145,25
+5242,Watika Rajagopal,8,Professor,66471,1
+5243,Nimrat Bedi,11,HOD,65808,14
+5244,Urishilla Taneja,8,HOD,129859,35
+5245,Saanvi Brar,14,Associate Professor,75044,29
+5246,Agastya Amble,7,Assistant Professor,157766,9
+5247,Chatura Dugar,6,Associate Professor,169534,2
+5248,Amara Deshpande,9,HOD,117867,32
+5249,Vedant Nori,10,Assistant Professor,128657,5
