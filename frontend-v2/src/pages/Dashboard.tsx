@@ -38,9 +38,9 @@ export default function Dashboard() {
   const students = studentsData?.content || [];
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       {/* Header */}
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
         <div className="flex items-center space-x-4">
           <div className="relative">
@@ -48,7 +48,7 @@ export default function Dashboard() {
             <input 
               type="text" 
               placeholder="Search here" 
-              className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 w-64"
+              className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 w-full sm:w-64"
             />
           </div>
           <button className="w-10 h-10 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-600 hover:bg-slate-50">
@@ -111,7 +111,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
          {/* Chart Section */}
          <div className="lg:col-span-2 bg-white rounded-[32px] p-6 shadow-sm border border-slate-100">
-           <div className="flex justify-between items-center mb-6">
+           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
               <h3 className="font-bold text-lg">Fee Collection vs Outstanding</h3>
               <div className="flex items-center space-x-4 text-sm">
                  <div className="flex items-center"><div className="w-2 h-2 rounded-full bg-[#000000] mr-2"></div>Collected</div>
@@ -129,7 +129,7 @@ export default function Dashboard() {
 
          {/* List Section */}
          <div className="bg-white rounded-[32px] p-6 shadow-sm border border-slate-100 flex flex-col h-full">
-           <div className="flex justify-between items-center mb-6">
+           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
              <h3 className="font-bold text-lg">Recent Activity</h3>
              <button className="text-black font-semibold text-sm hover:underline" disabled>View All</button>
            </div>
@@ -142,3 +142,9 @@ export default function Dashboard() {
     </div>
   );
 }
+
+
+
+
+
+

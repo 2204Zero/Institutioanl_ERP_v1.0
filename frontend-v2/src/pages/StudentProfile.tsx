@@ -190,7 +190,7 @@ export default function StudentProfile() {
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 col-span-2">
           <h2 className="text-lg font-bold text-slate-900 mb-4">Academic Record</h2>
           
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div className="p-4 rounded-xl border border-slate-100 bg-slate-50/50">
               <p className="text-xs text-slate-500 font-semibold uppercase mb-1">Enrollment Date</p>
               <p className="font-medium text-slate-900">{student.enrollmentDate || 'N/A'}</p>
@@ -213,7 +213,7 @@ export default function StudentProfile() {
 
       {/* Guardians Section */}
       <div className="mt-8 bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <h2 className="text-xl font-bold text-slate-900 flex items-center">
             <HeartHandshake className="w-5 h-5 mr-2 text-primary" />
             Guardians & Contacts
@@ -268,3 +268,10 @@ export default function StudentProfile() {
     </div>
   );
 }
+
+
+
+
+
+
+

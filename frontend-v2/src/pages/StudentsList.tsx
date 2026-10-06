@@ -44,9 +44,9 @@ export default function StudentsList() {
   const isLast = studentsData?.last ?? true;
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       {/* Header */}
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 mb-1">Students</h1>
           <p className="text-slate-500 text-sm">Manage student records, enrollments, and academic statuses.</p>
@@ -62,7 +62,7 @@ export default function StudentsList() {
             <Input 
               type="text" 
               placeholder="Search students..." 
-              className="pl-9 pr-4 py-2 bg-slate-50 border-slate-200 rounded-lg text-sm w-72 h-10"
+              className="pl-9 pr-4 py-2 bg-slate-50 border-slate-200 rounded-lg text-sm w-full sm:w-72 h-10"
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
@@ -171,3 +171,9 @@ export default function StudentsList() {
     </div>
   );
 }
+
+
+
+
+
+

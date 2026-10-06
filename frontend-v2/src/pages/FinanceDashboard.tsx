@@ -27,9 +27,9 @@ export default function FinanceDashboard() {
   const pendingDues = fees?.filter(f => f.status === 'PENDING' || f.status === 'OVERDUE').reduce((acc, curr) => acc + curr.amount, 0) || 0;
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       {/* Header */}
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 mb-1">Finance</h1>
           <p className="text-slate-500 text-sm">Manage institutional revenue, fee invoices, and pending dues.</p>
@@ -71,7 +71,7 @@ export default function FinanceDashboard() {
             <Input 
               type="text" 
               placeholder="Search invoices..." 
-              className="pl-9 pr-4 py-2 bg-slate-50 border-slate-200 rounded-lg text-sm w-72 h-10"
+              className="pl-9 pr-4 py-2 bg-slate-50 border-slate-200 rounded-lg text-sm w-full sm:w-72 h-10"
             />
           </div>
         </div>
@@ -143,3 +143,9 @@ export default function FinanceDashboard() {
     </div>
   );
 }
+
+
+
+
+
+

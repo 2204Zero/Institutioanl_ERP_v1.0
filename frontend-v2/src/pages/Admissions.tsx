@@ -36,8 +36,8 @@ export default function Admissions() {
   });
 
   return (
-    <div className="p-8">
-      <div className="flex justify-between items-center mb-8">
+    <div className="p-4 md:p-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 mb-1">Admissions Workflow</h1>
           <p className="text-slate-500 text-sm">Manage inquiries, applications, and enrollments.</p>
@@ -49,7 +49,7 @@ export default function Admissions() {
 
       <div className="bg-white rounded-[32px] shadow-sm border border-slate-100 overflow-hidden">
         {/* Tabs */}
-        <div className="flex border-b border-slate-100 px-6 pt-4 space-x-8">
+        <div className="flex border-b border-slate-100 px-6 pt-4 space-x-8 overflow-x-auto whitespace-nowrap custom-scrollbar">
           {['inquiries', 'applications', 'verification', 'decisions'].map((tab) => (
             <button
               key={tab}
@@ -66,13 +66,13 @@ export default function Admissions() {
         </div>
 
         {/* Toolbar */}
-        <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+        <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50/50">
           <div className="relative">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <Input 
               type="text" 
               placeholder={`Search ${activeTab}...`}
-              className="pl-9 pr-4 py-2 bg-white border-slate-200 rounded-full text-sm w-72 h-10"
+              className="pl-9 pr-4 py-2 bg-white border-slate-200 rounded-full text-sm w-full sm:w-72 h-10"
               disabled
             />
           </div>
@@ -131,3 +131,9 @@ export default function Admissions() {
     </div>
   );
 }
+
+
+
+
+
+

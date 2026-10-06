@@ -50,8 +50,8 @@ export default function GuardiansList() {
   });
 
   return (
-    <div className="p-8">
-      <div className="flex justify-between items-center mb-8">
+    <div className="p-4 md:p-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 mb-1">Guardians Directory</h1>
           <p className="text-slate-500 text-sm">Manage parents and emergency contacts globally.</p>
@@ -66,7 +66,7 @@ export default function GuardiansList() {
             <Input 
               type="text" 
               placeholder="Search guardians..." 
-              className="pl-9 pr-4 py-2 bg-slate-50 border-slate-200 rounded-lg text-sm w-72 h-10"
+              className="pl-9 pr-4 py-2 bg-slate-50 border-slate-200 rounded-lg text-sm w-full sm:w-72 h-10"
             />
           </div>
         </div>
@@ -173,3 +173,9 @@ export default function GuardiansList() {
     </div>
   );
 }
+
+
+
+
+
+

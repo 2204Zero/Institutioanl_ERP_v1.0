@@ -12,3 +12,9 @@ export default function PlaceholderPage({ title }: { title: string }) {
     </div>
   );
 }
+
+
+
+
+
+
