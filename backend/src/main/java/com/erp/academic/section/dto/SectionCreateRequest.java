@@ -17,11 +17,8 @@ public class SectionCreateRequest {
     @NotBlank(message = "Section name is required")
     private String name;
 
-    @NotNull(message = "Batch ID is required")
-    private Long batchId;
-
-    @NotNull(message = "Semester ID is required")
-    private Long semesterId;
+    @NotNull(message = "Course Offering ID is required")
+    private Long courseOfferingId;
 
     @NotNull(message = "Capacity is required")
     @Min(value = 1, message = "Section capacity must be at least 1")

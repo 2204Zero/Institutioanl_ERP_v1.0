@@ -14,8 +14,7 @@ import java.time.Instant;
 public class SectionResponse {
     private Long id;
     private String name;
-    private Long batchId;
-    private Long semesterId;
+    private Long courseOfferingId;
     private Integer capacity;
     private Integer currentEnrollment;
     private Boolean isActive;

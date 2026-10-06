@@ -12,8 +12,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class SectionUpdateRequest {
     private String name;
-    private Long batchId;
-    private Long semesterId;
+    private Long courseOfferingId;
 
     @Min(value = 1, message = "Section capacity must be at least 1")
     private Integer capacity;

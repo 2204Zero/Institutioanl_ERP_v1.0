@@ -25,4 +25,12 @@ public interface SemesterRepository extends JpaRepository<Semester, Long> {
            "ORDER BY s.semesterNumber ASC")
     List<Semester> findByFilters(@Param("academicYearId") Long academicYearId,
                                  @Param("isActive") Boolean isActive);
+
+    @Query("SELECT s FROM Semester s WHERE s.academicYearId = :academicYearId " +
+           "AND s.startDate <= :endDate AND s.endDate >= :startDate " +
+           "AND (:excludeId IS NULL OR s.id != :excludeId)")
+    List<Semester> findOverlapping(@Param("academicYearId") Long academicYearId,
+                                   @Param("startDate") java.time.LocalDate startDate, 
+                                   @Param("endDate") java.time.LocalDate endDate, 
+                                   @Param("excludeId") Long excludeId);
 }

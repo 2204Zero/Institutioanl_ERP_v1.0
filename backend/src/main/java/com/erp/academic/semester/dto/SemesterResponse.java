@@ -1,7 +1,9 @@
 package com.erp.academic.semester.dto;
 
+import lombok.ToString;
 import java.time.Instant;
 
+@ToString
 public class SemesterResponse {
     private Long id;
     private String name;

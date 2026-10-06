@@ -50,8 +50,7 @@ class SectionControllerTest {
     void testCreateSection() throws Exception {
         SectionCreateRequest request = SectionCreateRequest.builder()
                 .name("Section A")
-                .batchId(1L)
-                .semesterId(1L)
+                .courseOfferingId(1L)
                 .capacity(60)
                 .isActive(true)
                 .build();
@@ -59,8 +58,7 @@ class SectionControllerTest {
         SectionResponse response = SectionResponse.builder()
                 .id(1L)
                 .name("Section A")
-                .batchId(1L)
-                .semesterId(1L)
+                .courseOfferingId(1L)
                 .capacity(60)
                 .currentEnrollment(0)
                 .isActive(true)

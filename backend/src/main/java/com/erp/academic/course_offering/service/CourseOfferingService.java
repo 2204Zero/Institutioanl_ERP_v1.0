@@ -1,0 +1,48 @@
+package com.erp.academic.course_offering.service;
+
+import com.erp.academic.course.entity.Course;
+import com.erp.academic.course.repository.CourseRepository;
+import com.erp.academic.course_offering.entity.CourseOffering;
+import com.erp.academic.course_offering.repository.CourseOfferingRepository;
+import com.erp.academic.semester.entity.Semester;
+import com.erp.academic.semester.repository.SemesterRepository;
+import com.erp.common.exception.BusinessException;
+import com.erp.common.exception.ResourceNotFoundException;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@RequiredArgsConstructor
+public class CourseOfferingService {
+
+    private final CourseOfferingRepository courseOfferingRepository;
+    private final CourseRepository courseRepository;
+    private final SemesterRepository semesterRepository;
+
+    @Transactional
+    public CourseOffering createCourseOffering(Long courseId, Long semesterId, Integer maxCapacity) {
+        if (courseOfferingRepository.existsByCourseIdAndSemesterId(courseId, semesterId)) {
+            throw new BusinessException("This course is already offered in the specified semester.");
+        }
+
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Course not found"));
+                
+        Semester semester = semesterRepository.findById(semesterId)
+                .orElseThrow(() -> new ResourceNotFoundException("Semester not found"));
+
+        if (!semester.getIsActive()) {
+            throw new BusinessException("Cannot offer a course in an inactive semester.");
+        }
+
+        CourseOffering offering = CourseOffering.builder()
+                .course(course)
+                .semester(semester)
+                .maxCapacity(maxCapacity)
+                .isPublished(false)
+                .build();
+
+        return courseOfferingRepository.save(offering);
+    }
+}

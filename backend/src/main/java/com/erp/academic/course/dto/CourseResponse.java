@@ -1,7 +1,9 @@
 package com.erp.academic.course.dto;
 
+import lombok.ToString;
 import java.time.Instant;
 
+@ToString
 public class CourseResponse {
     private Long id;
     private String code;

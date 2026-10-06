@@ -11,21 +11,14 @@ import java.util.List;
 @Repository
 public interface SectionRepository extends JpaRepository<Section, Long> {
 
-    List<Section> findByBatchId(Long batchId);
-
-    List<Section> findBySemesterId(Long semesterId);
-
-    List<Section> findByBatchIdAndSemesterId(Long batchId, Long semesterId);
+    List<Section> findByCourseOfferingId(Long courseOfferingId);
 
     @Query("SELECT s FROM Section s WHERE " +
-           "(:search IS NULL OR :search = '' OR " +
-           " LOWER(s.name) LIKE LOWER(CONCAT('%', :search, '%'))) AND " +
-           "(:batchId IS NULL OR s.batchId = :batchId) AND " +
-           "(:semesterId IS NULL OR s.semesterId = :semesterId) AND " +
-           "(:isActive IS NULL OR s.isActive = :isActive) " +
-           "ORDER BY s.name ASC")
-    List<Section> searchAndFilter(@Param("search") String search,
-                                  @Param("batchId") Long batchId,
-                                  @Param("semesterId") Long semesterId,
-                                  @Param("isActive") Boolean isActive);
+           "(:search IS NULL OR LOWER(s.name) LIKE LOWER(CONCAT('%', :search, '%'))) AND " +
+           "(:courseOfferingId IS NULL OR s.courseOffering.id = :courseOfferingId) AND " +
+           "(:isActive IS NULL OR s.isActive = :isActive)")
+    List<Section> searchAndFilter(
+            @Param("search") String search, 
+            @Param("courseOfferingId") Long courseOfferingId, 
+            @Param("isActive") Boolean isActive);
 }
