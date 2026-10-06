@@ -1,0 +1,13 @@
+CREATE TABLE course (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(100) NOT NULL UNIQUE,
+    name VARCHAR(255) NOT NULL,
+    course_type VARCHAR(50) NOT NULL,
+    credits INT NOT NULL,
+    department_id BIGINT NOT NULL,
+    program_id BIGINT,
+    is_active BOOLEAN DEFAULT TRUE,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

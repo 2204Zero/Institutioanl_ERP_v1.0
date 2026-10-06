@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class SubjectMapper {
+
     public Subject toEntity(SubjectCreateRequest request) {
         Subject entity = new Subject();
         entity.setCode(request.getCode());
@@ -15,6 +16,7 @@ public class SubjectMapper {
         entity.setIsPractical(request.getIsPractical());
         entity.setDepartmentId(request.getDepartmentId());
         entity.setCourseId(request.getCourseId());
+        entity.setProgramId(request.getProgramId());
         entity.setIsActive(request.getIsActive());
 
         return entity;
@@ -30,6 +32,7 @@ public class SubjectMapper {
         response.setIsPractical(entity.getIsPractical());
         response.setDepartmentId(entity.getDepartmentId());
         response.setCourseId(entity.getCourseId());
+        response.setProgramId(entity.getProgramId());
         response.setIsActive(entity.getIsActive());
 
         response.setCreatedAt(entity.getCreatedAt());
@@ -59,9 +62,11 @@ public class SubjectMapper {
         if (request.getCourseId() != null) {
             entity.setCourseId(request.getCourseId());
         }
+        if (request.getProgramId() != null) {
+            entity.setProgramId(request.getProgramId());
+        }
         if (request.getIsActive() != null) {
             entity.setIsActive(request.getIsActive());
         }
-
     }
 }

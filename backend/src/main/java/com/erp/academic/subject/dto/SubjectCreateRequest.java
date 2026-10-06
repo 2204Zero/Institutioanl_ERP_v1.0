@@ -1,79 +1,39 @@
 package com.erp.academic.subject.dto;
 
-import java.time.Instant;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class SubjectCreateRequest {
+
+    @NotBlank(message = "Subject code is required")
     private String code;
+
+    @NotBlank(message = "Subject name is required")
     private String name;
+
+    @NotBlank(message = "Subject type is required (e.g. CORE, ELECTIVE, AUDIT)")
     private String subjectType;
+
+    @NotNull(message = "Credits are required")
+    @Min(value = 0, message = "Credits cannot be negative")
     private Integer credits;
+
+    @NotNull(message = "isPractical is required (true for practical/lab, false for theory)")
     private Boolean isPractical;
+
+    @NotNull(message = "Department ID is required")
     private Long departmentId;
+
     private Long courseId;
+    private Long programId;
     private Boolean isActive;
-
-
-    public String getCode() {
-        return code;
-    }
-
-    public void setCode(String code) {
-        this.code = code;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getSubjectType() {
-        return subjectType;
-    }
-
-    public void setSubjectType(String subjectType) {
-        this.subjectType = subjectType;
-    }
-
-    public Integer getCredits() {
-        return credits;
-    }
-
-    public void setCredits(Integer credits) {
-        this.credits = credits;
-    }
-
-    public Boolean getIsPractical() {
-        return isPractical;
-    }
-
-    public void setIsPractical(Boolean isPractical) {
-        this.isPractical = isPractical;
-    }
-
-    public Long getDepartmentId() {
-        return departmentId;
-    }
-
-    public void setDepartmentId(Long departmentId) {
-        this.departmentId = departmentId;
-    }
-
-    public Long getCourseId() {
-        return courseId;
-    }
-
-    public void setCourseId(Long courseId) {
-        this.courseId = courseId;
-    }
-
-    public Boolean getIsActive() {
-        return isActive;
-    }
-
-    public void setIsActive(Boolean isActive) {
-        this.isActive = isActive;
-    }
 }

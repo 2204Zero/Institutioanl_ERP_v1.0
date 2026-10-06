@@ -1,8 +1,11 @@
 CREATE TABLE program (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255),
-    code VARCHAR(255),
-    department_id BIGINT,
+    name VARCHAR(255) NOT NULL,
+    code VARCHAR(100) NOT NULL UNIQUE,
+    degree VARCHAR(100) NOT NULL,
+    duration INT NOT NULL,
+    department_id BIGINT NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
 
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
