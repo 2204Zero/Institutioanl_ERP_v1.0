@@ -116,7 +116,7 @@ public class SectionService {
 
     @Transactional
     public List<SectionStudentResponse> assignStudents(Long sectionId, SectionStudentAssignRequest request) {
-        Section section = repository.findById(sectionId).orElseThrow(() -> new SectionNotFoundException(sectionId));
+        Section section = repository.findByIdWithPessimisticWriteLock(sectionId).orElseThrow(() -> new SectionNotFoundException(sectionId));
 
         if (Boolean.FALSE.equals(section.getIsActive())) {
             throw new BusinessException("Cannot assign students to an inactive section");

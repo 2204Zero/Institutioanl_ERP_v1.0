@@ -7,6 +7,9 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
+import org.springframework.data.jpa.repository.Lock;
+import jakarta.persistence.LockModeType;
 
 @Repository
 public interface SectionRepository extends JpaRepository<Section, Long> {
@@ -21,4 +24,7 @@ public interface SectionRepository extends JpaRepository<Section, Long> {
             @Param("search") String search, 
             @Param("courseOfferingId") Long courseOfferingId, 
             @Param("isActive") Boolean isActive);
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT s FROM Section s WHERE s.id = :id")
+    Optional<Section> findByIdWithPessimisticWriteLock(@Param("id") Long id);
 }
