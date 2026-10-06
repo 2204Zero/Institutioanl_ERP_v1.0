@@ -43,19 +43,23 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Public authentication & swagger documentation endpoints
                         .requestMatchers(
-                                "/auth/login",
-                                "/auth/refresh",
+                                "/api/auth/login", "/api/auth/register", "/api/auth/refresh", "/auth/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/error"
                         ).permitAll()
                         // Protected endpoints requiring authentication and method security checks
-                        .requestMatchers("/auth/logout", "/auth/session", "/auth/me").authenticated()
+                        .requestMatchers("/api/auth/logout", "/api/auth/session", "/api/auth/me").authenticated()
+                        .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/v1/students/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                        .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/v1/audit/**").denyAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/v1/audit/**").denyAll()
+                        .requestMatchers("/api/v1/audit/**").hasAnyRole("ADMIN", "SUPER_ADMIN", "SECURITY_ADMIN")
                         .requestMatchers("/api/v1/**").authenticated()
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(new com.example.demo.security.filter.IdorFilter(), com.example.demo.security.jwt.JwtAuthenticationFilter.class);
 
         return http.build();
     }
@@ -65,3 +69,7 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 }
+
+
+
+

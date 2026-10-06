@@ -8,32 +8,23 @@ import org.springframework.stereotype.Component;
 @Component("registrationSecurity")
 public class RegistrationSecurityEvaluator {
 
-    // ============================================================================
-    // TODO: [INTEGRATION DEPENDENCY]
-    // OWNER: Palak
-    // MODULE: #33 Registration Holds
-    // PENDING: RegistrationHoldService implementation
-    // ACTION REQUIRED ONCE READY: Inject RegistrationHoldService and call 
-    // holdService.hasActiveHold(targetStudentId) before allowing registration.
-    // ============================================================================
-    // ============================================================================
-    // TODO: [INTEGRATION DEPENDENCY]
-    // OWNER: Prashant
-    // MODULE: #21 Academic Calendar
-    // PENDING: AcademicCalendarService implementation
-    // ACTION REQUIRED ONCE READY: Inject AcademicCalendarService to verify that the 
-    // registration window is currently active for the semester.
-    // ============================================================================
-
     public boolean canModifyRegistration(String targetStudentId) {
+        if (targetStudentId == null || targetStudentId.trim().isEmpty()) {
+            throw new AccessDeniedException("Invalid student ID.");
+        }
+
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
             throw new AccessDeniedException("Authentication required to modify registration.");
         }
 
         String currentAuthenticatedUser = authentication.getName();
+        if (currentAuthenticatedUser == null || currentAuthenticatedUser.trim().isEmpty()) {
+            throw new AccessDeniedException("Invalid principal context.");
+        }
+
         boolean isAdmin = authentication.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_SUPER_ADMIN"));
 
         if (!isAdmin && !currentAuthenticatedUser.equals(targetStudentId)) {
             throw new AccessDeniedException("IDOR Attempt: You are not authorized to modify registration for another student.");

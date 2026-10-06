@@ -27,7 +27,14 @@ public enum Permission {
 
     // Institution Permissions
     INSTITUTION_MANAGE("INSTITUTION_MANAGE", "Manage Institution Settings"),
-    INSTITUTION_READ("INSTITUTION_READ", "View Institution Information");
+    INSTITUTION_READ("INSTITUTION_READ", "View Institution Information"),
+
+    // Audit & Security Permissions
+    AUDIT_VIEW("AUDIT_VIEW", "View Audit Logs"),
+    ROLE_ASSIGN("ROLE_ASSIGN", "Assign Roles to Users"),
+    ROLE_REMOVE("ROLE_REMOVE", "Remove Roles from Users"),
+    SESSION_READ("SESSION_READ", "View Active Sessions"),
+    SESSION_DELETE("SESSION_DELETE", "Revoke Active Sessions");
 
     private final String value;
     private final String description;

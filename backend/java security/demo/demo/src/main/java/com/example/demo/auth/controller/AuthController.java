@@ -17,8 +17,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
-@RestController
-@RequestMapping("/auth")
+@RestController("securityAuthController")
+@RequestMapping("/api/auth")
 @Tag(name = "Authentication & Session", description = "Endpoints for user authentication, token refresh, logout, and session validation")
 public class AuthController {
 
