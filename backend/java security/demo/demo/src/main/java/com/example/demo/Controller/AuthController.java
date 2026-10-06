@@ -7,7 +7,7 @@ import com.example.demo.security.JwtService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@RestController
+// @RestController (Disabled to prevent conflicts)
 @RequestMapping("/auth")
 public class AuthController {
 

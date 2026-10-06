@@ -18,7 +18,7 @@ public class RoleController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAuthority('ROLE_SECURITY_ADMIN')")
+    @PreAuthorize("hasAuthority('ROLE_SECURITY_ADMIN') and #request.roleName() != 'SUPER_ADMIN'")
     public ResponseEntity<Void> assignRole(
             @PathVariable Long userId, 
             @Valid @RequestBody RoleAssignmentRequest request) {
@@ -27,7 +27,7 @@ public class RoleController {
     }
 
     @DeleteMapping("/{roleName}")
-    @PreAuthorize("hasAuthority('ROLE_SECURITY_ADMIN')")
+    @PreAuthorize("hasAuthority('ROLE_SECURITY_ADMIN') and #roleName != 'SUPER_ADMIN'")
     public ResponseEntity<Void> removeRole(
             @PathVariable Long userId, 
             @PathVariable String roleName) {
@@ -35,3 +35,6 @@ public class RoleController {
         return ResponseEntity.noContent().build();
     }
 }
+
+
+
