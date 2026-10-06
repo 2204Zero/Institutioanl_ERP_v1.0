@@ -1,13 +1,13 @@
 package com.erp;
 
 import com.erp.attendance.dto.AttendanceRecordRequest;
-import com.erp.finance.dto.FeeCreationRequest;
+import com.erp.finance.fee_structure.entity.FeeStructure;
 import com.erp.student.dto.StudentCreateRequest;
 
 
 import com.erp.attendance.dto.AttendanceRecordRequest;
 import com.erp.auth.dto.LoginRequest;
-import com.erp.finance.dto.FeeCreationRequest;
+import com.erp.finance.fee_structure.entity.FeeStructure;
 import com.erp.student.dto.StudentCreateRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
@@ -137,9 +137,9 @@ class RbacAndPermissionIntegrationTest {
     @DisplayName("Day 04 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Faculty: Should forbid faculty from managing fees")
     void shouldForbidFacultyFromManagingFees() throws Exception {
         String token = obtainAccessToken("faculty", "Faculty@123");
-        FeeCreationRequest feeRequest = new FeeCreationRequest(101L, "Semester 6", new BigDecimal("60000.00"), LocalDate.now().plusMonths(1));
+        FeeStructure feeRequest = new FeeStructure(); feeRequest.setName("Semester 6"); feeRequest.setCode("SEM6");
 
-        mockMvc.perform(post("/api/v1/finance/fees")
+        mockMvc.perform(post("/api/v1/finance/fee-structures")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(feeRequest)))
@@ -208,9 +208,9 @@ class RbacAndPermissionIntegrationTest {
     @DisplayName("Day 04 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Finance: Should allow managing fees with FEES_MANAGE permission")
     void shouldAllowFinanceToManageFees() throws Exception {
         String token = obtainAccessToken("finance", "Finance@123");
-        FeeCreationRequest feeRequest = new FeeCreationRequest(101L, "Semester 6", new BigDecimal("70000.00"), LocalDate.now().plusMonths(2));
+        FeeStructure feeRequest = new FeeStructure(); feeRequest.setName("Semester 6"); feeRequest.setCode("SEM6_ALT");
 
-        mockMvc.perform(post("/api/v1/finance/fees")
+        mockMvc.perform(post("/api/v1/finance/fee-structures")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(feeRequest)))
