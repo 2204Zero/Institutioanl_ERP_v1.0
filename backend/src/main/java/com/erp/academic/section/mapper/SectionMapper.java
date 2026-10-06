@@ -10,8 +10,7 @@ public class SectionMapper {
     public Section toEntity(SectionCreateRequest request) {
         Section entity = new Section();
         entity.setName(request.getName());
-        entity.setBatchId(request.getBatchId());
-        entity.setSemesterId(request.getSemesterId());
+        entity.setCourseOffering(com.erp.academic.course_offering.entity.CourseOffering.builder().id(request.getCourseOfferingId()).build());
         entity.setCapacity(request.getCapacity());
         entity.setCurrentEnrollment(0);
         entity.setIsActive(request.getIsActive());
@@ -23,8 +22,7 @@ public class SectionMapper {
         SectionResponse response = new SectionResponse();
         response.setId(entity.getId());
         response.setName(entity.getName());
-        response.setBatchId(entity.getBatchId());
-        response.setSemesterId(entity.getSemesterId());
+        response.setCourseOfferingId(entity.getCourseOffering() != null ? entity.getCourseOffering().getId() : null);
         response.setCapacity(entity.getCapacity());
         response.setCurrentEnrollment(entity.getCurrentEnrollment() != null ? entity.getCurrentEnrollment() : 0);
         response.setIsActive(entity.getIsActive());
@@ -38,11 +36,8 @@ public class SectionMapper {
         if (request.getName() != null) {
             entity.setName(request.getName());
         }
-        if (request.getBatchId() != null) {
-            entity.setBatchId(request.getBatchId());
-        }
-        if (request.getSemesterId() != null) {
-            entity.setSemesterId(request.getSemesterId());
+        if (request.getCourseOfferingId() != null) {
+            entity.setCourseOffering(com.erp.academic.course_offering.entity.CourseOffering.builder().id(request.getCourseOfferingId()).build());
         }
         if (request.getCapacity() != null) {
             entity.setCapacity(request.getCapacity());

@@ -12,7 +12,7 @@ import java.security.Key;
 import java.util.Date;
 import java.util.function.Function;
 
-@Service
+@Service("legacyJwtService")
 public class JwtService {
 
     private static final Key SECRET_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);

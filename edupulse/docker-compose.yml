@@ -1,0 +1,97 @@
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: edupulse_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: edupulse_erp
+      POSTGRES_USER: edupulse_admin
+      POSTGRES_PASSWORD: edupulse_secure_password_2026
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - edupulse_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U edupulse_admin -d edupulse_erp"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    container_name: edupulse_redis
+    restart: always
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "edupulse_redis_secret_2026"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - edupulse_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "edupulse_redis_secret_2026", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: edupulse_rabbitmq
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: edupulse_mq
+      RABBITMQ_DEFAULT_PASS: edupulse_mq_secret_2026
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - edupulse_net
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+
+  minio:
+    image: minio/minio:latest
+    container_name: edupulse_minio
+    restart: always
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: edupulse_minio_admin
+      MINIO_ROOT_PASSWORD: edupulse_minio_secret_2026
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - edupulse_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+networks:
+  edupulse_net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  rabbitmq_data:
+    driver: local
+  minio_data:
+    driver: local

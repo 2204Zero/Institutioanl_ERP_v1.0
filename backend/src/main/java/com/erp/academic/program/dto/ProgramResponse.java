@@ -1,7 +1,9 @@
 package com.erp.academic.program.dto;
 
+import lombok.ToString;
 import java.time.Instant;
 
+@ToString
 public class ProgramResponse {
     private Long id;
     private String name;

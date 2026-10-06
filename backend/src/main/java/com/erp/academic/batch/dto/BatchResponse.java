@@ -1,7 +1,9 @@
 package com.erp.academic.batch.dto;
 
+import lombok.ToString;
 import java.time.Instant;
 
+@ToString
 public class BatchResponse {
     private Long id;
     private String name;

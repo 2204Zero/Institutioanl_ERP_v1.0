@@ -5,10 +5,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-@Configuration
+@Configuration("legacyPasswordConfig")
 public class PasswordConfig {
-    @Bean
-    public PasswordEncoder passwordEncoder() {
+    @Bean("legacyPasswordEncoder")
+    public PasswordEncoder legacyPasswordEncoder() {
         return new BCryptPasswordEncoder();
     }
 }

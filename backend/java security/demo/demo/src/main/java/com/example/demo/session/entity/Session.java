@@ -16,7 +16,7 @@ public class Session {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(name = "session_token", nullable = false, unique = true)
+    @Column(name = "session_token", nullable = false, unique = true, length = 1024)
     private String sessionToken;
 
     @Column(name = "expires_at", nullable = false)

@@ -43,6 +43,18 @@ public enum Role {
             Permission.FEES_READ,
             Permission.FEES_CREATE,
             Permission.STUDENT_PROFILE_READ
+    )),
+    SECURITY_ADMIN("ROLE_SECURITY_ADMIN", EnumSet.of(
+            Permission.AUDIT_VIEW,
+            Permission.ROLE_ASSIGN,
+            Permission.ROLE_REMOVE,
+            Permission.SESSION_READ,
+            Permission.SESSION_DELETE,
+            Permission.USER_READ
+    )),
+    ADMISSION_OFFICER("ROLE_ADMISSION_OFFICER", EnumSet.of(
+            Permission.STUDENT_PROFILE_READ,
+            Permission.STUDENT_MANAGE
     ));
 
     private final String authority;

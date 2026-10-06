@@ -1,0 +1,94 @@
+spring:
+  application:
+    name: edupulse-erp
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/edupulse_erp?sslmode=disable&ApplicationName=EduPulse_Backend
+    username: edupulse_admin
+    password: edupulse_secure_password_2026
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      pool-name: EduPulseHikariPool
+      maximum-pool-size: 30
+      minimum-idle: 10
+      idle-timeout: 300000
+      connection-timeout: 20000
+      max-lifetime: 1200000
+      auto-commit: true
+      leak-detection-threshold: 60000
+
+  jpa:
+    database: postgresql
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    ddl-auto: validate
+    show-sql: false
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: false
+        jdbc:
+          batch_size: 50
+        order_inserts: true
+        order_updates: true
+        jdbc.lob.non_contextual_creation: true
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 0
+    locations: classpath:db/migration
+    table: schema_version_history
+    schemas: public
+    connect-retries: 5
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: edupulse_redis_secret_2026
+
+  cache:
+    type: redis
+    redis:
+      time-to-live: 3600000
+      cache-null-values: false
+
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: edupulse_mq
+    password: edupulse_mq_secret_2026
+    virtual-host: /
+    listener:
+      simple:
+        concurrency: 5
+        max-concurrency: 10
+
+server:
+  port: 8080
+  servlet:
+    context-path: /api/v1
+
+edupulse:
+  storage:
+    minio:
+      endpoint: http://localhost:9000
+      access-key: edupulse_minio_admin
+      secret-key: edupulse_minio_secret_2026
+      bucket-name: edupulse-documents
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  health:
+    db:
+      enabled: true
+    redis:
+      enabled: true
+    rabbit:
+      enabled: true

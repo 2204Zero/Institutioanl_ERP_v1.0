@@ -25,6 +25,8 @@ public class SessionServiceImpl implements SessionService {
     
     private final SessionRepository sessionRepository;
     private final UserRepository userRepository;
+    
+    private static final int MAX_ACTIVE_SESSIONS = 3;
 
     public SessionServiceImpl(SessionRepository sessionRepository, UserRepository userRepository) {
         this.sessionRepository = sessionRepository;
@@ -36,6 +38,19 @@ public class SessionServiceImpl implements SessionService {
     public SessionResponse createSession(Long userId, String token, long durationMillis) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", userId));
+
+        List<Session> activeSessions = sessionRepository.findByUserIdAndStatus(userId, "ACTIVE");
+        if (activeSessions.size() >= MAX_ACTIVE_SESSIONS) {
+            // Invalidate earliest sessions to make room
+            activeSessions.stream()
+                    .sorted((s1, s2) -> s1.getExpiresAt().compareTo(s2.getExpiresAt()))
+                    .limit(activeSessions.size() - MAX_ACTIVE_SESSIONS + 1)
+                    .forEach(s -> {
+                        s.setStatus("REVOKED");
+                        sessionRepository.save(s);
+                        log.info("Revoked older session to enforce concurrent limit for user {}", userId);
+                    });
+        }
 
         Session session = new Session();
         session.setUser(user);
@@ -100,7 +115,7 @@ public class SessionServiceImpl implements SessionService {
 
     @Override
     @Transactional
-    @Scheduled(fixedRate = 3600000) // Run every hour
+    @Scheduled(fixedRate = 3600000)
     public void cleanUpExpiredSessions() {
         List<Session> expired = sessionRepository.findByExpiresAtBeforeAndStatus(LocalDateTime.now(), "ACTIVE");
         expired.forEach(session -> session.setStatus("EXPIRED"));

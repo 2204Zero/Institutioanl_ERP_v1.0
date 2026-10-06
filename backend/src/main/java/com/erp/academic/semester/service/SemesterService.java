@@ -42,6 +42,8 @@ public class SemesterService {
             throw new BusinessException("Semester number " + request.getSemesterNumber() + " already exists for academic year " + request.getAcademicYearId());
         }
 
+        validateNoOverlap(request.getAcademicYearId(), request.getStartDate(), request.getEndDate(), null);
+
         Semester entity = mapper.toEntity(request);
         if (entity.getIsActive() == null) {
             entity.setIsActive(true);
@@ -83,6 +85,8 @@ public class SemesterService {
             throw new BusinessException("Semester number " + targetSemesterNumber + " already exists for academic year " + targetAcademicYearId);
         }
 
+        validateNoOverlap(targetAcademicYearId, targetStartDate, targetEndDate, id);
+
         mapper.updateEntity(entity, request);
         return mapper.toResponse(repository.save(entity));
     }
@@ -107,5 +111,12 @@ public class SemesterService {
             throw new SemesterNotFoundException(id);
         }
         repository.deleteById(id);
+    }
+
+    private void validateNoOverlap(Long academicYearId, LocalDate startDate, LocalDate endDate, Long excludeId) {
+        List<Semester> overlaps = repository.findOverlapping(academicYearId, startDate, endDate, excludeId);
+        if (!overlaps.isEmpty()) {
+            throw new ValidationException("Semester dates cannot overlap with existing semesters in the same academic year");
+        }
     }
 }

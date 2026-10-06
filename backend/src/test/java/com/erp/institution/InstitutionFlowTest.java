@@ -22,13 +22,32 @@ import com.erp.academic.batch.dto.BatchCreateRequest;
 import com.erp.academic.batch.dto.BatchResponse;
 import com.erp.academic.batch.service.BatchService;
 
+import com.erp.academic.course.dto.CourseCreateRequest;
+import com.erp.academic.course.dto.CourseResponse;
+import com.erp.academic.course.service.CourseService;
+import com.erp.academic.course_offering.entity.CourseOffering;
+import com.erp.academic.course_offering.service.CourseOfferingService;
+import com.erp.academic.curriculum.dto.CurriculumCreateRequest;
+import com.erp.academic.curriculum.dto.CurriculumResponse;
+import com.erp.academic.curriculum.service.CurriculumService;
+import com.erp.academic.subject.dto.SubjectCreateRequest;
+import com.erp.academic.subject.dto.SubjectResponse;
+import com.erp.academic.subject.service.SubjectService;
+import com.erp.academic.section.dto.SectionCreateRequest;
+import com.erp.academic.section.dto.SectionResponse;
+import com.erp.academic.section.service.SectionService;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 
-@SpringBootTest
+@SpringBootTest(properties = {
+    "spring.jpa.show-sql=false", 
+    "logging.level.org.hibernate.SQL=WARN", 
+    "logging.level.org.hibernate.type.descriptor.sql.BasicBinder=WARN"
+})
 public class InstitutionFlowTest {
 
     @Autowired private InstitutionService institutionService;
@@ -38,6 +57,11 @@ public class InstitutionFlowTest {
     @Autowired private SemesterService semesterService;
     @Autowired private ProgramService programService;
     @Autowired private BatchService batchService;
+    @Autowired private CourseService courseService;
+    @Autowired private CurriculumService curriculumService;
+    @Autowired private SubjectService subjectService;
+    @Autowired private SectionService sectionService;
+    @Autowired private CourseOfferingService courseOfferingService;
 
     @Test
     @Transactional
@@ -99,6 +123,54 @@ public class InstitutionFlowTest {
         batchReq.setIsActive(true);
         BatchResponse batch = batchService.create(batchReq);
         System.out.println("[Batch Created] -> " + batch);
+
+        // 8. Create Course
+        CourseCreateRequest courseReq = new CourseCreateRequest();
+        courseReq.setCode("CS101");
+        courseReq.setName("Introduction to Computer Science");
+        courseReq.setCourseType("CORE");
+        courseReq.setCredits(4);
+        courseReq.setDepartmentId(department.id());
+        courseReq.setProgramId(program.getId());
+        courseReq.setIsActive(true);
+        CourseResponse course = courseService.create(courseReq);
+        System.out.println("[Course Created] -> " + course);
+
+        // 9. Create Curriculum
+        CurriculumCreateRequest curriculumReq = new CurriculumCreateRequest();
+        curriculumReq.setVersion("v1.0");
+        curriculumReq.setProgramId(program.getId());
+        curriculumReq.setSemesterId(semester.getId());
+        curriculumReq.setEffectiveAcademicYearId(academicYear.id());
+        curriculumReq.setTotalCredits(120);
+        curriculumReq.setIsActive(true);
+        CurriculumResponse curriculum = curriculumService.create(curriculumReq);
+        System.out.println("[Curriculum Created] -> " + curriculum);
+
+        // 10. Create Subject
+        SubjectCreateRequest subjectReq = new SubjectCreateRequest();
+        subjectReq.setCode("CS101-TH");
+        subjectReq.setName("Intro to CS Theory");
+        subjectReq.setSubjectType("CORE");
+        subjectReq.setCredits(3);
+        subjectReq.setIsPractical(false);
+        subjectReq.setDepartmentId(department.id());
+        subjectReq.setCourseId(course.getId());
+        subjectReq.setProgramId(program.getId());
+        subjectReq.setIsActive(true);
+        SubjectResponse subject = subjectService.create(subjectReq);
+        System.out.println("[Subject Created] -> " + subject);
+
+        // 11. Create Section/Class
+        CourseOffering offering = courseOfferingService.createCourseOffering(course.getId(), semester.getId(), 60);
+
+        SectionCreateRequest sectionReq = new SectionCreateRequest();
+        sectionReq.setName("Section A");
+        sectionReq.setCourseOfferingId(offering.getId());
+        sectionReq.setCapacity(60);
+        sectionReq.setIsActive(true);
+        SectionResponse section = sectionService.create(sectionReq);
+        System.out.println("[Section Created] -> " + section);
 
         System.out.println("\n========== DEMONSTRATION SUCCESSFUL ==========");
     }
