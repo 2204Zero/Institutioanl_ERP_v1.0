@@ -22,11 +22,9 @@ public class Section {
     @Column(nullable = false)
     private String name;
 
-    @Column(name = "batch_id", nullable = false)
-    private Long batchId;
-
-    @Column(name = "semester_id", nullable = false)
-    private Long semesterId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "course_offering_id", nullable = false)
+    private com.erp.academic.course_offering.entity.CourseOffering courseOffering;
 
     @Column(nullable = false)
     private Integer capacity;

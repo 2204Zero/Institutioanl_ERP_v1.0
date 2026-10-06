@@ -8,6 +8,8 @@ import com.erp.academic.batch.service.BatchService;
 import com.erp.academic.course.dto.CourseCreateRequest;
 import com.erp.academic.course.dto.CourseResponse;
 import com.erp.academic.course.service.CourseService;
+import com.erp.academic.course_offering.entity.CourseOffering;
+import com.erp.academic.course_offering.service.CourseOfferingService;
 import com.erp.academic.curriculum.dto.CurriculumCourseAssignRequest;
 import com.erp.academic.curriculum.dto.CurriculumCreateRequest;
 import com.erp.academic.curriculum.dto.CurriculumResponse;
@@ -75,6 +77,9 @@ class AcademicDomainFlowIntegrationTest {
 
     @Autowired
     private SectionService sectionService;
+
+    @Autowired
+    private CourseOfferingService courseOfferingService;
 
     private Long academicYearId;
     private Long departmentId;
@@ -315,10 +320,11 @@ class AcademicDomainFlowIntegrationTest {
         // -------------------------------------------------------------
         // DAY 06: Section / Class Management
         // -------------------------------------------------------------
+        CourseOffering offering = courseOfferingService.createCourseOffering(aiCourse.getId(), sem1.getId(), 60);
+
         SectionCreateRequest secReq = SectionCreateRequest.builder()
                 .name("Section A")
-                .batchId(batch.getId())
-                .semesterId(sem1.getId())
+                .courseOfferingId(offering.getId())
                 .capacity(2) // Capacity = 2
                 .isActive(true)
                 .build();

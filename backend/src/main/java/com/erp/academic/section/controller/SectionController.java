@@ -25,10 +25,9 @@ public class SectionController {
     @GetMapping
     public ResponseEntity<List<SectionResponse>> getAll(
             @RequestParam(required = false) String search,
-            @RequestParam(required = false) Long batchId,
-            @RequestParam(required = false) Long semesterId,
+            @RequestParam(required = false) Long courseOfferingId,
             @RequestParam(required = false) Boolean isActive) {
-        return ResponseEntity.ok(service.getAll(search, batchId, semesterId, isActive));
+        return ResponseEntity.ok(service.getAll(search, courseOfferingId, isActive));
     }
 
     @GetMapping("/{id}")

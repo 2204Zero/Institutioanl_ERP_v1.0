@@ -1,6 +1,6 @@
 package com.erp.academic.section.service;
 
-import com.erp.academic.batch.repository.BatchRepository;
+import com.erp.academic.course_offering.repository.CourseOfferingRepository;
 import com.erp.academic.section.dto.*;
 import com.erp.academic.section.entity.Section;
 import com.erp.academic.section.entity.SectionFaculty;
@@ -10,7 +10,6 @@ import com.erp.academic.section.mapper.SectionMapper;
 import com.erp.academic.section.repository.SectionFacultyRepository;
 import com.erp.academic.section.repository.SectionRepository;
 import com.erp.academic.section.repository.SectionStudentRepository;
-import com.erp.academic.semester.repository.SemesterRepository;
 import com.erp.academic.subject.entity.Subject;
 import com.erp.academic.subject.repository.SubjectRepository;
 import com.erp.common.exception.BusinessException;
@@ -34,20 +33,15 @@ public class SectionService {
     private final SectionRepository repository;
     private final SectionStudentRepository sectionStudentRepository;
     private final SectionFacultyRepository sectionFacultyRepository;
-    private final BatchRepository batchRepository;
-    private final SemesterRepository semesterRepository;
+    private final CourseOfferingRepository courseOfferingRepository;
     private final StudentRepository studentRepository;
     private final SubjectRepository subjectRepository;
     private final SectionMapper mapper;
 
     @Transactional
     public SectionResponse create(SectionCreateRequest request) {
-        if (!batchRepository.existsById(request.getBatchId())) {
-            throw new ResourceNotFoundException("Batch not found with id: " + request.getBatchId());
-        }
-
-        if (!semesterRepository.existsById(request.getSemesterId())) {
-            throw new ResourceNotFoundException("Semester not found with id: " + request.getSemesterId());
+        if (!courseOfferingRepository.existsById(request.getCourseOfferingId())) {
+            throw new ResourceNotFoundException("Course Offering not found with id: " + request.getCourseOfferingId());
         }
 
         if (request.getCapacity() <= 0) {
@@ -63,8 +57,8 @@ public class SectionService {
     }
 
     @Transactional(readOnly = true)
-    public List<SectionResponse> getAll(String search, Long batchId, Long semesterId, Boolean isActive) {
-        return repository.searchAndFilter(search, batchId, semesterId, isActive).stream()
+    public List<SectionResponse> getAll(String search, Long courseOfferingId, Boolean isActive) {
+        return repository.searchAndFilter(search, courseOfferingId, isActive).stream()
                 .map(mapper::toResponse)
                 .collect(Collectors.toList());
     }
@@ -79,12 +73,8 @@ public class SectionService {
     public SectionResponse update(Long id, SectionUpdateRequest request) {
         Section entity = repository.findById(id).orElseThrow(() -> new SectionNotFoundException(id));
 
-        if (request.getBatchId() != null && !batchRepository.existsById(request.getBatchId())) {
-            throw new ResourceNotFoundException("Batch not found with id: " + request.getBatchId());
-        }
-
-        if (request.getSemesterId() != null && !semesterRepository.existsById(request.getSemesterId())) {
-            throw new ResourceNotFoundException("Semester not found with id: " + request.getSemesterId());
+        if (request.getCourseOfferingId() != null && !courseOfferingRepository.existsById(request.getCourseOfferingId())) {
+            throw new ResourceNotFoundException("Course Offering not found with id: " + request.getCourseOfferingId());
         }
 
         if (request.getCapacity() != null) {

@@ -23,6 +23,10 @@ public class AcademicYearService {
     }
 
     public AcademicYearResponse create(AcademicYearCreateRequest request) {
+        validateDates(request.startDate(), request.endDate(), null);
+        if (Boolean.TRUE.equals(request.isActive())) {
+            validateSingleActiveYear(null);
+        }
         AcademicYear entity = mapper.toEntity(request);
         return mapper.toResponse(repository.save(entity));
     }
@@ -40,7 +44,19 @@ public class AcademicYearService {
 
     public AcademicYearResponse update(Long id, AcademicYearUpdateRequest request) {
         AcademicYear entity = repository.findById(id).orElseThrow(() -> new AcademicYearNotFoundException(id));
-        // map updates
+        
+        validateDates(request.startDate() != null ? request.startDate() : entity.getStartDate(),
+                      request.endDate() != null ? request.endDate() : entity.getEndDate(), id);
+        
+        if (Boolean.TRUE.equals(request.isActive())) {
+            validateSingleActiveYear(id);
+        }
+
+        if (request.name() != null) entity.setName(request.name());
+        if (request.startDate() != null) entity.setStartDate(request.startDate());
+        if (request.endDate() != null) entity.setEndDate(request.endDate());
+        if (request.isActive() != null) entity.setIsActive(request.isActive());
+
         return mapper.toResponse(repository.save(entity));
     }
 
@@ -49,5 +65,25 @@ public class AcademicYearService {
             throw new AcademicYearNotFoundException(id);
         }
         repository.deleteById(id);
+    }
+
+    private void validateDates(java.time.LocalDate startDate, java.time.LocalDate endDate, Long excludeId) {
+        if (startDate != null && endDate != null && startDate.isAfter(endDate)) {
+            throw new IllegalArgumentException("Start date must be before end date");
+        }
+        if (startDate != null && endDate != null) {
+            List<AcademicYear> overlaps = repository.findOverlapping(startDate, endDate, excludeId);
+            if (!overlaps.isEmpty()) {
+                throw new IllegalArgumentException("Academic year dates cannot overlap with existing years");
+            }
+        }
+    }
+
+    private void validateSingleActiveYear(Long excludeId) {
+        List<AcademicYear> activeYears = excludeId == null ? 
+            repository.findAllActive() : repository.findActiveExcluding(excludeId);
+        if (!activeYears.isEmpty()) {
+            throw new IllegalArgumentException("Only one academic year can be active at a time");
+        }
     }
 }
