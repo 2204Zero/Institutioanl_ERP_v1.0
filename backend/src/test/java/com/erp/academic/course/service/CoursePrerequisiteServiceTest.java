@@ -59,8 +59,6 @@ public class CoursePrerequisiteServiceTest {
         CoursePrerequisite existingReq = CoursePrerequisite.builder()
                 .course(courseB).prerequisiteCourse(courseA).build();
         when(prerequisiteRepository.findByCourseId(2L)).thenReturn(List.of(existingReq));
-        when(prerequisiteRepository.findByCourseId(1L)).thenReturn(List.of());
-
         BusinessException exception = assertThrows(BusinessException.class, () -> 
             prerequisiteService.addPrerequisite(1L, 2L));
 
