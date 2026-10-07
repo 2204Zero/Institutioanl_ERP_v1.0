@@ -1,0 +1,109 @@
+================================================================================
+INSTITUTIONAL ERP v1.0 — STUDENT INFORMATION SYSTEM (SIS)
+TEST CASES: DAY 01 — DATABASE SCHEMA & CONSTRAINTS
+Author: Palak Agarwal
+Module: Student Information System (Database Layer)
+================================================================================
+
+TC_DB_001: Table Creation - students table
+--------------------------------------------------------------------------------
+Objective    : Verify that the `students` table is created with all required columns,
+               data types, primary key, and unique constraints.
+Input Script : database/schema/01_student_schema.sql
+Expected SQL :
+    CREATE TABLE IF NOT EXISTS students (
+        id BIGSERIAL PRIMARY KEY,
+        roll_number VARCHAR(50) NOT NULL UNIQUE,
+        first_name VARCHAR(100) NOT NULL,
+        last_name VARCHAR(100) NOT NULL,
+        email VARCHAR(150) NOT NULL UNIQUE,
+        phone VARCHAR(20) NOT NULL,
+        date_of_birth DATE NOT NULL,
+        gender VARCHAR(20) NOT NULL,
+        blood_group VARCHAR(10),
+        address VARCHAR(255),
+        city VARCHAR(100),
+        state VARCHAR(100),
+        pincode VARCHAR(20),
+        department VARCHAR(100) NOT NULL,
+        program VARCHAR(100),
+        batch VARCHAR(50) NOT NULL,
+        enrollment_date DATE NOT NULL,
+        status VARCHAR(30) NOT NULL DEFAULT 'ACTIVE',
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    );
+Expected Out : Table created successfully. Primary key `id`, Unique keys `roll_number`, `email`.
+Actual Status: PASS (Verified in schema and H2/PostgreSQL migration).
+
+--------------------------------------------------------------------------------
+TC_DB_002: Table Creation - guardians table & Foreign Key linkage
+--------------------------------------------------------------------------------
+Objective    : Verify that the `guardians` table is created and establishes a 1:N
+               foreign key relationship with `students(id)` with ON DELETE CASCADE.
+Input Script : database/schema/02_guardian_schema.sql
+Expected SQL :
+    CREATE TABLE IF NOT EXISTS guardians (
+        id BIGSERIAL PRIMARY KEY,
+        student_id BIGINT REFERENCES students(id) ON DELETE CASCADE,
+        first_name VARCHAR(100) NOT NULL,
+        last_name VARCHAR(100) NOT NULL,
+        relation VARCHAR(50) NOT NULL,
+        phone VARCHAR(20) NOT NULL,
+        email VARCHAR(150),
+        occupation VARCHAR(100),
+        address VARCHAR(255),
+        is_emergency_contact BOOLEAN NOT NULL DEFAULT FALSE,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    );
+Expected Out : Foreign key `guardians.student_id -> students.id` with CASCADE deletion.
+Actual Status: PASS.
+
+--------------------------------------------------------------------------------
+TC_DB_003: Table Creation - student_documents table
+--------------------------------------------------------------------------------
+Objective    : Verify `student_documents` table stores document types (Aadhaar, Marksheet, etc.)
+               and links to parent student record.
+Input Script : database/schema/03_document_schema.sql
+Expected SQL :
+    CREATE TABLE IF NOT EXISTS student_documents (
+        id BIGSERIAL PRIMARY KEY,
+        student_id BIGINT NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+        document_type VARCHAR(50) NOT NULL,
+        file_name VARCHAR(255) NOT NULL,
+        original_file_name VARCHAR(255) NOT NULL,
+        file_type VARCHAR(100) NOT NULL,
+        file_size BIGINT NOT NULL,
+        storage_path VARCHAR(500) NOT NULL,
+        uploaded_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    );
+Expected Out : Table created with indexes `idx_student_documents_student_id` & `idx_student_documents_type`.
+Actual Status: PASS.
+
+--------------------------------------------------------------------------------
+TC_DB_004: Table Creation - student_status_history table
+--------------------------------------------------------------------------------
+Objective    : Verify `student_status_history` table records audit changes of student status.
+Input Script : database/schema/04_status_schema.sql
+Expected SQL :
+    CREATE TABLE IF NOT EXISTS student_status_history (
+        id BIGSERIAL PRIMARY KEY,
+        student_id BIGINT NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+        previous_status VARCHAR(30),
+        new_status VARCHAR(30) NOT NULL,
+        reason VARCHAR(500),
+        changed_by VARCHAR(100),
+        changed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    );
+Expected Out : Audit log table successfully created with foreign key to students.
+Actual Status: PASS.
+
+--------------------------------------------------------------------------------
+TC_DB_005: Seed Data Execution
+--------------------------------------------------------------------------------
+Objective    : Verify seed script inserts baseline records across all 4 tables without key violations.
+Input Script : database/seeds/01_student_seeds.sql
+Expected Out : 5 Student records, 4 Guardian records, 4 Document records, 6 Status Audit records inserted.
+Actual Status: PASS.
+================================================================================

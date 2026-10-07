@@ -1,0 +1,22 @@
+package com.erp.academic.section.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.Instant;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class SectionStudentResponse {
+    private Long id;
+    private Long sectionId;
+    private Long studentId;
+    private String rollNumber;
+    private String studentName;
+    private Instant assignedAt;
+    private Boolean isActive;
+}
