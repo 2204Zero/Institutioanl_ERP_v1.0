@@ -7,6 +7,7 @@ import { Input } from '../components/ui/input';
 import { useQuery } from '@tanstack/react-query';
 import type { PaginatedResponse, Student } from '../types/student';
 import { CreateStudentDialog } from '../components/CreateStudentDialog';
+import { Skeleton } from '../components/ui/skeleton';
 import { useDebounce } from '../hooks/useDebounce';
 import {
   Table,
@@ -49,39 +50,35 @@ export default function StudentsList() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 mb-1">Students</h1>
-          <p className="text-slate-500 text-sm">Manage student records, enrollments, and academic statuses.</p>
+          <p className="text-slate-500 text-sm">Manage student profiles, academic records, and status.</p>
         </div>
         <CreateStudentDialog />
       </div>
 
-      {/* Toolbar */}
-      <div className="bg-white p-4 rounded-t-2xl border-b border-slate-100 flex justify-between items-center shadow-sm mt-4">
-        <div className="flex items-center space-x-4">
-          <div className="relative">
+      <div className="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center p-4 sm:p-6 gap-4">
+        <div className="flex w-full md:w-auto items-center space-x-4">
+          <div className="relative w-full sm:w-72">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <Input 
               type="text" 
               placeholder="Search students..." 
-              className="pl-9 pr-4 py-2 bg-slate-50 border-slate-200 rounded-lg text-sm w-full sm:w-72 h-10"
               value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setPage(0); // Reset page on new search
-              }}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9 pr-4 py-2 bg-slate-50 border-slate-200 rounded-lg text-sm w-full h-10"
             />
           </div>
-          <Button variant="outline" className="flex items-center space-x-2 h-10 text-slate-600 border-slate-200">
-            <Filter className="w-4 h-4" />
-            <span>Filters</span>
+          <Button variant="outline" className="h-10 text-slate-600 border-slate-200">
+            <Filter className="w-4 h-4 mr-2" />
+            Filters
           </Button>
         </div>
-        <div className="text-sm text-slate-500 font-medium">
-          Showing {students.length} of {totalElements} students
+        <div className="text-sm text-slate-500 font-medium whitespace-nowrap">
+          {totalElements} students total
         </div>
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-b-2xl shadow-sm border border-slate-100 border-t-0">
+      <div className="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-x-auto mt-6">
         <Table>
           <TableHeader className="bg-slate-50">
             <TableRow>
@@ -95,13 +92,16 @@ export default function StudentsList() {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center text-slate-500">
-                  <div className="flex justify-center items-center">
-                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                  </div>
-                </TableCell>
-              </TableRow>
+              Array.from({ length: 5 }).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell className="px-6 py-4"><Skeleton className="h-4 w-32" /><Skeleton className="h-3 w-24 mt-2" /></TableCell>
+                  <TableCell className="px-6 py-4"><Skeleton className="h-4 w-20" /></TableCell>
+                  <TableCell className="px-6 py-4"><Skeleton className="h-4 w-24" /></TableCell>
+                  <TableCell className="px-6 py-4"><Skeleton className="h-4 w-16" /></TableCell>
+                  <TableCell className="px-6 py-4"><Skeleton className="h-6 w-16 rounded-full" /></TableCell>
+                  <TableCell className="px-6 py-4"><Skeleton className="h-8 w-8 rounded-md ml-auto" /></TableCell>
+                </TableRow>
+              ))
             ) : isError ? (
               <TableRow>
                 <TableCell colSpan={6} className="h-24 text-center text-destructive">Failed to load students.</TableCell>
@@ -119,8 +119,8 @@ export default function StudentsList() {
                 >
                   <TableCell className="px-6 py-4">
                     <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 rounded-full bg-primary/20 text-primary font-bold flex items-center justify-center uppercase">
-                        {student.firstName?.charAt(0) || 'U'}
+                      <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold border border-slate-200">
+                        {student.firstName[0]}{student.lastName[0]}
                       </div>
                       <div>
                         <div className="font-semibold text-slate-900">{student.firstName} {student.lastName}</div>
@@ -171,9 +171,5 @@ export default function StudentsList() {
     </div>
   );
 }
-
-
-
-
 
 

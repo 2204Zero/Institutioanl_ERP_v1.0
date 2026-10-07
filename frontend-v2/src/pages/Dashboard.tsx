@@ -1,150 +1,364 @@
 import React from 'react';
 import { useAuthStore } from '../store/useAuthStore';
 import { useNavigate } from 'react-router-dom';
-import { Users, Bell, Search, PlusCircle, ArrowUpRight, ArrowDownRight, Loader2 } from 'lucide-react';
+import { 
+  User, Users, Bell, Search, PlusCircle, ArrowUpRight, ArrowDownRight, 
+  Loader2, BookOpen, GraduationCap, Calendar, Clock, CreditCard, CalendarCheck, Wallet, 
+  Building2, MapPin, Briefcase, Store, ShieldAlert, FileText, CheckCircle
+} from 'lucide-react';
 import { apiClient } from '../config/api';
 import { useQuery } from '@tanstack/react-query';
 import type { PaginatedResponse, Student } from '../types/student';
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer
-} from 'recharts';
-
-const mockChartData = [
-  { name: 'Jan', enrollments: 40, dropouts: 24 },
-  { name: 'Feb', enrollments: 30, dropouts: 13 },
-  { name: 'Mar', enrollments: 20, dropouts: 48 },
-  { name: 'Apr', enrollments: 27, dropouts: 39 },
-  { name: 'May', enrollments: 18, dropouts: 48 },
-  { name: 'Jun', enrollments: 23, dropouts: 38 },
-  { name: 'Jul', enrollments: 34, dropouts: 43 },
-];
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { user } = useAuthStore();
+  const role = user?.role || '';
+
+  const isAdmin = role === 'SUPER_ADMIN' || role === 'ADMIN';
+
   const { data: studentsData, isLoading, isError } = useQuery<PaginatedResponse<Student>>({
-    queryKey: ['students'],
+    queryKey: ['recent-students'],
+    enabled: isAdmin,
     queryFn: async () => {
-      const res = await apiClient.get('/students');
+      const res = await apiClient.get('/students', {
+        params: { page: 0, size: 5 }
+      });
       return res.data?.data;
     }
   });
 
-  const students = studentsData?.content || [];
+  const recentStudents = studentsData?.content || [];
 
-  return (
-    <div className="p-4 md:p-8">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-        <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
-        <div className="flex items-center space-x-4">
-          <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input 
-              type="text" 
-              placeholder="Search here" 
-              className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 w-full sm:w-64"
-            />
-          </div>
-          <button className="w-10 h-10 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-600 hover:bg-slate-50">
-            <Bell className="w-4 h-4" />
-          </button>
-          <button onClick={() => navigate('/dashboard/admissions')} className="flex items-center space-x-2 bg-black text-white hover:bg-slate-800 px-4 py-2 rounded-full text-sm font-semibold shadow-sm">
-            <span>New Admission</span>
-            <PlusCircle className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-
-      {/* Top Metric Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        {/* Dark Card */}
-        <div className="bg-black text-white p-6 rounded-[32px] shadow-xl shadow-black/10 relative overflow-hidden">
-          <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center mb-6">
-            <Users className="w-5 h-5 text-white" />
-          </div>
-          <div className="text-slate-400 text-sm mb-1">Total Active Students</div>
-          <div className="text-3xl font-bold text-white mb-4">{studentsData?.totalElements || students.length || '--'}</div>
-          <div className="text-xs text-slate-500 mt-2">Active enrollments</div>
-          <button className="absolute top-6 right-6 w-8 h-8 rounded-full border border-white/20 flex items-center justify-center hover:bg-white/10 transition-colors">
-            <ArrowUpRight className="w-4 h-4 text-slate-300" />
-          </button>
-        </div>
-
-        {/* Light Cards */}
-        <div className="bg-white p-6 rounded-[32px] shadow-sm relative border border-slate-100">
-          <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center mb-6">
-            <Users className="w-5 h-5 text-black" />
-          </div>
-          <div className="text-slate-500 text-sm mb-1">Pending Admissions</div>
-          <div className="text-3xl font-bold text-slate-300 mb-4">
-            --
-          </div>
-          <div className="text-xs text-slate-400 mt-2">API Missing</div>
-        </div>
-
-        <div className="bg-white p-6 rounded-[32px] shadow-sm relative border border-slate-100 flex items-center justify-between">
-          <div>
-            <div className="text-slate-500 text-sm mb-1">Attendance Today</div>
-            <div className="text-3xl font-bold text-slate-300 mb-4">
-              --
+  // ---------------------------------------------------------
+  // 1. SUPER_ADMIN Dashboard
+  // ---------------------------------------------------------
+  if (role === 'SUPER_ADMIN') {
+    return (
+      <div className="p-4 md:p-8 max-w-7xl mx-auto">
+        <div className="mb-8">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold text-slate-900">System Overview</h1>
+              <p className="text-slate-500 mt-1">Logged in as SUPER_ADMIN • EduPulse ERP</p>
             </div>
-            <div className="text-xs text-slate-400 mt-2">API Missing</div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-[32px] shadow-sm relative border border-slate-100 flex items-center justify-between">
-          <div>
-            <div className="text-slate-500 text-sm mb-1">Outstanding Fees</div>
-            <div className="text-3xl font-bold text-slate-300 mb-4">--</div>
-            <div className="text-xs text-slate-400 mt-2">API Missing</div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex items-center space-x-4">
+            <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-400">
+              <Users className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="text-slate-500 text-sm font-medium">Total Students</div>
+              <div className="text-xl font-bold text-slate-900 mt-1">{studentsData?.totalElements ?? 'Unavailable'}</div>
+            </div>
+          </div>
+          <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex items-center space-x-4">
+            <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-400">
+              <Briefcase className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="text-slate-500 text-sm font-medium">Faculty/Staff</div>
+              <div className="text-sm font-semibold text-slate-400 mt-1">Data unavailable</div>
+            </div>
+          </div>
+          <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex items-center space-x-4">
+            <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-400">
+              <Building2 className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="text-slate-500 text-sm font-medium">Campuses</div>
+              <div className="text-sm font-semibold text-slate-400 mt-1">Data unavailable</div>
+            </div>
+          </div>
+          <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex items-center space-x-4">
+            <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-400">
+              <ShieldAlert className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="text-slate-500 text-sm font-medium">Active Users</div>
+              <div className="text-sm font-semibold text-slate-400 mt-1">Data unavailable</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
+            <h2 className="text-lg font-bold text-slate-900 mb-4">Requires Attention</h2>
+            <div className="text-slate-500 text-sm py-8 text-center border-2 border-dashed border-slate-100 rounded-xl">
+              No pending system issues or alerts.
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex flex-col">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-lg font-bold text-slate-900">Recent Enrollments</h2>
+              <button onClick={() => navigate('/dashboard/students')} className="text-sm text-blue-600 hover:text-blue-700 font-semibold">View All</button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4">
+              {isLoading ? (
+                <div className="flex items-center justify-center h-full"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>
+              ) : isError ? (
+                <div className="text-sm text-red-500 text-center py-4">Failed to load recent students.</div>
+              ) : recentStudents.length === 0 ? (
+                <div className="text-sm text-slate-500 text-center py-4">No recent enrollments.</div>
+              ) : (
+                recentStudents.map((student) => (
+                  <div key={student.id} className="flex items-center justify-between group cursor-pointer" onClick={() => navigate(`/dashboard/students/${student.id}`)}>
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 font-bold text-sm">
+                        {student.firstName[0]}{student.lastName[0]}
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                          {student.firstName} {student.lastName}
+                        </div>
+                        <div className="text-xs text-slate-500">{student.department || 'Unassigned'}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
       </div>
+    );
+  }
 
-      {/* Bottom Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-         {/* Chart Section */}
-         <div className="lg:col-span-2 bg-white rounded-[32px] p-6 shadow-sm border border-slate-100">
-           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-              <h3 className="font-bold text-lg">Fee Collection vs Outstanding</h3>
-              <div className="flex items-center space-x-4 text-sm">
-                 <div className="flex items-center"><div className="w-2 h-2 rounded-full bg-[#000000] mr-2"></div>Collected</div>
-                 <div className="flex items-center"><div className="w-2 h-2 rounded-full bg-slate-300 mr-2"></div>Outstanding</div>
-              </div>
-           </div>
-           
-           <div className="h-[300px] w-full flex items-center justify-center border-2 border-dashed border-slate-100 rounded-2xl">
-             <div className="text-center text-slate-400">
-               <div className="text-sm font-medium">No fee collection data available yet.</div>
-               <div className="text-xs mt-1">Backend/API dependency</div>
-             </div>
-           </div>
-         </div>
+  // ---------------------------------------------------------
+  // 2. ADMIN Dashboard
+  // ---------------------------------------------------------
+  if (role === 'ADMIN') {
+    return (
+      <div className="p-4 md:p-8 max-w-7xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-slate-900">Institutional Administration</h1>
+          <p className="text-slate-500 mt-1">Manage institutional configuration and students.</p>
+        </div>
 
-         {/* List Section */}
-         <div className="bg-white rounded-[32px] p-6 shadow-sm border border-slate-100 flex flex-col h-full">
-           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-             <h3 className="font-bold text-lg">Recent Activity</h3>
-             <button className="text-black font-semibold text-sm hover:underline" disabled>View All</button>
-           </div>
-           <div className="flex-1 flex flex-col items-center justify-center text-slate-400">
-             <div className="text-sm font-medium">No recent activity found.</div>
-             <div className="text-xs mt-1">Audit API not yet integrated</div>
-           </div>
-         </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex flex-col">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-lg font-bold text-slate-900">Student Activity</h2>
+              <button onClick={() => navigate('/dashboard/students')} className="text-sm text-blue-600 hover:text-blue-700 font-semibold">Manage All</button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4">
+              {isLoading ? (
+                <div className="flex items-center justify-center h-full"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>
+              ) : isError ? (
+                <div className="text-sm text-red-500 text-center py-4">Failed to load recent students.</div>
+              ) : recentStudents.length === 0 ? (
+                <div className="text-sm text-slate-500 text-center py-4 border-2 border-dashed border-slate-100 rounded-xl py-12">
+                   <Users className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                   No recent student updates available.
+                </div>
+              ) : (
+                recentStudents.map((student) => (
+                  <div key={student.id} className="flex items-center justify-between group cursor-pointer hover:bg-slate-50 p-2 rounded-xl transition-colors" onClick={() => navigate(`/dashboard/students/${student.id}`)}>
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 font-bold text-sm">
+                        {student.firstName[0]}{student.lastName[0]}
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                          {student.firstName} {student.lastName}
+                        </div>
+                        <div className="text-xs text-slate-500">{student.email || 'No Email'}</div>
+                      </div>
+                    </div>
+                    <div className="text-xs font-semibold text-slate-400">
+                      {student.status || 'ACTIVE'}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
+            <h2 className="text-lg font-bold text-slate-900 mb-4">Requires Attention</h2>
+            <div className="text-slate-500 text-sm py-8 text-center border-2 border-dashed border-slate-100 rounded-xl">
+              <ShieldAlert className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+              No administrative items require attention.
+            </div>
+          </div>
+        </div>
       </div>
+    );
+  }
+
+  // ---------------------------------------------------------
+  // 3. FACULTY Dashboard
+  // ---------------------------------------------------------
+  if (role === 'FACULTY') {
+    return (
+      <div className="p-4 md:p-8 max-w-7xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-slate-900">Faculty Portal</h1>
+          <p className="text-slate-500 mt-1">Manage your academic schedule and attendance.</p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+          <div className="lg:col-span-2 bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-lg font-bold text-slate-900">Today's Schedule</h2>
+            </div>
+            <div className="text-slate-500 text-sm py-12 text-center border-2 border-dashed border-slate-100 rounded-xl">
+              <Calendar className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+              No schedule data available for today.
+            </div>
+          </div>
+
+          <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex flex-col">
+            <h2 className="text-lg font-bold text-slate-900 mb-4">Quick Actions</h2>
+            <button onClick={() => navigate('/dashboard/attendance')} className="w-full bg-black text-white font-semibold py-3 rounded-xl hover:bg-black/90 transition-colors mb-3 shadow-md">
+              Take Attendance
+            </button>
+            <button onClick={() => navigate('/dashboard/attendance')} className="w-full bg-white border border-slate-200 text-slate-700 font-semibold py-3 rounded-xl hover:bg-slate-50 transition-colors mb-3">
+              View Attendance
+            </button>
+            <button onClick={() => navigate('/dashboard/students')} className="w-full bg-white border border-slate-200 text-slate-700 font-semibold py-3 rounded-xl hover:bg-slate-50 transition-colors">
+              View Students
+            </button>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
+          <h2 className="text-lg font-bold text-slate-900 mb-4">Classes Requiring Attendance</h2>
+          <div className="text-slate-500 text-sm py-8 text-center border-2 border-dashed border-slate-100 rounded-xl">
+            <CheckCircle className="w-8 h-8 text-green-300 mx-auto mb-2" />
+            All attendance has been recorded.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ---------------------------------------------------------
+  // 4. STUDENT & PARENT Dashboard
+  // ---------------------------------------------------------
+  if (role === 'STUDENT' || role === 'PARENT') {
+    const isParent = role === 'PARENT';
+    return (
+      <div className="p-4 md:p-8 max-w-7xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-slate-900">Welcome back, {user?.username}!</h1>
+          <p className="text-slate-500 mt-1">Here is the academic and financial status for {isParent ? 'your ward' : 'yourself'}.</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex items-center space-x-4">
+            <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+              <User className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="text-slate-500 text-sm font-medium">Profile Summary</div>
+              <div className="text-sm font-semibold text-slate-400 mt-1">Data unavailable</div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex items-center space-x-4">
+            <div className="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center text-green-600">
+              <CalendarCheck className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="text-slate-500 text-sm font-medium">Attendance</div>
+              <div className="text-sm font-semibold text-slate-400 mt-1">Data unavailable</div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex items-center space-x-4">
+            <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center text-red-600">
+              <Wallet className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="text-slate-500 text-sm font-medium">Outstanding Fees</div>
+              <div className="text-sm font-semibold text-slate-400 mt-1">Data unavailable</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
+            <h2 className="text-lg font-bold text-slate-900 mb-4">Recent Activity & Notifications</h2>
+            <div className="text-slate-500 text-sm py-12 text-center border-2 border-dashed border-slate-100 rounded-xl">
+              <Bell className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+              No recent notifications.
+            </div>
+          </div>
+
+          <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex flex-col">
+            <h2 className="text-lg font-bold text-slate-900 mb-4">Quick Actions</h2>
+            <button onClick={() => navigate('/dashboard')} className="w-full bg-white border border-slate-200 text-slate-700 font-semibold py-3 rounded-xl hover:bg-slate-50 transition-colors mb-3">View Profile</button>
+            <button onClick={() => navigate('/dashboard/attendance')} className="w-full bg-white border border-slate-200 text-slate-700 font-semibold py-3 rounded-xl hover:bg-slate-50 transition-colors mb-3">View Attendance</button>
+            <button onClick={() => navigate('/dashboard/finance')} className="w-full bg-white border border-slate-200 text-slate-700 font-semibold py-3 rounded-xl hover:bg-slate-50 transition-colors">View Fees & Payment History</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ---------------------------------------------------------
+  // 5. FINANCE Dashboard
+  // ---------------------------------------------------------
+  if (role === 'FINANCE') {
+    return (
+      <div className="p-4 md:p-8 max-w-7xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-slate-900">Finance Portal</h1>
+          <p className="text-slate-500 mt-1">Manage fee structures, invoices, and payments.</p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+          <div className="lg:col-span-2 bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
+            <h2 className="text-lg font-bold text-slate-900 mb-4">Financial Overview</h2>
+            <div className="text-slate-500 text-sm py-12 text-center border-2 border-dashed border-slate-100 rounded-xl">
+              <CreditCard className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+              No fee records available.
+            </div>
+          </div>
+
+          <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex flex-col">
+            <h2 className="text-lg font-bold text-slate-900 mb-4">Quick Actions</h2>
+            <button onClick={() => navigate('/dashboard/finance')} className="w-full bg-black text-white font-semibold py-3 rounded-xl hover:bg-black/90 transition-colors mb-3 shadow-md">
+              Create Invoice
+            </button>
+            <button onClick={() => navigate('/dashboard/finance')} className="w-full bg-white border border-slate-200 text-slate-700 font-semibold py-3 rounded-xl hover:bg-slate-50 transition-colors mb-3">
+              Manage Fee Structures
+            </button>
+            <button onClick={() => navigate('/dashboard/finance')} className="w-full bg-white border border-slate-200 text-slate-700 font-semibold py-3 rounded-xl hover:bg-slate-50 transition-colors mb-3">
+              View Payments
+            </button>
+            <button onClick={() => navigate('/dashboard/students')} className="w-full bg-white border border-slate-200 text-slate-700 font-semibold py-3 rounded-xl hover:bg-slate-50 transition-colors">
+              View Students
+            </button>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
+          <h2 className="text-lg font-bold text-slate-900 mb-4">Recent Financial Activity</h2>
+          <div className="text-slate-500 text-sm py-8 text-center border-2 border-dashed border-slate-100 rounded-xl">
+            <FileText className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+            No recent financial activity recorded.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Fallback
+  return (
+    <div className="p-8">
+      <h1 className="text-2xl font-bold">Dashboard</h1>
+      <p className="text-slate-500">Please select an option from the sidebar.</p>
     </div>
   );
 }
-
-
-
 
 
 

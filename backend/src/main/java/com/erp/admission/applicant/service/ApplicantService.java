@@ -37,6 +37,10 @@ public class ApplicantService {
     }
 
     @Transactional(readOnly = true)
+    public java.util.List<ApplicantDto> getAllApplicants() { return applicantRepository.findAll().stream().map(this::mapToDto).toList(); }
+
+    private ApplicantDto mapToDto(Applicant applicant) { return ApplicantDto.builder().id(applicant.getId()).firstName(applicant.getFirstName()).lastName(applicant.getLastName()).email(applicant.getEmail()).phone(applicant.getPhone()).dateOfBirth(applicant.getDateOfBirth()).gender(applicant.getGender()).address(applicant.getAddress()).build(); }
+
     public ApplicantDto getApplicant(Long id) {
         Applicant applicant = applicantRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Applicant not found"));
@@ -53,3 +57,5 @@ public class ApplicantService {
                 .build();
     }
 }
+
+

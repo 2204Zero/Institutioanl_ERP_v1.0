@@ -63,7 +63,10 @@ public class StudentFeeService {
         return studentFeeRepository.save(studentFee);
     }
     
+    public List<StudentFee> getAllStudentFees() { return studentFeeRepository.findAll(); }
+
     public List<StudentFee> getStudentFees(Long studentId) {
         return studentFeeRepository.findByStudentId(studentId);
     }
 }
+

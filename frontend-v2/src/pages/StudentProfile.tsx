@@ -1,10 +1,11 @@
-import React from 'react';
+﻿import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../config/api';
 import type { Student } from '../types/student';
 import { ArrowLeft, Mail, Phone, MapPin, Building2, BookOpen, Clock, Loader2, MoreVertical, Edit, Trash, ShieldAlert, HeartHandshake, UserSquare2 } from 'lucide-react';
 import { Button } from '../components/ui/button';
+import { Skeleton } from '../components/ui/skeleton';
 import { toast } from 'sonner';
 import type { GuardianResponseDto } from '../types/guardian';
 import { CreateGuardianDialog } from '../components/CreateGuardianDialog';
@@ -72,8 +73,42 @@ export default function StudentProfile() {
 
   if (isLoading) {
     return (
-      <div className="flex h-[80vh] items-center justify-center">
-        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+      <div className="p-4 md:p-8 space-y-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+          <Skeleton className="h-10 w-48" />
+          <Skeleton className="h-10 w-32" />
+        </div>
+        <div className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100 flex flex-col md:flex-row items-center space-y-6 md:space-y-0 md:space-x-8">
+          <Skeleton className="w-32 h-32 rounded-full" />
+          <div className="flex-1 space-y-4">
+             <Skeleton className="h-8 w-64" />
+             <div className="flex space-x-4">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-4 w-32" />
+             </div>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="md:col-span-2 space-y-8">
+             <div className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100">
+               <Skeleton className="h-6 w-48 mb-6" />
+               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i}><Skeleton className="h-4 w-24 mb-2" /><Skeleton className="h-6 w-full" /></div>
+                  ))}
+               </div>
+             </div>
+          </div>
+          <div className="space-y-8">
+             <div className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100">
+                <Skeleton className="h-6 w-32 mb-6" />
+                <div className="space-y-4">
+                   <Skeleton className="h-12 w-full" />
+                   <Skeleton className="h-12 w-full" />
+                </div>
+             </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -268,6 +303,7 @@ export default function StudentProfile() {
     </div>
   );
 }
+
 
 
 

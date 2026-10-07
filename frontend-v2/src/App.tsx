@@ -14,6 +14,7 @@ import GuardiansList from './pages/GuardiansList';
 import AdminUsersList from './pages/AdminUsersList';
 import Admissions from './pages/Admissions';
 import PlaceholderPage from './pages/PlaceholderPage';
+import Academics from './pages/Academics';
 import Layout from './components/Layout';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -56,6 +57,8 @@ function App() {
             <Route path="finance" element={<FinanceDashboard />} />
             <Route path="institutions" element={<InstitutionsList />} />
             <Route path="campuses" element={<CampusesList />} />
+            <Route path="admissions" element={<Admissions />} />
+            <Route path="academics" element={<Academics />} />
             <Route path="guardians" element={<GuardiansList />} />
             <Route path="admin/users" element={<AdminUsersList />} />
           </Route>
@@ -68,3 +71,5 @@ function App() {
 }
 
 export default App;
+
+

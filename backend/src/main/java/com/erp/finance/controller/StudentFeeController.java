@@ -22,6 +22,12 @@ public class StudentFeeController {
         return ResponseEntity.ok(studentFeeService.assignFeeStructure(studentId, feeStructureId, academicYearId));
     }
 
+    @GetMapping
+    @PreAuthorize("hasAuthority('FEE_ASSIGNMENT_VIEW') or hasRole('FINANCE')")
+    public ResponseEntity<List<StudentFee>> getAllStudentFees() {
+        return ResponseEntity.ok(studentFeeService.getAllStudentFees());
+    }
+
     @GetMapping("/student/{studentId}")
     @PreAuthorize("hasAuthority('FEE_ASSIGNMENT_VIEW') or hasRole('FINANCE') or hasRole('STUDENT')")
     public ResponseEntity<List<StudentFee>> getStudentFees(@PathVariable Long studentId) {

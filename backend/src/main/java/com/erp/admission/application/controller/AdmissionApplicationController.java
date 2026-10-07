@@ -24,6 +24,9 @@ public class AdmissionApplicationController {
                 .body(applicationService.createDraftApplication(applicantId, programId, academicYearId));
     }
 
+    @GetMapping
+    public ResponseEntity<java.util.List<AdmissionApplicationDto>> getAllApplications() { return ResponseEntity.ok(applicationService.getAllApplications()); }
+
     @PostMapping("/{id}/submit")
     public ResponseEntity<AdmissionApplicationDto> submitApplication(@PathVariable Long id) {
         return ResponseEntity.ok(applicationService.submitApplication(id));
@@ -37,3 +40,5 @@ public class AdmissionApplicationController {
         return ResponseEntity.ok(applicationService.updateStatus(id, status, remarks));
     }
 }
+
+

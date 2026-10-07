@@ -19,8 +19,13 @@ public class ApplicantController {
         return ResponseEntity.status(HttpStatus.CREATED).body(applicantService.registerApplicant(request));
     }
 
+    @GetMapping
+    public ResponseEntity<java.util.List<ApplicantDto>> getAllApplicants() { return ResponseEntity.ok(applicantService.getAllApplicants()); }
+
     @GetMapping("/{id}")
     public ResponseEntity<ApplicantDto> getApplicant(@PathVariable Long id) {
         return ResponseEntity.ok(applicantService.getApplicant(id));
     }
 }
+
+

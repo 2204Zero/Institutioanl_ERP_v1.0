@@ -50,6 +50,10 @@ public class AdmissionApplicationService {
     }
 
     @Transactional
+    public java.util.List<AdmissionApplicationDto> getAllApplications() { return applicationRepository.findAll().stream().map(this::mapToDto).toList(); }
+
+    
+
     public AdmissionApplicationDto submitApplication(Long applicationId) {
         AdmissionApplication application = applicationRepository.findById(applicationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Application not found"));
@@ -96,3 +100,7 @@ public class AdmissionApplicationService {
                 .build();
     }
 }
+
+
+
+
