@@ -40,7 +40,7 @@ export default function Dashboard() {
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-3xl font-bold text-slate-900">System Overview</h1>
-              <p className="text-slate-500 mt-1">Logged in as SUPER_ADMIN • EduPulse ERP</p>
+              <p className="text-slate-500 mt-1">Logged in as SUPER_ADMIN â€¢ EduPulse ERP</p>
             </div>
           </div>
         </div>
