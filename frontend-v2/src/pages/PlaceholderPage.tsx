@@ -7,7 +7,7 @@ export default function PlaceholderPage({ title }: { title: string }) {
       <Construction className="w-16 h-16 mb-4 text-slate-300" />
       <h2 className="text-2xl font-bold text-slate-900 mb-2">{title}</h2>
       <p className="max-w-md text-center">
-        Backend/API dependency — do not mock in final implementation. This module is pending backend integration.
+        Backend/API dependency â€” do not mock in final implementation. This module is pending backend integration.
       </p>
     </div>
   );
