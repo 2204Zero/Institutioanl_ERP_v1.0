@@ -25,4 +25,6 @@ public interface TimetableSlotRepository extends JpaRepository<TimetableSlot, Lo
                         @Param("sectionId") Long sectionId);
 
     List<TimetableSlot> findBySectionIdAndIsActiveTrue(Long sectionId);
+
+    List<TimetableSlot> findByFacultyIdAndIsActiveTrue(Long facultyId);
 }

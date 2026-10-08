@@ -1,14 +1,5 @@
-import React, { useState } from 'react';
-import { 
-  UserCheck, 
-  Search, 
-  Loader2, 
-  MoreHorizontal, 
-  FileText, 
-  CheckCircle, 
-  XCircle, 
-  AlertCircle 
-} from 'lucide-react';
+import { useState } from 'react';
+import { UserCheck, Search, MoreHorizontal, FileText } from 'lucide-react';
 import { 
   Table, 
   TableBody, 
@@ -93,7 +84,7 @@ export default function Admissions() {
         <div className="flex flex-col items-center justify-center">
           <FileText className="w-8 h-8 text-slate-300 mb-2" />
           <div className="font-medium text-slate-900">No {tab} found.</div>
-          <div className="text-sm mt-1">There are currently no records in this stage.</div>
+          <div className="text-sm mt-1">No admission applications found. Applications will appear here once they are submitted.</div>
         </div>
       </TableCell>
     </TableRow>

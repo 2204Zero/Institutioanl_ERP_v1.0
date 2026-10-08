@@ -38,7 +38,7 @@ class RbacAndPermissionIntegrationTest {
     private ObjectMapper objectMapper;
 
     private String obtainAccessToken(String username, String password) throws Exception {
-        LoginRequest loginRequest = new LoginRequest(username, password);
+        LoginRequest loginRequest = new LoginRequest(username, password, null);
         MvcResult result = mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginRequest)))
@@ -58,7 +58,7 @@ class RbacAndPermissionIntegrationTest {
     }
 
     @Test
-    @DisplayName("Day 04 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Student: Should allow viewing student profile with STUDENT_PROFILE_READ authority")
+    @DisplayName("Day 04 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Student: Should allow viewing student profile with STUDENT_PROFILE_READ authority")
     void shouldAllowStudentToViewProfile() throws Exception {
         String adminToken = obtainAccessToken("admin", "Admin@123");
         com.erp.student.dto.StudentRequestDto request = new com.erp.student.dto.StudentRequestDto();
@@ -91,7 +91,7 @@ class RbacAndPermissionIntegrationTest {
     }
 
     @Test
-    @DisplayName("Day 03/04 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Student: Should forbid student from managing users with 403 Forbidden")
+    @DisplayName("Day 03/04 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Student: Should forbid student from managing users with 403 Forbidden")
     void shouldForbidStudentFromManagingUsers() throws Exception {
         String token = obtainAccessToken("student", "Student@123");
 
@@ -103,7 +103,7 @@ class RbacAndPermissionIntegrationTest {
     }
 
     @Test
-    @DisplayName("Day 03/04 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Student: Should forbid student from taking attendance")
+    @DisplayName("Day 03/04 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Student: Should forbid student from taking attendance")
     void shouldForbidStudentFromTakingAttendance() throws Exception {
         String token = obtainAccessToken("student", "Student@123");
         AttendanceRecordRequest request = new AttendanceRecordRequest(101L, "CS-301", "PRESENT", "Attempting self mark");
@@ -118,7 +118,7 @@ class RbacAndPermissionIntegrationTest {
     }
 
     @Test
-    @DisplayName("Day 04 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Faculty: Should allow taking attendance with ATTENDANCE_TAKE permission")
+    @DisplayName("Day 04 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Faculty: Should allow taking attendance with ATTENDANCE_TAKE permission")
     void shouldAllowFacultyToTakeAttendance() throws Exception {
         String token = obtainAccessToken("faculty", "Faculty@123");
         AttendanceRecordRequest request = new AttendanceRecordRequest(101L, "CS-301", "PRESENT", "Regular Lecture");
@@ -134,7 +134,7 @@ class RbacAndPermissionIntegrationTest {
     }
 
     @Test
-    @DisplayName("Day 04 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Faculty: Should forbid faculty from managing fees")
+    @DisplayName("Day 04 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Faculty: Should forbid faculty from managing fees")
     void shouldForbidFacultyFromManagingFees() throws Exception {
         String token = obtainAccessToken("faculty", "Faculty@123");
         FeeStructure feeRequest = new FeeStructure(); feeRequest.setName("Semester 6"); feeRequest.setCode("SEM6");
@@ -148,7 +148,7 @@ class RbacAndPermissionIntegrationTest {
     }
 
     @Test
-    @DisplayName("Day 04 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Admin: Should allow managing users with USER_MANAGE permission")
+    @DisplayName("Day 04 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Admin: Should allow managing users with USER_MANAGE permission")
     void shouldAllowAdminToManageUsers() throws Exception {
         String token = obtainAccessToken("admin", "Admin@123");
 
@@ -159,7 +159,7 @@ class RbacAndPermissionIntegrationTest {
     }
 
     @Test
-    @DisplayName("Day 06 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Admin: Should allow creating new student records")
+    @DisplayName("Day 06 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Admin: Should allow creating new student records")
     void shouldAllowAdminToCreateStudent() throws Exception {
         String token = obtainAccessToken("admin", "Admin@123");
         com.erp.student.dto.StudentRequestDto request = new com.erp.student.dto.StudentRequestDto();
@@ -183,7 +183,7 @@ class RbacAndPermissionIntegrationTest {
     }
 
     @Test
-    @DisplayName("Day 06 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Admin: Should allow managing institution settings")
+    @DisplayName("Day 06 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Admin: Should allow managing institution settings")
     void shouldAllowAdminToManageInstitution() throws Exception {
         String token = obtainAccessToken("admin", "Admin@123");
         com.erp.institution.dto.InstitutionCreateRequest createReq = new com.erp.institution.dto.InstitutionCreateRequest("Apex Institute", "APEX");
@@ -205,7 +205,7 @@ class RbacAndPermissionIntegrationTest {
     }
 
     @Test
-    @DisplayName("Day 04 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Finance: Should allow managing fees with FEES_MANAGE permission")
+    @DisplayName("Day 04 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Finance: Should allow managing fees with FEES_MANAGE permission")
     void shouldAllowFinanceToManageFees() throws Exception {
         String token = obtainAccessToken("finance", "Finance@123");
         FeeStructure feeRequest = new FeeStructure(); feeRequest.setName("Semester 6"); feeRequest.setCode("SEM6_ALT");
@@ -221,7 +221,7 @@ class RbacAndPermissionIntegrationTest {
     }
 
     @Test
-    @DisplayName("Day 03 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â  Super Admin: Should have unrestricted access across all modules")
+    @DisplayName("Day 03 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚  Super Admin: Should have unrestricted access across all modules")
     void shouldAllowSuperAdminAccessToAllProtectedApis() throws Exception {
         String token = obtainAccessToken("superadmin", "Admin@123");
 

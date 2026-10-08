@@ -15,6 +15,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.List;
 
@@ -37,6 +38,7 @@ public class StudentController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'FACULTY', 'FINANCE', 'SUPER_ADMIN')")
     @Operation(summary = "List Students", description = "Retrieves paginated and filtered list of students")
     public ResponseEntity<ApiResponse<PageResponse<StudentResponseDto>>> getAllStudents(
             @RequestParam(defaultValue = "0") int page,
@@ -51,6 +53,7 @@ public class StudentController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("@securityOwnershipService.canAccessStudentData(authentication, #id) or hasAnyRole('ADMIN', 'FACULTY', 'FINANCE')")
     @Operation(summary = "View Student by ID", description = "Fetches complete student profile including guardians and documents")
     public ResponseEntity<ApiResponse<StudentResponseDto>> getStudentById(
             @Parameter(description = "Student primary ID") @PathVariable Long id) {

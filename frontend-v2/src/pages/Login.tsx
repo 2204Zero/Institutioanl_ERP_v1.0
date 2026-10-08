@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiClient } from '../config/api';
 import { useAuthStore } from '../store/useAuthStore';
-import { Shield, Loader2, User, Users, GraduationCap } from 'lucide-react';
+import { Loader2, Eye, EyeOff, Shield, Users, GraduationCap, User } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -12,8 +12,9 @@ import { toast } from 'sonner';
 export default function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'ADMIN' | 'STAFF' | 'STUDENT' | 'GUARDIAN'>('ADMIN');
+  const [activeTab, setActiveTab] = useState<'ADMIN' | 'FACULTY' | 'STUDENT' | 'PARENT' | 'FINANCE'>('ADMIN');
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
 
@@ -22,14 +23,15 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const response = await apiClient.post('/auth/login', { username, password });
-      const { accessToken, username: user, role, permissions } = response.data;
+      const response = await apiClient.post('/auth/login', { username, password, role: activeTab });
+      const { accessToken, refreshToken, username: user, role, permissions } = response.data;
       
-      login(accessToken, { username: user, role, permissions });
+      login(accessToken, refreshToken, { username: user, role, permissions });
       toast.success('Login successful!');
       navigate('/dashboard');
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Invalid credentials or server error.');
+      const errMsg = err.response?.data?.message || err.message || 'Invalid credentials or role mismatch.';
+      toast.error(errMsg);
     } finally {
       setLoading(false);
     }
@@ -41,15 +43,19 @@ export default function Login() {
         setUsername('admin');
         setPassword('Admin@123');
         break;
-      case 'STAFF':
+      case 'FACULTY':
         setUsername('faculty');
         setPassword('Faculty@123');
+        break;
+      case 'FINANCE':
+        setUsername('finance');
+        setPassword('Finance@123');
         break;
       case 'STUDENT':
         setUsername('student');
         setPassword('Student@123');
         break;
-      case 'GUARDIAN':
+      case 'PARENT':
         setUsername('parent');
         setPassword('Parent@123');
         break;
@@ -72,12 +78,13 @@ export default function Login() {
         <CardContent className="pt-0">
           
           {/* Role Selection Tabs */}
-          <div className="flex bg-slate-100 p-1 rounded-xl mb-6 shadow-inner">
+          <div className="flex bg-slate-100 p-1 rounded-xl mb-6 shadow-inner overflow-x-auto no-scrollbar">
             {[
               { id: 'ADMIN', label: 'Admin', icon: Shield },
-              { id: 'STAFF', label: 'Staff', icon: Users },
+              { id: 'FACULTY', label: 'Faculty', icon: Users },
               { id: 'STUDENT', label: 'Student', icon: GraduationCap },
-              { id: 'GUARDIAN', label: 'Parent', icon: User },
+              { id: 'PARENT', label: 'Parent', icon: User },
+              { id: 'FINANCE', label: 'Finance', icon: Shield },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -87,7 +94,7 @@ export default function Login() {
                   setUsername('');
                   setPassword('');
                 }}
-                className={`flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-lg text-xs font-semibold transition-all duration-200 ${
+                className={`flex-1 flex flex-col items-center justify-center py-2 px-1 min-w-[60px] rounded-lg text-xs font-semibold transition-all duration-200 ${
                   activeTab === tab.id 
                     ? 'bg-white text-black shadow-sm' 
                     : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
@@ -103,7 +110,7 @@ export default function Login() {
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <label className="text-sm font-semibold text-slate-700">
-                  {activeTab === 'STUDENT' ? 'Student ID' : activeTab === 'GUARDIAN' ? 'Registered Email' : 'Username'}
+                  {activeTab === 'STUDENT' ? 'Student Email' : activeTab === 'PARENT' ? 'Parent Email' : 'Username or Email'}
                 </label>
                 <button type="button" onClick={handleDemoFill} className="text-xs text-blue-600 hover:underline font-medium">
                   Use Demo Login
@@ -113,24 +120,32 @@ export default function Login() {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder={`Enter ${activeTab.toLowerCase()} ID`}
+                placeholder="Enter your username or email"
                 required
                 className="h-12 bg-slate-50 border-slate-200 focus-visible:ring-black text-slate-900 transition-all rounded-xl"
               />
             </div>
+
             <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                 <label className="text-sm font-semibold text-slate-700">Password</label>
-                 <a href="#" className="text-xs text-slate-500 hover:text-black hover:underline transition-colors">Forgot password?</a>
+              <label className="text-sm font-semibold text-slate-700">Password</label>
+              <div className="relative">
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                  required
+                  className="h-12 bg-slate-50 border-slate-200 focus-visible:ring-black text-slate-900 transition-all rounded-xl pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
               </div>
-              <Input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                className="h-12 bg-slate-50 border-slate-200 focus-visible:ring-black text-slate-900 transition-all rounded-xl"
-              />
             </div>
             
             <div className="pt-2">

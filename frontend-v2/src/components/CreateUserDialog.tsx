@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../config/api';
 import { toast } from 'sonner';
-import { Loader2, UserPlus } from 'lucide-react';
+import { Loader2, UserPlus, Eye, EyeOff } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -31,7 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import type { CreateUserRequest } from '../types/admin';
+
 
 const userSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
@@ -40,23 +40,26 @@ const userSchema = z.object({
   role: z.string().min(1, "Role is required"),
 });
 
+type FormValues = z.infer<typeof userSchema>;
+
 export function CreateUserDialog() {
   const [open, setOpen] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const queryClient = useQueryClient();
 
-  const form = useForm<CreateUserRequest>({
+  const form = useForm<FormValues, any, FormValues>({
     resolver: zodResolver(userSchema),
     defaultValues: {
       username: '',
       email: '',
       password: '',
       role: 'STUDENT',
-    },
+    } as FormValues,
   });
 
   const mutation = useMutation({
-    mutationFn: async (data: CreateUserRequest) => {
-      const res = await apiClient.post('/admin/users', data);
+    mutationFn: async (data: any) => {
+      const res = await apiClient.post('/api/v1/admin/users', data);
       return res.data;
     },
     onSuccess: (data: any) => {
@@ -70,7 +73,7 @@ export function CreateUserDialog() {
     },
   });
 
-  const onSubmit = (data: CreateUserRequest) => {
+  const onSubmit = (data: FormValues) => {
     mutation.mutate(data);
   };
 
@@ -126,7 +129,22 @@ export function CreateUserDialog() {
                 <FormItem>
                   <FormLabel>Temporary Password</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="••••••••" {...field} />
+                    <div className="relative">
+                      <Input 
+                        type={showPassword ? "text" : "password"} 
+                        placeholder="••••••••" 
+                        className="pr-10"
+                        {...field} 
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>

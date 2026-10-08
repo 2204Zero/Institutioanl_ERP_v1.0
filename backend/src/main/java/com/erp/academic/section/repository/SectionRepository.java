@@ -27,4 +27,7 @@ public interface SectionRepository extends JpaRepository<Section, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT s FROM Section s WHERE s.id = :id")
     Optional<Section> findByIdWithPessimisticWriteLock(@Param("id") Long id);
+
+    @Query("SELECT s FROM Section s JOIN SectionFaculty sf ON s.id = sf.sectionId WHERE sf.facultyId = :facultyId AND s.isActive = true")
+    List<Section> findActiveSectionsByFacultyId(@Param("facultyId") Long facultyId);
 }

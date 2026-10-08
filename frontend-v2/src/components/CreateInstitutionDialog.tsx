@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -24,28 +24,30 @@ import {
 } from './ui/form';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
-import type { InstitutionCreateRequest } from '../types/institution';
+
 
 const institutionSchema = z.object({
   name: z.string().min(2, "Name is required"),
   code: z.string().min(2, "Code is required").max(10),
 });
 
+type FormValues = z.infer<typeof institutionSchema>;
+
 export function CreateInstitutionDialog() {
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
 
-  const form = useForm<InstitutionCreateRequest>({
+  const form = useForm<FormValues, any, FormValues>({
     resolver: zodResolver(institutionSchema),
     defaultValues: {
       name: '',
       code: '',
-    },
+    } as FormValues,
   });
 
   const mutation = useMutation({
-    mutationFn: async (data: InstitutionCreateRequest) => {
-      const res = await apiClient.post('/institutions', data);
+    mutationFn: async (data: any) => {
+      const res = await apiClient.post('/api/v1/institutions', data);
       return res.data;
     },
     onSuccess: () => {
@@ -59,7 +61,7 @@ export function CreateInstitutionDialog() {
     },
   });
 
-  const onSubmit = (data: InstitutionCreateRequest) => {
+  const onSubmit = (data: FormValues) => {
     mutation.mutate(data);
   };
 

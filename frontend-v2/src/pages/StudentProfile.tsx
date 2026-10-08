@@ -1,14 +1,19 @@
-﻿import React from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuthStore } from '../store/useAuthStore';
 import { apiClient } from '../config/api';
 import type { Student } from '../types/student';
-import { ArrowLeft, Mail, Phone, MapPin, Building2, BookOpen, Clock, Loader2, MoreVertical, Edit, Trash, ShieldAlert, HeartHandshake, UserSquare2 } from 'lucide-react';
-import { Button } from '../components/ui/button';
-import { Skeleton } from '../components/ui/skeleton';
-import { toast } from 'sonner';
 import type { GuardianResponseDto } from '../types/guardian';
-import { CreateGuardianDialog } from '../components/CreateGuardianDialog';
+import { 
+  User, Mail, Phone, MapPin, Building2, Calendar, 
+  BookOpen, MoreVertical, Edit, ShieldAlert, HeartHandshake, Loader2,
+  AlertCircle, Download, FileText, CalendarCheck, Wallet, Clock
+} from 'lucide-react';
+import { PageFrame } from '../components/ui/PageFrame';
+import { Button } from '../components/ui/button';
+import { StatusBadge } from '../components/ui/StatusBadge';
+import { toast } from 'sonner';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,12 +26,16 @@ import {
 export default function StudentProfile() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuthStore();
+  const canManage = user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN';
   const queryClient = useQueryClient();
+
+  const [activeTab, setActiveTab] = useState<'overview' | 'academic' | 'attendance' | 'fees' | 'documents' | 'history'>('overview');
 
   const { data: student, isLoading, isError } = useQuery<Student>({
     queryKey: ['student', id],
     queryFn: async () => {
-      const res = await apiClient.get(`/students/${id}`);
+      const res = await apiClient.get(`/api/v1/students/${id}`);
       return res.data?.data;
     }
   });
@@ -34,7 +43,7 @@ export default function StudentProfile() {
   const { data: guardiansResponse } = useQuery({
     queryKey: ['student-guardians', id],
     queryFn: async () => {
-      const res = await apiClient.get(`/students/${id}/guardians`);
+      const res = await apiClient.get(`/api/v1/students/${id}/guardians`);
       return res.data;
     },
     enabled: !!id
@@ -44,270 +53,246 @@ export default function StudentProfile() {
 
   const statusMutation = useMutation({
     mutationFn: async (newStatus: string) => {
-      const res = await apiClient.patch(`/students/${id}/status`, { status: newStatus, remarks: 'Updated via portal' });
+      const res = await apiClient.patch(`/api/v1/students/${id}/status`, { status: newStatus, remarks: 'Updated via portal' });
       return res.data;
     },
     onSuccess: () => {
+      toast.success('Status updated successfully');
       queryClient.invalidateQueries({ queryKey: ['student', id] });
-      queryClient.invalidateQueries({ queryKey: ['students'] });
-      toast.success('Student status updated!');
     },
     onError: () => {
       toast.error('Failed to update status');
     }
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: async () => {
-      await apiClient.delete(`/students/${id}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['students'] });
-      toast.success('Student deleted successfully');
-      navigate('/dashboard/students');
-    },
-    onError: () => {
-      toast.error('Failed to delete student');
-    }
-  });
-
   if (isLoading) {
     return (
-      <div className="p-4 md:p-8 space-y-6">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-          <Skeleton className="h-10 w-48" />
-          <Skeleton className="h-10 w-32" />
-        </div>
-        <div className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100 flex flex-col md:flex-row items-center space-y-6 md:space-y-0 md:space-x-8">
-          <Skeleton className="w-32 h-32 rounded-full" />
-          <div className="flex-1 space-y-4">
-             <Skeleton className="h-8 w-64" />
-             <div className="flex space-x-4">
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-4 w-32" />
-             </div>
-          </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="md:col-span-2 space-y-8">
-             <div className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100">
-               <Skeleton className="h-6 w-48 mb-6" />
-               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  {Array.from({ length: 6 }).map((_, i) => (
-                    <div key={i}><Skeleton className="h-4 w-24 mb-2" /><Skeleton className="h-6 w-full" /></div>
-                  ))}
-               </div>
-             </div>
-          </div>
-          <div className="space-y-8">
-             <div className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100">
-                <Skeleton className="h-6 w-32 mb-6" />
-                <div className="space-y-4">
-                   <Skeleton className="h-12 w-full" />
-                   <Skeleton className="h-12 w-full" />
-                </div>
-             </div>
-          </div>
-        </div>
-      </div>
+      <PageFrame title="Student Profile" breadcrumbs={[{ label: 'Students', href: '/dashboard/students' }, { label: 'Loading...' }]}>
+        <div className="flex justify-center p-12 border border-slate-200 bg-white"><Loader2 className="h-8 w-8 animate-spin text-slate-400" /></div>
+      </PageFrame>
     );
   }
 
   if (isError || !student) {
     return (
-      <div className="p-8 text-center text-destructive font-medium">
-        Failed to load student profile.
-      </div>
+      <PageFrame title="Student Not Found" breadcrumbs={[{ label: 'Students', href: '/dashboard/students' }, { label: 'Error' }]}>
+        <div className="flex flex-col items-center justify-center p-12 bg-white border border-slate-200">
+          <AlertCircle className="h-10 w-10 text-red-500 mb-3" />
+          <h2 className="text-sm font-bold text-slate-900 uppercase">Failed to load student</h2>
+          <p className="text-xs text-slate-500 mt-1">The student record may have been deleted or you don't have permission to view it.</p>
+          <Button onClick={() => navigate('/dashboard/students')} variant="outline" size="sm" className="mt-4">Return to Directory</Button>
+        </div>
+      </PageFrame>
     );
   }
 
+  const tabs = [
+    { id: 'overview', label: 'Overview', icon: User },
+    { id: 'academic', label: 'Academic', icon: BookOpen },
+    { id: 'attendance', label: 'Attendance', icon: CalendarCheck },
+    { id: 'fees', label: 'Fees & Finance', icon: Wallet },
+    { id: 'documents', label: 'Documents', icon: FileText },
+    { id: 'history', label: 'Audit History', icon: Clock },
+  ];
+
   return (
-    <div className="p-8 max-w-6xl mx-auto">
-      <Button 
-        variant="ghost" 
-        className="mb-6 -ml-4 text-slate-500 hover:text-slate-900"
-        onClick={() => navigate('/dashboard/students')}
-      >
-        <ArrowLeft className="w-4 h-4 mr-2" /> Back to Students
-      </Button>
-
-      {/* Header Profile Card */}
-      <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100 flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-6">
-        <div className="flex items-center gap-6">
-          <div className="w-24 h-24 rounded-full bg-primary/20 text-primary font-bold flex items-center justify-center text-3xl uppercase">
-            {student.firstName.charAt(0)}
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900 mb-2">{student.firstName} {student.lastName}</h1>
-            <div className="flex items-center gap-4 text-slate-500 text-sm">
-              <span className="flex items-center"><Building2 className="w-4 h-4 mr-1" /> {student.department || 'N/A'}</span>
-              <span className="flex items-center"><BookOpen className="w-4 h-4 mr-1" /> Roll: {student.rollNumber}</span>
-              <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
-                student.status === 'ACTIVE' ? 'bg-green-100 text-green-700' : 
-                student.status === 'SUSPENDED' ? 'bg-red-100 text-red-700' : 
-                'bg-slate-100 text-slate-700'
-              }`}>
-                {student.status || 'ACTIVE'}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <Button variant="outline" className="border-slate-200" onClick={() => toast.info('Edit modal coming soon!')}>
-            <Edit className="w-4 h-4 mr-2" /> Edit Profile
-          </Button>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon" className="border-slate-200">
-                <MoreVertical className="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuLabel>Change Status</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => statusMutation.mutate('ACTIVE')}>Mark Active</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => statusMutation.mutate('SUSPENDED')}>Suspend Student</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => statusMutation.mutate('GRADUATED')}>Mark Graduated</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => statusMutation.mutate('DROPOUT')}>Mark Dropout</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => {
-                if(window.confirm('Are you sure you want to delete this student?')) {
-                  deleteMutation.mutate();
-                }
-              }}>
-                <Trash className="w-4 h-4 mr-2" /> Delete Student
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {/* Contact Info */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 col-span-1">
-          <h2 className="text-lg font-bold text-slate-900 mb-4">Contact Details</h2>
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 text-slate-600">
-              <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center shrink-0">
-                <Mail className="w-5 h-5 text-slate-400" />
-              </div>
-              <div>
-                <p className="text-xs text-slate-400 font-medium uppercase">Email Address</p>
-                <p className="text-sm font-medium">{student.email}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 text-slate-600">
-              <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center shrink-0">
-                <Phone className="w-5 h-5 text-slate-400" />
-              </div>
-              <div>
-                <p className="text-xs text-slate-400 font-medium uppercase">Phone Number</p>
-                <p className="text-sm font-medium">{student.phone || 'Not provided'}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 text-slate-600">
-              <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center shrink-0">
-                <MapPin className="w-5 h-5 text-slate-400" />
-              </div>
-              <div>
-                <p className="text-xs text-slate-400 font-medium uppercase">Location</p>
-                <p className="text-sm font-medium">
-                  {student.city ? `${student.city}, ${student.state}` : 'Not provided'}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Academic Info */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 col-span-2">
-          <h2 className="text-lg font-bold text-slate-900 mb-4">Academic Record</h2>
+    <PageFrame
+      title={`${student.firstName} ${student.lastName}`}
+      description={student.rollNumber ? `ID: ${student.rollNumber}` : 'Pending Enrollment ID'}
+      breadcrumbs={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Students', href: '/dashboard/students' }, { label: student.firstName }]}
+      actions={
+        <div className="flex items-center space-x-3">
+          <StatusBadge status={student.status} />
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div className="p-4 rounded-xl border border-slate-100 bg-slate-50/50">
-              <p className="text-xs text-slate-500 font-semibold uppercase mb-1">Enrollment Date</p>
-              <p className="font-medium text-slate-900">{student.enrollmentDate || 'N/A'}</p>
-            </div>
-            <div className="p-4 rounded-xl border border-slate-100 bg-slate-50/50">
-              <p className="text-xs text-slate-500 font-semibold uppercase mb-1">Current Batch</p>
-              <p className="font-medium text-slate-900">{student.batch || 'N/A'}</p>
-            </div>
-            <div className="p-4 rounded-xl border border-slate-100 bg-slate-50/50">
-              <p className="text-xs text-slate-500 font-semibold uppercase mb-1">Date of Birth</p>
-              <p className="font-medium text-slate-900">{student.dateOfBirth || 'N/A'}</p>
-            </div>
-            <div className="p-4 rounded-xl border border-slate-100 bg-slate-50/50">
-              <p className="text-xs text-slate-500 font-semibold uppercase mb-1">Gender</p>
-              <p className="font-medium text-slate-900 capitalize">{student.gender?.toLowerCase() || 'N/A'}</p>
-            </div>
-          </div>
+          {canManage && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 text-xs font-semibold">
+                  <MoreVertical className="w-3.5 h-3.5 mr-1" /> Options
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-40 text-xs">
+                <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-slate-500">Manage Status</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => statusMutation.mutate('ACTIVE')}>Mark Active</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => statusMutation.mutate('SUSPENDED')} className="text-orange-600">Suspend</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => statusMutation.mutate('DROPPED')} className="text-red-600">Drop</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => statusMutation.mutate('GRADUATED')} className="text-emerald-600">Graduated</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => toast.info('Edit student functionality coming soon')}>
+                  <Edit className="w-3.5 h-3.5 mr-2" /> Edit Profile
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
+      }
+    >
+      <div className="border-b border-slate-200 mb-6 flex overflow-x-auto hide-scrollbar">
+        {tabs.map(tab => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`flex items-center space-x-1.5 px-4 py-2.5 border-b-2 text-xs font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${
+                isActive 
+                  ? 'border-slate-900 text-slate-900' 
+                  : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <Icon className="w-3.5 h-3.5" />
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
       </div>
 
-      {/* Guardians Section */}
-      <div className="mt-8 bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-          <h2 className="text-xl font-bold text-slate-900 flex items-center">
-            <HeartHandshake className="w-5 h-5 mr-2 text-primary" />
-            Guardians & Contacts
-          </h2>
-          <CreateGuardianDialog studentId={Number(id)} />
-        </div>
-        
-        {guardians.length === 0 ? (
-          <div className="p-8 text-center text-slate-500 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
-            No guardians or emergency contacts linked to this student yet.
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {guardians.map(guardian => (
-              <div key={guardian.id} className="p-5 rounded-2xl border border-slate-100 flex flex-col justify-between hover:shadow-md transition-shadow bg-slate-50/30">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center font-bold">
-                      {guardian.firstName.charAt(0)}{guardian.lastName.charAt(0)}
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-slate-900">{guardian.fullName}</h3>
-                      <span className="text-xs font-semibold text-slate-500 uppercase">{guardian.relation}</span>
-                    </div>
-                  </div>
-                  {guardian.isEmergencyContact && (
-                    <span className="px-2 py-1 bg-rose-100 text-rose-700 rounded-full text-xs font-bold flex items-center">
-                      <ShieldAlert className="w-3 h-3 mr-1" />
-                      Emergency
-                    </span>
-                  )}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
+          {activeTab === 'overview' && (
+            <>
+              <div className="border border-slate-200 bg-white">
+                <div className="px-4 py-3 border-b border-slate-200 bg-slate-50">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">Personal Information</h3>
                 </div>
-                
-                <div className="space-y-2 mt-2 pt-4 border-t border-slate-100 text-sm text-slate-600">
-                  <div className="flex items-center">
-                    <Phone className="w-4 h-4 mr-3 text-slate-400" />
-                    {guardian.phone}
+                <div className="grid grid-cols-1 sm:grid-cols-2">
+                  <div className="p-4 border-b sm:border-b-0 sm:border-r border-slate-200/50">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Date of Birth</p>
+                    <p className="font-semibold text-slate-900 mt-0.5">{student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString() : 'N/A'}</p>
                   </div>
-                  {guardian.email && (
-                    <div className="flex items-center">
-                      <Mail className="w-4 h-4 mr-3 text-slate-400" />
-                      {guardian.email}
+                  <div className="p-4 border-b sm:border-b-0 border-slate-200/50">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Gender</p>
+                    <p className="font-semibold text-slate-900 mt-0.5">{student.gender || 'N/A'}</p>
+                  </div>
+                  <div className="p-4 border-b sm:border-r sm:border-t border-slate-200/50">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Email Address</p>
+                    <div className="flex items-center space-x-1.5 text-slate-900 font-semibold mt-0.5">
+                      <Mail className="w-3.5 h-3.5 text-slate-400" />
+                      <span>{student.email || 'N/A'}</span>
+                    </div>
+                  </div>
+                  <div className="p-4 border-b sm:border-t border-slate-200/50">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Phone Number</p>
+                    <div className="flex items-center space-x-1.5 text-slate-900 font-semibold mt-0.5">
+                      <Phone className="w-3.5 h-3.5 text-slate-400" />
+                      <span>{student.phone || 'N/A'}</span>
+                    </div>
+                  </div>
+                  <div className="sm:col-span-2 p-4 border-t border-slate-200/50">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Address</p>
+                    <div className="flex items-start space-x-1.5 text-slate-900 font-semibold mt-0.5">
+                      <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
+                      <span>{student.address || 'Address not provided'}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border border-slate-200 bg-white">
+                <div className="px-4 py-3 border-b border-slate-200 bg-slate-50">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">Guardian Information</h3>
+                </div>
+                <div>
+                  {guardians.length > 0 ? (
+                    <div className="divide-y divide-slate-100">
+                      {guardians.map(g => (
+                        <div key={g.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 hover:bg-slate-50">
+                          <div className="space-y-1">
+                            <div className="flex items-center space-x-2">
+                              <HeartHandshake className="w-4 h-4 text-slate-400" />
+                              <span className="font-bold text-slate-900">{g.firstName} {g.lastName}</span>
+                              <span className="text-[10px] font-bold uppercase tracking-widest bg-slate-900 text-white px-2 py-0.5">{g.relation}</span>
+                            </div>
+                            <div className="flex space-x-4 pl-6">
+                              <p className="text-xs font-medium text-slate-600 flex items-center"><Phone className="w-3 h-3 mr-1"/>{g.phone}</p>
+                              {g.email && <p className="text-xs font-medium text-slate-600 flex items-center"><Mail className="w-3 h-3 mr-1"/>{g.email}</p>}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 text-slate-500 text-xs italic">
+                      No guardians registered for this student.
                     </div>
                   )}
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+            </>
+          )}
 
-    </div>
+          {(activeTab === 'academic' || activeTab === 'attendance' || activeTab === 'fees' || activeTab === 'history') && (
+            <div className="flex flex-col items-center justify-center p-12 bg-slate-50 border border-slate-200">
+               <div className="w-10 h-10 bg-slate-200 flex items-center justify-center mb-3">
+                 <ShieldAlert className="w-5 h-5 text-slate-400" />
+               </div>
+               <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900">Module Unreachable</h3>
+               <p className="text-slate-500 text-xs text-center max-w-sm mt-1">
+                 This module will be connected to the new APIs in the upcoming phases. The UI layout foundation is ready.
+               </p>
+            </div>
+          )}
+
+          {activeTab === 'documents' && (
+            <div className="border border-slate-200 bg-white">
+              <div className="px-4 py-3 border-b border-slate-200 bg-slate-50">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">Uploaded Documents</h3>
+              </div>
+              <div className="p-4">
+                 <div className="text-center py-8 text-slate-500 text-xs border border-dashed border-slate-300 bg-slate-50">
+                    Document integration coming soon.
+                 </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-6">
+          <div className="border border-slate-200 bg-white">
+            <div className="px-4 py-3 border-b border-slate-200 bg-slate-50">
+              <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Current Program</h3>
+            </div>
+            <div className="p-4 space-y-4">
+              <div className="flex items-start space-x-3">
+                <Building2 className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Department</p>
+                  <p className="font-bold text-slate-900 text-sm mt-0.5">{student.department ? `Dept ID: ${student.department}` : 'Not assigned'}</p>
+                </div>
+              </div>
+              <div className="flex items-start space-x-3">
+                <Calendar className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Enrolled On</p>
+                  <p className="font-bold text-slate-900 text-sm mt-0.5">{student.enrollmentDate ? new Date(student.enrollmentDate).toLocaleDateString() : 'N/A'}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="border border-slate-200 bg-white">
+             <div className="px-4 py-3 border-b border-slate-200 bg-slate-50">
+               <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Quick Actions</h3>
+             </div>
+             <div className="p-2 space-y-1">
+                <button 
+                  className="w-full flex items-center px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+                  onClick={() => toast.info('Generate ID Card coming soon')}
+                >
+                  <User className="w-3.5 h-3.5 mr-2 text-slate-400" /> Generate ID Card
+                </button>
+                <button 
+                  className="w-full flex items-center px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+                  onClick={() => toast.info('Export transcript coming soon')}
+                >
+                  <Download className="w-3.5 h-3.5 mr-2 text-slate-400" /> Export Transcript
+                </button>
+             </div>
+          </div>
+        </div>
+      </div>
+    </PageFrame>
   );
 }
-
-
-
-
-
-
-
-

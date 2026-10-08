@@ -32,7 +32,7 @@ class AuthenticationIntegrationTest {
     @Test
     @DisplayName("Should authenticate successfully with valid credentials and return JWT tokens with RBAC claims")
     void shouldAuthenticateSuccessfullyWithValidCredentials() throws Exception {
-        LoginRequest loginRequest = new LoginRequest("student", "Student@123");
+        LoginRequest loginRequest = new LoginRequest("student", "Student@123", null);
 
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -49,7 +49,7 @@ class AuthenticationIntegrationTest {
     @Test
     @DisplayName("Should reject authentication when password is invalid with 401 and standard error payload")
     void shouldRejectAuthenticationWhenPasswordIsInvalid() throws Exception {
-        LoginRequest loginRequest = new LoginRequest("student", "WrongPassword!");
+        LoginRequest loginRequest = new LoginRequest("student", "WrongPassword!", null);
 
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -63,7 +63,7 @@ class AuthenticationIntegrationTest {
     @Test
     @DisplayName("Should reject authentication when username is nonexistent")
     void shouldRejectAuthenticationWhenUsernameDoesNotExist() throws Exception {
-        LoginRequest loginRequest = new LoginRequest("unknown_user_404", "Password@123");
+        LoginRequest loginRequest = new LoginRequest("unknown_user_404", "Password@123", null);
 
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -77,7 +77,7 @@ class AuthenticationIntegrationTest {
     @DisplayName("Should refresh access token when valid refresh token is supplied")
     void shouldRefreshTokenSuccessfully() throws Exception {
         // 1. Login to get refresh token
-        LoginRequest loginRequest = new LoginRequest("faculty", "Faculty@123");
+        LoginRequest loginRequest = new LoginRequest("faculty", "Faculty@123", null);
         MvcResult loginResult = mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginRequest)))
@@ -103,7 +103,7 @@ class AuthenticationIntegrationTest {
     @DisplayName("Should validate active session and return session details")
     void shouldValidateActiveSession() throws Exception {
         // Login
-        LoginRequest loginRequest = new LoginRequest("student", "Student@123");
+        LoginRequest loginRequest = new LoginRequest("student", "Student@123", null);
         MvcResult loginResult = mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginRequest)))
@@ -125,7 +125,7 @@ class AuthenticationIntegrationTest {
     @DisplayName("Should invalidate session and revoke token on logout")
     void shouldLogoutAndRevokeToken() throws Exception {
         // 1. Login
-        LoginRequest loginRequest = new LoginRequest("student", "Student@123");
+        LoginRequest loginRequest = new LoginRequest("student", "Student@123", null);
         MvcResult loginResult = mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginRequest)))
