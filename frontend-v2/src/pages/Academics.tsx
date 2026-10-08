@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { BookOpen, GraduationCap, Users, Search, Plus, MoreHorizontal, FileText } from 'lucide-react';
 import { 
   Table, 
@@ -97,7 +97,7 @@ export default function Academics() {
         <div className="flex flex-col items-center justify-center">
           <FileText className="w-8 h-8 text-slate-300 mb-2" />
           <div className="font-medium text-slate-900">No {tab} found.</div>
-          <div className="text-sm mt-1">There are currently no records in this section.</div>
+          <div className="text-sm mt-1">No academic records found in this section. Create your first record to get started.</div>
         </div>
       </TableCell>
     </TableRow>

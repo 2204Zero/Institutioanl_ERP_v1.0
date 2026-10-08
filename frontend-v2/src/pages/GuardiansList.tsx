@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Search, Loader2, UserSquare2, Phone, MoreHorizontal, Trash, Edit, Mail } from 'lucide-react';
 import { apiClient } from '../config/api';
 import { Input } from '../components/ui/input';
@@ -28,7 +28,7 @@ export default function GuardiansList() {
   const { data: responseData, isLoading, isError } = useQuery({
     queryKey: ['guardians'],
     queryFn: async () => {
-      const res = await apiClient.get('/guardians');
+      const res = await apiClient.get('/api/v1/guardians');
       return res.data;
     }
   });
@@ -38,7 +38,7 @@ export default function GuardiansList() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      await apiClient.delete(`/guardians/${id}`);
+      await apiClient.delete(`/api/v1/guardians/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['guardians'] });
@@ -101,7 +101,7 @@ export default function GuardiansList() {
               </TableRow>
             ) : guardians.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center text-slate-500">No guardians found.</TableCell>
+                <TableCell colSpan={5} className="h-24 text-center text-slate-500">No guardians found.<br/><span className="text-sm mt-1 block">Guardians will appear here once they are added.</span></TableCell>
               </TableRow>
             ) : (
               guardians.map((guardian) => (
@@ -148,8 +148,8 @@ export default function GuardiansList() {
                   <TableCell className="px-6 py-4 text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="text-slate-400 hover:text-slate-700">
-                          <MoreHorizontal className="w-4 h-4" />
+                        <Button variant="ghost" size="icon" aria-label="More options" className="text-slate-400 hover:text-slate-700">
+                        <MoreHorizontal className="w-4 h-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">

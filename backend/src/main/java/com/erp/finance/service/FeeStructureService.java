@@ -22,6 +22,9 @@ public class FeeStructureService {
 
     @Transactional
     public FeeStructure createFeeStructure(FeeStructure feeStructure) {
+        if (feeStructure.getCode() == null || feeStructure.getCode().isEmpty()) {
+            feeStructure.setCode("FS-" + System.currentTimeMillis());
+        }
         return feeStructureRepository.save(feeStructure);
     }
 

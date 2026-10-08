@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Search, Loader2, MapPin, MoreHorizontal, Trash, Edit } from 'lucide-react';
 import { apiClient } from '../config/api';
 import { Input } from '../components/ui/input';
@@ -29,14 +29,14 @@ export default function CampusesList() {
     queryKey: ['campuses'],
     queryFn: async () => {
       // NOTE: Using backend typo '/campuss'
-      const res = await apiClient.get('/campuss');
+      const res = await apiClient.get('/api/v1/campuss');
       return res.data || [];
     }
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      await apiClient.delete(`/campuss/${id}`);
+      await apiClient.delete(`/api/v1/campuss/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['campuses'] });
@@ -98,7 +98,7 @@ export default function CampusesList() {
               </TableRow>
             ) : campuses?.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="h-24 text-center text-slate-500">No campuses found.</TableCell>
+                <TableCell colSpan={4} className="h-24 text-center text-slate-500">No campuses found.<br/><span className="text-sm mt-1 block">Campuses will appear here once they are created.</span></TableCell>
               </TableRow>
             ) : (
               campuses?.map((campus) => (
@@ -122,8 +122,8 @@ export default function CampusesList() {
                   <TableCell className="px-6 py-4 text-right text-slate-400">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="text-slate-400 hover:text-slate-700">
-                          <MoreHorizontal className="w-4 h-4" />
+                        <Button variant="ghost" size="icon" aria-label="More options" className="text-slate-400 hover:text-slate-700">
+                        <MoreHorizontal className="w-4 h-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">

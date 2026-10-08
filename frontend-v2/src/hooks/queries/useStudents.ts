@@ -1,6 +1,6 @@
-﻿import { useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '../../config/api';
-import { Student, PaginatedResponse } from '../../types/student';
+import type { Student, PaginatedResponse } from '../../types/student';
 
 // Type definitions for API responses based on our backend investigation
 export interface Guardian {

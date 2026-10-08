@@ -29,7 +29,7 @@ public class StudentFeeController {
     }
 
     @GetMapping("/student/{studentId}")
-    @PreAuthorize("hasAuthority('FEE_ASSIGNMENT_VIEW') or hasRole('FINANCE') or hasRole('STUDENT')")
+    @PreAuthorize("@securityOwnershipService.canAccessStudentData(authentication, #studentId)")
     public ResponseEntity<List<StudentFee>> getStudentFees(@PathVariable Long studentId) {
         return ResponseEntity.ok(studentFeeService.getStudentFees(studentId));
     }

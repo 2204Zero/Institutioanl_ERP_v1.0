@@ -10,6 +10,7 @@ export interface AttendanceResponse {
   studentId: number;
   studentName: string;
   rollNumber: string;
+  courseCode?: string;
   date: string;
   status: 'PRESENT' | 'ABSENT' | 'LATE' | 'EXCUSED';
   remarks?: string;

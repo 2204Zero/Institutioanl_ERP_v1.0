@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -38,11 +38,13 @@ const guardianSchema = z.object({
   isEmergencyContact: z.boolean().default(false),
 });
 
+type FormValues = z.infer<typeof guardianSchema>;
+
 export function CreateGuardianDialog({ studentId }: { studentId?: number }) {
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
 
-  const form = useForm<z.infer<typeof guardianSchema>>({
+  const form = useForm({
     resolver: zodResolver(guardianSchema),
     defaultValues: {
       firstName: '',
@@ -53,17 +55,17 @@ export function CreateGuardianDialog({ studentId }: { studentId?: number }) {
       occupation: '',
       address: '',
       isEmergencyContact: false,
-    },
+    } as FormValues,
   });
 
   const mutation = useMutation({
-    mutationFn: async (data: z.infer<typeof guardianSchema>) => {
+    mutationFn: async (data: any) => {
       const payload: GuardianRequestDto = { ...data, studentId };
       if (studentId) {
-        const res = await apiClient.post(`/students/${studentId}/guardians`, payload);
+        const res = await apiClient.post(`/api/v1/students/${studentId}/guardians`, payload);
         return res.data;
       } else {
-        const res = await apiClient.post('/guardians', payload);
+        const res = await apiClient.post('/api/v1/guardians', payload);
         return res.data;
       }
     },
@@ -79,7 +81,7 @@ export function CreateGuardianDialog({ studentId }: { studentId?: number }) {
     },
   });
 
-  const onSubmit = (data: z.infer<typeof guardianSchema>) => {
+  const onSubmit = (data: FormValues) => {
     mutation.mutate(data);
   };
 

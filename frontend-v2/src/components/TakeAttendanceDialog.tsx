@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -24,32 +24,33 @@ import {
 } from './ui/form';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
-import type { AttendanceRecordRequest } from '../types/attendance';
 
 const attendanceSchema = z.object({
-  studentId: z.coerce.number().min(1, "Student ID is required"),
+  studentId: z.string().min(1, "Student ID is required"),
   date: z.string().min(10, "Date is required"),
   status: z.enum(['PRESENT', 'ABSENT', 'LATE', 'EXCUSED']),
   remarks: z.string().optional(),
 });
 
+type FormValues = z.infer<typeof attendanceSchema>;
+
 export function TakeAttendanceDialog() {
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
 
-  const form = useForm<AttendanceRecordRequest>({
+  const form = useForm<FormValues, any, FormValues>({
     resolver: zodResolver(attendanceSchema),
     defaultValues: {
-      studentId: 0,
+      studentId: '',
       date: new Date().toISOString().split('T')[0],
       status: 'PRESENT',
       remarks: '',
-    },
+    } as FormValues,
   });
 
   const mutation = useMutation({
-    mutationFn: async (data: AttendanceRecordRequest) => {
-      const res = await apiClient.post('/attendance', data);
+    mutationFn: async (data: any) => {
+      const res = await apiClient.post('/api/v1/attendance', data);
       return res.data;
     },
     onSuccess: () => {
@@ -63,23 +64,23 @@ export function TakeAttendanceDialog() {
     },
   });
 
-  const onSubmit = (data: AttendanceRecordRequest) => {
-    mutation.mutate(data);
+  const onSubmit = (data: FormValues) => {
+    mutation.mutate({ ...data, studentId: Number(data.studentId) });
   };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="flex items-center space-x-2 bg-[#dc2626] text-white hover:bg-[#b91c1c] rounded-xl">
-          <CalendarPlus className="w-4 h-4 text-primary" />
-          <span>Mark Attendance</span>
+        <Button className="flex items-center space-x-2">
+          <CalendarPlus className="w-4 h-4" />
+          <span>Take Attendance</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[400px]">
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Mark Attendance</DialogTitle>
+          <DialogTitle>Take Attendance</DialogTitle>
           <DialogDescription>
-            Record daily attendance for a specific student.
+            Record attendance for a student.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -115,7 +116,7 @@ export function TakeAttendanceDialog() {
               name="status"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Status (PRESENT / ABSENT / LATE)</FormLabel>
+                  <FormLabel>Status (PRESENT / ABSENT / LATE / EXCUSED)</FormLabel>
                   <FormControl>
                     <Input placeholder="PRESENT" {...field} />
                   </FormControl>
@@ -130,7 +131,7 @@ export function TakeAttendanceDialog() {
                 <FormItem>
                   <FormLabel>Remarks (Optional)</FormLabel>
                   <FormControl>
-                    <Input placeholder="Late due to traffic" {...field} />
+                    <Input placeholder="e.g. Doctor appointment" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -138,7 +139,7 @@ export function TakeAttendanceDialog() {
             />
             <Button type="submit" className="w-full mt-6" disabled={mutation.isPending}>
               {mutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {mutation.isPending ? 'Saving...' : 'Record Attendance'}
+              {mutation.isPending ? 'Saving...' : 'Save Attendance'}
             </Button>
           </form>
         </Form>

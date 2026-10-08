@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -24,30 +24,32 @@ import {
 } from './ui/form';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
-import type { DepartmentCreateRequest } from '../types/department';
+
 
 const departmentSchema = z.object({
   name: z.string().min(2, "Name is required"),
   code: z.string().min(2, "Code is required").max(10),
-  campusId: z.coerce.number().optional(),
+  campusId: z.string().optional(),
 });
+
+type FormValues = z.infer<typeof departmentSchema>;
 
 export function CreateDepartmentDialog() {
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
 
-  const form = useForm<DepartmentCreateRequest>({
+  const form = useForm({
     resolver: zodResolver(departmentSchema),
     defaultValues: {
       name: '',
       code: '',
-      campusId: 1, // Defaulting to 1 for MVP
-    },
+      campusId: '',
+    } as FormValues,
   });
 
   const mutation = useMutation({
-    mutationFn: async (data: DepartmentCreateRequest) => {
-      const res = await apiClient.post('/departments', data);
+    mutationFn: async (data: any) => {
+      const res = await apiClient.post('/api/v1/departments', data);
       return res.data;
     },
     onSuccess: () => {
@@ -61,7 +63,7 @@ export function CreateDepartmentDialog() {
     },
   });
 
-  const onSubmit = (data: DepartmentCreateRequest) => {
+  const onSubmit = (data: FormValues) => {
     mutation.mutate(data);
   };
 

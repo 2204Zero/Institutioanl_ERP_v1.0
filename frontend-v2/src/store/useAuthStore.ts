@@ -9,9 +9,10 @@ interface User {
 
 interface AuthState {
   token: string | null;
+  refreshToken: string | null;
   user: User | null;
   isAuthenticated: boolean;
-  login: (token: string, user: User) => void;
+  login: (token: string, refreshToken: string, user: User) => void;
   logout: () => void;
 }
 
@@ -19,20 +20,24 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       token: null,
+      refreshToken: null,
       user: null,
       isAuthenticated: false,
-      login: (token, user) => {
-        localStorage.setItem('access_token', token);
-        set({ token, user, isAuthenticated: true });
+      login: (token, refreshToken, user) => {
+        set({ token, refreshToken, user, isAuthenticated: true });
       },
       logout: () => {
-        localStorage.removeItem('access_token');
-        set({ token: null, user: null, isAuthenticated: false });
+        set({ token: null, refreshToken: null, user: null, isAuthenticated: false });
       },
     }),
     {
       name: 'auth-storage',
-      partialize: (state) => ({ token: state.token, user: state.user, isAuthenticated: state.isAuthenticated }),
+      partialize: (state) => ({ 
+        token: state.token, 
+        refreshToken: state.refreshToken,
+        user: state.user, 
+        isAuthenticated: state.isAuthenticated 
+      }),
     }
   )
 );

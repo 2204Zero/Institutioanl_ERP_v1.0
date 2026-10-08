@@ -1,0 +1,34 @@
+
+--- 1. AUTHENTICATION REGRESSION ---
+Admin Login: OK
+Faculty Login: OK
+Student Login: OK
+Parent Login: OK
+Finance Login: OK
+Unauthenticated API returns 401: OK
+Unauthorized API returns 403: OK
+
+--- 2. STUDENT LIFECYCLE E2E ---
+Create Student: OK (ID: 6)
+Fetch Student Profile (Admin): OK
+Student IDOR protection (403): OK
+
+--- 3. ADMISSION E2E ---
+Create Applicant: OK (ID: 1)
+[ERROR] Admission E2E failed: {"timestamp":[2026,10,8,0,11,51,151377600],"status":404,"error":"Not Found","message":"Program not found","path":"/api/v1/admission-applications/draft","validationErrors":null}
+
+--- 4. ACADEMIC E2E ---
+[ERROR] Academic E2E failed: {"timestamp":[2026,10,8,0,11,51,168398000],"status":404,"error":"Not Found","message":"Department not found with id: 1","path":"/api/v1/programs","validationErrors":null}
+
+--- 6. SCHEDULING E2E ---
+Valid Timetable Allocation: OK (ID: 1)
+Conflict Detection (Same time/room/faculty): OK
+
+--- 7. ATTENDANCE E2E ---
+Record Attendance (Faculty): OK (ID: 501)
+[ERROR] Duplicate attendance recorded instead of rejected!: undefined
+
+--- 8. FINANCE E2E ---
+Create Fee Structure: OK (ID: 1, Code: FS-1791398511234)
+Assign Fee to Student: OK (StudentFee ID: 1)
+Duplicate Fee Assignment Prevention: OK (Status: 500)

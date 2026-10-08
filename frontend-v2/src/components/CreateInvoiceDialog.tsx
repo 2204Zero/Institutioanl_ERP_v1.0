@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -24,32 +24,34 @@ import {
 } from './ui/form';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
-import type { FeeCreationRequest } from '../types/finance';
+
 
 const invoiceSchema = z.object({
-  studentId: z.coerce.number().min(1, "Student ID is required"),
-  amount: z.coerce.number().min(1, "Amount must be greater than 0"),
+  studentId: z.string().min(1, "Student ID is required"),
+  amount: z.string().min(1, "Amount must be greater than 0"),
   dueDate: z.string().min(10, "Due Date is required"),
   description: z.string().min(2, "Description is required"),
 });
+
+type FormValues = z.infer<typeof invoiceSchema>;
 
 export function CreateInvoiceDialog() {
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
 
-  const form = useForm<FeeCreationRequest>({
+  const form = useForm<FormValues, any, FormValues>({
     resolver: zodResolver(invoiceSchema),
     defaultValues: {
-      studentId: 0,
-      amount: 0,
+      studentId: '',
+      amount: '',
       dueDate: '',
       description: 'Tuition Fee - Fall 2026',
-    },
+    } as FormValues,
   });
 
   const mutation = useMutation({
-    mutationFn: async (data: FeeCreationRequest) => {
-      const res = await apiClient.post('/finance/fees', data);
+    mutationFn: async (data: any) => {
+      const res = await apiClient.post('/api/v1/finance/fees', data);
       return res.data;
     },
     onSuccess: () => {
@@ -63,8 +65,8 @@ export function CreateInvoiceDialog() {
     },
   });
 
-  const onSubmit = (data: FeeCreationRequest) => {
-    mutation.mutate(data);
+  const onSubmit = (data: FormValues) => {
+    mutation.mutate({ ...data, studentId: Number(data.studentId), amount: Number(data.amount) });
   };
 
   return (
@@ -84,7 +86,7 @@ export function CreateInvoiceDialog() {
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
+            <FormField<FormValues>
               control={form.control}
               name="studentId"
               render={({ field }) => (
@@ -97,7 +99,7 @@ export function CreateInvoiceDialog() {
                 </FormItem>
               )}
             />
-            <FormField
+            <FormField<FormValues>
               control={form.control}
               name="amount"
               render={({ field }) => (
@@ -110,7 +112,7 @@ export function CreateInvoiceDialog() {
                 </FormItem>
               )}
             />
-            <FormField
+            <FormField<FormValues>
               control={form.control}
               name="dueDate"
               render={({ field }) => (
@@ -123,7 +125,7 @@ export function CreateInvoiceDialog() {
                 </FormItem>
               )}
             />
-            <FormField
+            <FormField<FormValues>
               control={form.control}
               name="description"
               render={({ field }) => (

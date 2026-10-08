@@ -52,6 +52,11 @@ public class AuthService {
             throw new BadCredentialsException("Invalid username or password");
         }
 
+        if (request.role() != null && !request.role().equalsIgnoreCase(user.getRole().name())) {
+            log.warn("Login failed for username: {} - requested role {} does not match actual role {}", request.username(), request.role(), user.getRole().name());
+            throw new BadCredentialsException("Unauthorized role access");
+        }
+
         String accessToken = jwtService.generateAccessToken(user);
         String refreshToken = jwtService.generateRefreshToken(user);
         String tokenId = jwtService.extractTokenId(accessToken);

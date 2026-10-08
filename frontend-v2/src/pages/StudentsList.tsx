@@ -1,175 +1,195 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Search, Filter, ChevronLeft, ChevronRight, MoreHorizontal, Loader2 } from 'lucide-react';
-import { apiClient } from '../config/api';
-import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
 import { useQuery } from '@tanstack/react-query';
-import type { PaginatedResponse, Student } from '../types/student';
+import { apiClient } from '../config/api';
+import { Link } from 'react-router-dom';
+import { PageFrame } from '../components/ui/PageFrame';
+import { Input } from '../components/ui/input';
+import { Search, Loader2, Filter, ChevronLeft, ChevronRight, Eye } from 'lucide-react';
+import { StatusBadge } from '../components/ui/StatusBadge';
 import { CreateStudentDialog } from '../components/CreateStudentDialog';
-import { Skeleton } from '../components/ui/skeleton';
-import { useDebounce } from '../hooks/useDebounce';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "../components/ui/table"
+import type { PaginatedResponse, Student } from '../types/student';
+import { useAuthStore } from '../store/useAuthStore';
 
 export default function StudentsList() {
-  const navigate = useNavigate();
-  const [page, setPage] = useState(0);
-  const [searchTerm, setSearchTerm] = useState('');
-  const debouncedSearch = useDebounce(searchTerm, 500);
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN';
 
-  const { data: studentsData, isLoading, isError } = useQuery<PaginatedResponse<Student>>({
-    queryKey: ['students', page, debouncedSearch],
+  const [page, setPage] = useState(0);
+  const [size] = useState(10);
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('');
+
+  React.useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(0);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [search]);
+
+  const { data, isLoading, isError } = useQuery<PaginatedResponse<Student>>({
+    queryKey: ['students', page, size, debouncedSearch, statusFilter],
     queryFn: async () => {
-      const res = await apiClient.get('/students', {
-        params: {
-          page: page,
-          size: 10,
+      const res = await apiClient.get('/api/v1/students', {
+        params: { 
+          page, 
+          size, 
           search: debouncedSearch || undefined,
+          status: statusFilter || undefined,
+          sortBy: 'id',
+          sortDir: 'desc'
         }
       });
       return res.data?.data;
-    }
+    },
   });
 
-  const students = studentsData?.content || [];
-  const totalElements = studentsData?.totalElements || 0;
-  const totalPages = studentsData?.totalPages || 1;
-  const isFirst = studentsData?.first ?? true;
-  const isLast = studentsData?.last ?? true;
+  const students = (data as PaginatedResponse<Student>)?.content || [];
+  const totalPages = (data as PaginatedResponse<Student>)?.totalPages || 0;
+  const totalElements = (data as PaginatedResponse<Student>)?.totalElements || 0;
 
   return (
-    <div className="p-4 md:p-8">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-1">Students</h1>
-          <p className="text-slate-500 text-sm">Manage student profiles, academic records, and status.</p>
-        </div>
-        <CreateStudentDialog />
-      </div>
-
-      <div className="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center p-4 sm:p-6 gap-4">
-        <div className="flex w-full md:w-auto items-center space-x-4">
-          <div className="relative w-full sm:w-72">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+    <PageFrame
+      title="Student Directory"
+      description="Manage institutional student records and profiles."
+      breadcrumbs={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Students' }]}
+      actions={
+        isAdmin && (
+          <CreateStudentDialog />
+        )
+      }
+    >
+      <div className="flex flex-col min-h-[500px] border border-slate-200 bg-white">
+        <div className="p-3 border-b border-slate-200 bg-slate-50 flex flex-col md:flex-row justify-between items-center space-y-3 md:space-y-0 md:space-x-4">
+          <div className="relative w-full md:max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <Input 
-              type="text" 
-              placeholder="Search students..." 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 pr-4 py-2 bg-slate-50 border-slate-200 rounded-lg text-sm w-full h-10"
+              placeholder="Search by name, email, or enrollment ID..." 
+              className="pl-9 h-8 text-xs border-slate-300"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <Button variant="outline" className="h-10 text-slate-600 border-slate-200">
-            <Filter className="w-4 h-4 mr-2" />
-            Filters
-          </Button>
+          
+          <div className="flex items-center space-x-2 w-full md:w-auto">
+            <Filter className="w-4 h-4 text-slate-400 hidden md:block" />
+            <select 
+              className="w-full md:w-auto bg-white border border-slate-300 text-xs rounded px-2 py-1.5 text-slate-700 focus:outline-none focus:ring-1 focus:ring-slate-900"
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setPage(0);
+              }}
+            >
+              <option value="">All Statuses</option>
+              <option value="ACTIVE">Active</option>
+              <option value="INACTIVE">Inactive</option>
+              <option value="SUSPENDED">Suspended</option>
+              <option value="GRADUATED">Graduated</option>
+              <option value="ALUMNI">Alumni</option>
+              <option value="DROPPED">Dropped</option>
+            </select>
+          </div>
         </div>
-        <div className="text-sm text-slate-500 font-medium whitespace-nowrap">
-          {totalElements} students total
-        </div>
-      </div>
 
-      {/* Table */}
-      <div className="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-x-auto mt-6">
-        <Table>
-          <TableHeader className="bg-slate-50">
-            <TableRow>
-              <TableHead className="font-semibold px-6 py-4">Student</TableHead>
-              <TableHead className="font-semibold px-6 py-4">Roll Number</TableHead>
-              <TableHead className="font-semibold px-6 py-4">Department</TableHead>
-              <TableHead className="font-semibold px-6 py-4">Batch</TableHead>
-              <TableHead className="font-semibold px-6 py-4">Status</TableHead>
-              <TableHead className="font-semibold px-6 py-4 text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}>
-                  <TableCell className="px-6 py-4"><Skeleton className="h-4 w-32" /><Skeleton className="h-3 w-24 mt-2" /></TableCell>
-                  <TableCell className="px-6 py-4"><Skeleton className="h-4 w-20" /></TableCell>
-                  <TableCell className="px-6 py-4"><Skeleton className="h-4 w-24" /></TableCell>
-                  <TableCell className="px-6 py-4"><Skeleton className="h-4 w-16" /></TableCell>
-                  <TableCell className="px-6 py-4"><Skeleton className="h-6 w-16 rounded-full" /></TableCell>
-                  <TableCell className="px-6 py-4"><Skeleton className="h-8 w-8 rounded-md ml-auto" /></TableCell>
-                </TableRow>
-              ))
-            ) : isError ? (
-              <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center text-destructive">Failed to load students.</TableCell>
-              </TableRow>
-            ) : students.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center text-slate-500">No students found.</TableCell>
-              </TableRow>
-            ) : (
-              students.map((student) => (
-                <TableRow 
-                  key={student.id} 
-                  className="hover:bg-slate-50/80 transition-colors cursor-pointer"
-                  onClick={() => navigate(`/dashboard/students/${student.id}`)}
-                >
-                  <TableCell className="px-6 py-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold border border-slate-200">
-                        {student.firstName[0]}{student.lastName[0]}
+        <div className="overflow-x-auto flex-1">
+          <table className="w-full text-left whitespace-nowrap">
+            <thead className="bg-slate-100 text-slate-600 border-b border-slate-200 uppercase text-[10px] font-bold tracking-wider sticky top-0">
+              <tr>
+                <th className="px-3 py-2 border-r border-slate-200/50">Student</th>
+                <th className="px-3 py-2 border-r border-slate-200/50">Enrollment ID</th>
+                <th className="px-3 py-2 border-r border-slate-200/50">Contact</th>
+                <th className="px-3 py-2 border-r border-slate-200/50">Status</th>
+                <th className="px-3 py-2 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 text-[13px]">
+              {isLoading ? (
+                <tr>
+                  <td colSpan={5} className="px-3 py-12 text-center">
+                    <Loader2 className="w-5 h-5 animate-spin text-slate-400 mx-auto mb-2" />
+                    <p className="text-slate-500 text-xs">Loading directory...</p>
+                  </td>
+                </tr>
+              ) : isError ? (
+                <tr>
+                  <td colSpan={5} className="px-3 py-12 text-center text-red-500 text-xs">
+                    Failed to load students. Please try again later.
+                  </td>
+                </tr>
+              ) : students.length > 0 ? (
+                students.map((student: Student) => (
+                  <tr key={student.id} className="hover:bg-slate-50 transition-colors group">
+                    <td className="px-3 py-2 border-r border-slate-100/50">
+                      <div className="flex items-center space-x-2">
+                        <div className="h-6 w-6 rounded-sm bg-slate-900 flex items-center justify-center text-white font-bold shrink-0 text-[10px]">
+                          {student.firstName.charAt(0)}{student.lastName.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-slate-900">{student.firstName} {student.lastName}</p>
+                          <p className="text-[10px] text-slate-500">Joined {new Date(student.enrollmentDate || student.createdAt || new Date()).toLocaleDateString()}</p>
+                        </div>
                       </div>
-                      <div>
-                        <div className="font-semibold text-slate-900">{student.firstName} {student.lastName}</div>
-                        <div className="text-xs text-slate-500">{student.email}</div>
-                      </div>
+                    </td>
+                    <td className="px-3 py-2 text-slate-600 font-medium border-r border-slate-100/50">
+                      {student.rollNumber || 'Pending Allocation'}
+                    </td>
+                    <td className="px-3 py-2 border-r border-slate-100/50">
+                      <p className="text-slate-700 leading-tight">{student.email}</p>
+                      <p className="text-[11px] text-slate-500">{student.phone || 'No phone'}</p>
+                    </td>
+                    <td className="px-3 py-2 border-r border-slate-100/50">
+                      <StatusBadge status={student.status} />
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      <Link to={`/dashboard/students/${student.id}`} className="text-[11px] font-semibold text-slate-500 hover:text-slate-900 inline-flex items-center">
+                        <Eye className="w-3.5 h-3.5 mr-1" />
+                        View
+                      </Link>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={5} className="px-3 py-16 text-center">
+                    <div className="w-10 h-10 bg-slate-100 flex items-center justify-center mx-auto mb-2">
+                      <Search className="w-5 h-5 text-slate-400" />
                     </div>
-                  </TableCell>
-                  <TableCell className="px-6 py-4 font-medium text-slate-700">{student.rollNumber}</TableCell>
-                  <TableCell className="px-6 py-4 text-slate-600">{student.department || '-'}</TableCell>
-                  <TableCell className="px-6 py-4 text-slate-600">{student.batch || '-'}</TableCell>
-                  <TableCell className="px-6 py-4">
-                    <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
-                      {student.status || 'ACTIVE'}
-                    </span>
-                  </TableCell>
-                  <TableCell className="px-6 py-4 text-right">
-                    <Button variant="ghost" size="icon" className="text-slate-400 hover:text-slate-700">
-                      <MoreHorizontal className="w-4 h-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+                    <p className="text-slate-900 font-medium text-sm">No students found</p>
+                    <p className="text-slate-500 text-xs mt-1">Try adjusting your search or filters.</p>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
 
-        {/* Pagination */}
-        <div className="p-4 border-t border-slate-100 flex items-center justify-between text-sm">
-           <Button 
-             variant="outline" 
-             className="text-slate-600 border-slate-200" 
-             onClick={() => setPage(p => Math.max(0, p - 1))}
-             disabled={isFirst}
-           >
-             <ChevronLeft className="w-4 h-4 mr-1" /> Previous
-           </Button>
-           <div className="text-slate-500 font-medium">Page {page + 1} of {totalPages}</div>
-           <Button 
-             variant="outline" 
-             className="text-slate-600 border-slate-200"
-             onClick={() => setPage(p => p + 1)}
-             disabled={isLast}
-           >
-             Next <ChevronRight className="w-4 h-4 ml-1" />
-           </Button>
+        <div className="p-3 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
+          <p className="text-[11px] text-slate-500 uppercase tracking-wide">
+            Showing <span className="font-bold text-slate-900">{students.length > 0 ? page * size + 1 : 0}</span> to <span className="font-bold text-slate-900">{Math.min((page + 1) * size, totalElements)}</span> of <span className="font-bold text-slate-900">{totalElements}</span> results
+          </p>
+          <div className="flex items-center space-x-1">
+            <button 
+              className="px-2 py-1 text-[11px] font-semibold border border-slate-300 rounded bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-50 inline-flex items-center"
+              onClick={() => setPage(p => Math.max(0, p - 1))}
+              disabled={page === 0 || isLoading}
+            >
+              <ChevronLeft className="w-3 h-3 mr-1" /> Prev
+            </button>
+            <div className="text-[11px] font-bold text-slate-700 px-2">
+              Page {page + 1} of {Math.max(1, totalPages)}
+            </div>
+            <button 
+              className="px-2 py-1 text-[11px] font-semibold border border-slate-300 rounded bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-50 inline-flex items-center"
+              onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+              disabled={page >= totalPages - 1 || isLoading}
+            >
+              Next <ChevronRight className="w-3 h-3 ml-1" />
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </PageFrame>
   );
 }
-
-

@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Search, Building2, MoreHorizontal, Loader2, Trash } from 'lucide-react';
 import { apiClient } from '../config/api';
 import { Button } from '../components/ui/button';
@@ -28,14 +28,14 @@ export default function DepartmentsList() {
   const { data: departments, isLoading, isError } = useQuery<Department[]>({
     queryKey: ['departments'],
     queryFn: async () => {
-      const res = await apiClient.get('/departments');
+      const res = await apiClient.get('/api/v1/departments');
       return res.data || [];
     }
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      await apiClient.delete(`/departments/${id}`);
+      await apiClient.delete(`/api/v1/departments/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['departments'] });
@@ -99,7 +99,7 @@ export default function DepartmentsList() {
               </TableRow>
             ) : departments?.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={3} className="h-24 text-center text-slate-500">No departments found.</TableCell>
+                <TableCell colSpan={3} className="h-24 text-center text-slate-500">No departments found.<br/><span className="text-sm mt-1 block">Departments will appear here once they are created.</span></TableCell>
               </TableRow>
             ) : (
               departments?.map((dept) => (
@@ -118,8 +118,8 @@ export default function DepartmentsList() {
                   <TableCell className="px-6 py-4 text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="text-slate-400 hover:text-slate-700">
-                          <MoreHorizontal className="w-4 h-4" />
+                        <Button variant="ghost" size="icon" aria-label="More options" className="text-slate-400 hover:text-slate-700">
+                        <MoreHorizontal className="w-4 h-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">

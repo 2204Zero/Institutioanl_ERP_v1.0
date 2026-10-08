@@ -25,6 +25,18 @@ export default {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
         },
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
+        },
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          foreground: "hsl(var(--warning-foreground))",
+        },
+        info: {
+          DEFAULT: "hsl(var(--info))",
+          foreground: "hsl(var(--info-foreground))",
+        },
         muted: {
           DEFAULT: "hsl(var(--muted))",
           foreground: "hsl(var(--muted-foreground))",
@@ -47,6 +59,14 @@ export default {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      fontSize: {
+        'xs': ['0.75rem', { lineHeight: '1rem' }],
+        'sm': ['0.8125rem', { lineHeight: '1.125rem' }], // 13px dense base
+        'base': ['0.875rem', { lineHeight: '1.25rem' }], // 14px
+        'lg': ['1rem', { lineHeight: '1.5rem' }], // 16px
+        'xl': ['1.125rem', { lineHeight: '1.5rem' }], // 18px
+        '2xl': ['1.25rem', { lineHeight: '1.75rem' }], // 20px
+      }
     },
   },
   plugins: [require("tailwindcss-animate")],

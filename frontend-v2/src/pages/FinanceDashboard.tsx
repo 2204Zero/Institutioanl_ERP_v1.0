@@ -1,5 +1,5 @@
-﻿import React from 'react';
-import { Search, DollarSign, Loader2, ArrowUpRight, ArrowDownRight, Wallet, TrendingDown } from 'lucide-react';
+
+import { Search, DollarSign, ArrowUpRight, ArrowDownRight, Wallet, TrendingDown } from 'lucide-react';
 import { Input } from '../components/ui/input';
 import { useFinanceSummary, useAllStudentFees } from '../hooks/queries/useFinance';
 import { Skeleton } from '../components/ui/skeleton';
@@ -13,7 +13,7 @@ import {
 } from "../components/ui/table"
 
 export default function FinanceDashboard() {
-  const { data: summary, isLoading: isLoadingSummary, isError: isErrorSummary } = useFinanceSummary();
+  const { data: summary, isLoading: isLoadingSummary } = useFinanceSummary();
   const { data: fees, isLoading: isLoadingFees, isError: isErrorFees } = useAllStudentFees();
 
   return (
@@ -37,7 +37,7 @@ export default function FinanceDashboard() {
           {isLoadingSummary ? (
              <Skeleton className="h-10 w-32 bg-slate-700 mb-4" />
           ) : (
-             <div className="text-3xl font-bold mb-4">?{summary?.totalCollected?.toLocaleString() || '0'}</div>
+             <div className="text-3xl font-bold mb-4">Ã¢â€šÂ¹{summary?.totalCollected?.toLocaleString() || '0'}</div>
           )}
           <div className="flex items-center text-xs text-slate-300 font-medium">
             <ArrowUpRight className="w-3 h-3 mr-1" />
@@ -53,7 +53,7 @@ export default function FinanceDashboard() {
           {isLoadingSummary ? (
              <Skeleton className="h-10 w-32 mb-4" />
           ) : (
-             <div className="text-3xl font-bold text-slate-900 mb-4">?{summary?.totalOutstanding?.toLocaleString() || '0'}</div>
+             <div className="text-3xl font-bold text-slate-900 mb-4">Ã¢â€šÂ¹{summary?.totalOutstanding?.toLocaleString() || '0'}</div>
           )}
           <div className="flex items-center text-xs text-slate-500 font-medium">
             <ArrowDownRight className="w-3 h-3 mr-1" />
@@ -69,7 +69,7 @@ export default function FinanceDashboard() {
           {isLoadingSummary ? (
              <Skeleton className="h-10 w-32 mb-4" />
           ) : (
-             <div className="text-3xl font-bold text-slate-900 mb-4">?{summary?.totalGrossAssigned?.toLocaleString() || '0'}</div>
+             <div className="text-3xl font-bold text-slate-900 mb-4">Ã¢â€šÂ¹{summary?.totalGrossAssigned?.toLocaleString() || '0'}</div>
           )}
           <div className="flex items-center text-xs text-slate-500 font-medium">
             <ArrowUpRight className="w-3 h-3 mr-1" />
@@ -122,7 +122,7 @@ export default function FinanceDashboard() {
               </TableRow>
             ) : fees?.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center text-slate-500">No student fees assigned yet.</TableCell>
+                <TableCell colSpan={5} className="h-24 text-center text-slate-500">No fee records found.<br/><span className="text-sm mt-1 block">Fee records will appear here once they are created.</span></TableCell>
               </TableRow>
             ) : (
               fees?.map((fee) => (
@@ -135,10 +135,10 @@ export default function FinanceDashboard() {
                     <div className="font-semibold text-slate-700">STD-{fee.studentId}</div>
                   </TableCell>
                   <TableCell className="px-6 py-4 font-bold text-slate-900">
-                    ?{fee.netPayable?.toLocaleString()}
+                    Ã¢â€šÂ¹{fee.netPayable?.toLocaleString()}
                   </TableCell>
                   <TableCell className="px-6 py-4 font-bold text-red-600">
-                    ?{fee.outstandingAmount?.toLocaleString()}
+                    Ã¢â€šÂ¹{fee.outstandingAmount?.toLocaleString()}
                   </TableCell>
                   <TableCell className="px-6 py-4">
                     <span className={`px-2 py-1 rounded-md text-xs font-bold ${

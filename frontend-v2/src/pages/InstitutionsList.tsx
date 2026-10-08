@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Search, Loader2, Building2, MoreHorizontal, Trash, Edit } from 'lucide-react';
 import { apiClient } from '../config/api';
 import { Input } from '../components/ui/input';
@@ -28,14 +28,14 @@ export default function InstitutionsList() {
   const { data: institutions, isLoading, isError } = useQuery<InstitutionResponse[]>({
     queryKey: ['institutions'],
     queryFn: async () => {
-      const res = await apiClient.get('/institutions');
+      const res = await apiClient.get('/api/v1/institutions');
       return res.data || [];
     }
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      await apiClient.delete(`/institutions/${id}`);
+      await apiClient.delete(`/api/v1/institutions/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['institutions'] });
@@ -123,8 +123,8 @@ export default function InstitutionsList() {
                   <TableCell className="px-6 py-4 text-right text-slate-400">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="text-slate-400 hover:text-slate-700">
-                          <MoreHorizontal className="w-4 h-4" />
+                        <Button variant="ghost" size="icon" aria-label="More options" className="text-slate-400 hover:text-slate-700">
+                        <MoreHorizontal className="w-4 h-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">

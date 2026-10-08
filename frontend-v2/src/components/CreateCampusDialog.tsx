@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -24,31 +24,32 @@ import {
 } from './ui/form';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
-import type { CampusCreateRequest } from '../types/institution';
 
 const campusSchema = z.object({
   name: z.string().min(2, "Name is required"),
   address: z.string().min(5, "Address is required"),
-  institutionId: z.coerce.number().min(1, "Institution ID is required"),
+  institutionId: z.string().min(1, "Institution ID is required"),
 });
+
+type FormValues = z.infer<typeof campusSchema>;
 
 export function CreateCampusDialog() {
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
 
-  const form = useForm<CampusCreateRequest>({
+  const form = useForm<FormValues, any, FormValues>({
     resolver: zodResolver(campusSchema),
     defaultValues: {
       name: '',
       address: '',
-      institutionId: 1, // Defaulting to 1 for convenience
-    },
+      institutionId: '',
+    } as FormValues,
   });
 
   const mutation = useMutation({
-    mutationFn: async (data: CampusCreateRequest) => {
+    mutationFn: async (data: any) => {
       // NOTE: Intentionally using the backend's typo 'campuss' here to ensure connectivity
-      const res = await apiClient.post('/campuss', data);
+      const res = await apiClient.post('/api/v1/campuss', data);
       return res.data;
     },
     onSuccess: () => {
@@ -62,7 +63,7 @@ export function CreateCampusDialog() {
     },
   });
 
-  const onSubmit = (data: CampusCreateRequest) => {
+  const onSubmit = (data: FormValues) => {
     mutation.mutate(data);
   };
 
