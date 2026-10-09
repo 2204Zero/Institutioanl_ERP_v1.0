@@ -17,7 +17,7 @@ public interface SectionRepository extends JpaRepository<Section, Long> {
     List<Section> findByCourseOfferingId(Long courseOfferingId);
 
     @Query("SELECT s FROM Section s WHERE " +
-           "(:search IS NULL OR LOWER(s.name) LIKE LOWER(CONCAT('%', :search, '%'))) AND " +
+           "(CAST(:search AS string) IS NULL OR LOWER(s.name) LIKE LOWER(CONCAT('%', CAST(:search AS string), '%'))) AND " +
            "(:courseOfferingId IS NULL OR s.courseOffering.id = :courseOfferingId) AND " +
            "(:isActive IS NULL OR s.isActive = :isActive)")
     List<Section> searchAndFilter(

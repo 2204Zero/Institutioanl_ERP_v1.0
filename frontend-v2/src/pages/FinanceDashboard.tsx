@@ -13,7 +13,7 @@ import {
 } from "../components/ui/table"
 
 export default function FinanceDashboard() {
-  const { data: summary, isLoading: isLoadingSummary } = useFinanceSummary();
+  const { data: summary, isLoading: isLoadingSummary, isError: isErrorSummary } = useFinanceSummary();
   const { data: fees, isLoading: isLoadingFees, isError: isErrorFees } = useAllStudentFees();
 
   return (
@@ -36,6 +36,8 @@ export default function FinanceDashboard() {
           <div className="text-slate-400 text-sm mb-1">Total Collected</div>
           {isLoadingSummary ? (
              <Skeleton className="h-10 w-32 bg-slate-700 mb-4" />
+          ) : isErrorSummary ? (
+             <div className="text-sm font-bold text-red-400 mb-4 h-10 flex items-center">Error</div>
           ) : (
              <div className="text-3xl font-bold mb-4">Ã¢â€šÂ¹{summary?.totalCollected?.toLocaleString() || '0'}</div>
           )}
@@ -52,6 +54,8 @@ export default function FinanceDashboard() {
           <div className="text-slate-500 text-sm mb-1">Pending Dues</div>
           {isLoadingSummary ? (
              <Skeleton className="h-10 w-32 mb-4" />
+          ) : isErrorSummary ? (
+             <div className="text-sm font-bold text-red-500 mb-4 h-10 flex items-center">Error</div>
           ) : (
              <div className="text-3xl font-bold text-slate-900 mb-4">Ã¢â€šÂ¹{summary?.totalOutstanding?.toLocaleString() || '0'}</div>
           )}
@@ -68,6 +72,8 @@ export default function FinanceDashboard() {
           <div className="text-slate-500 text-sm mb-1">Gross Assigned Fees</div>
           {isLoadingSummary ? (
              <Skeleton className="h-10 w-32 mb-4" />
+          ) : isErrorSummary ? (
+             <div className="text-sm font-bold text-red-500 mb-4 h-10 flex items-center">Error</div>
           ) : (
              <div className="text-3xl font-bold text-slate-900 mb-4">Ã¢â€šÂ¹{summary?.totalGrossAssigned?.toLocaleString() || '0'}</div>
           )}

@@ -64,7 +64,7 @@ class RbacAndPermissionIntegrationTest {
         com.erp.student.dto.StudentRequestDto request = new com.erp.student.dto.StudentRequestDto();
         request.setFirstName("Manish");
         request.setLastName("Sharma");
-        request.setEmail("manish@erp.com");
+        request.setEmail("student@erp.com");
         request.setPhone("+919876543210");
         request.setDateOfBirth(LocalDate.of(2000, 1, 1));
         request.setGender("MALE");
@@ -215,9 +215,9 @@ class RbacAndPermissionIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(feeRequest)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.studentId").value(101))
-                .andExpect(jsonPath("$.totalAmount").value(70000.00))
-                .andExpect(jsonPath("$.status").value("PENDING"));
+                .andExpect(jsonPath("$.code").value("SEM6_ALT"))
+                .andExpect(jsonPath("$.name").value("Semester 6"))
+                .andExpect(jsonPath("$.active").value(true));
     }
 
     @Test

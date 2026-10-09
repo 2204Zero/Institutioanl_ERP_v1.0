@@ -9,7 +9,7 @@ import lombok.RequiredArgsConstructor;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/campuss")
+@RequestMapping("/api/v1/campuses")
 public class CampusController {
     private final CampusService service;
 

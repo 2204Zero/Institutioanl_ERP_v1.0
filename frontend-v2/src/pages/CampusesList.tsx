@@ -29,7 +29,7 @@ export default function CampusesList() {
     queryKey: ['campuses'],
     queryFn: async () => {
       // NOTE: Using backend typo '/campuss'
-      const res = await apiClient.get('/api/v1/campuss');
+      const res = await apiClient.get('/api/v1/campuses');
       return res.data || [];
     }
   });
