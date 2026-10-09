@@ -43,14 +43,9 @@ public class UserController {
     @Operation(summary = "List system users", description = "Restricted to Administrators with USER_MANAGE permission")
     @PreAuthorize("hasAuthority('USER_MANAGE') or hasRole('ADMIN')")
     public ResponseEntity<List<UserSummary>> listUsers() {
-        List<UserSummary> users = List.of(
-                new UserSummary("superadmin", "superadmin@erp.com", "SUPER_ADMIN"),
-                new UserSummary("admin", "admin@erp.com", "ADMIN"),
-                new UserSummary("faculty", "faculty@erp.com", "FACULTY"),
-                new UserSummary("student", "student@erp.com", "STUDENT"),
-                new UserSummary("parent", "parent@erp.com", "PARENT"),
-                new UserSummary("finance", "finance@erp.com", "FINANCE")
-        );
+        List<UserSummary> users = userRegistry.getAllUsers().stream()
+                .map(user -> new UserSummary(user.getUsername(), user.getEmail(), user.getRole().name()))
+                .toList();
         return ResponseEntity.ok(users);
     }
 

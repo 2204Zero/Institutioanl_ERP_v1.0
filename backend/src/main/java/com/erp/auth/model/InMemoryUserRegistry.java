@@ -53,5 +53,8 @@ public class InMemoryUserRegistry implements UserDetailsService {
         }
         return users.get(username.toLowerCase());
     }
+    public java.util.Collection<UserPrincipal> getAllUsers() {
+        return users.values();
+    }
 }
 
