@@ -40,19 +40,34 @@ public class StudentServiceImpl implements StudentService {
 
     @Override
     public StudentResponseDto createStudent(StudentRequestDto requestDto) {
-        if (requestDto.getRollNumber() == null || requestDto.getRollNumber().trim().isEmpty()) {
-            requestDto.setRollNumber("ENR-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase());
-        }
-        
-        if (studentRepository.existsByRollNumber(requestDto.getRollNumber().trim())) {
-            throw new BusinessException("A student with roll number '" + requestDto.getRollNumber() + "' already exists.");
-        }
         if (studentRepository.existsByEmail(requestDto.getEmail().trim().toLowerCase())) {
             throw new BusinessException("A student with email '" + requestDto.getEmail() + "' already exists.");
         }
 
+        if (requestDto.getEnrollmentDate() == null) {
+            throw new BusinessException("Enrollment date is required for Enrollment ID generation.");
+        }
+
+        // Validate branch and gender before saving
+        String branchCode = getBranchCode(requestDto.getDepartment());
+        String genderCode = getGenderCode(requestDto.getGender());
+        int year = requestDto.getEnrollmentDate().getYear() % 100;
+
         Student student = studentMapper.toEntity(requestDto);
-        Student savedStudent = studentRepository.save(student);
+        // Temporary roll number to satisfy non-null constraint during initial insert
+        student.setRollNumber("ENR-TEMP-" + java.util.UUID.randomUUID().toString());
+
+        Student savedStudent = studentRepository.saveAndFlush(student);
+
+        // Generate final roll number: YY + BRANCH_CODE + GENDER_CODE + 3-digit-ID
+        String finalRollNumber = String.format("%02d%s%s%03d", year, branchCode, genderCode, savedStudent.getId());
+        
+        if (studentRepository.existsByRollNumber(finalRollNumber)) {
+            throw new BusinessException("Generated Enrollment ID collision detected: " + finalRollNumber);
+        }
+
+        savedStudent.setRollNumber(finalRollNumber);
+        savedStudent = studentRepository.save(savedStudent);
 
         // Record initial status in history
         StudentStatusHistory history = new StudentStatusHistory(
@@ -66,6 +81,34 @@ public class StudentServiceImpl implements StudentService {
         statusHistoryRepository.save(history);
 
         return studentMapper.toDto(savedStudent);
+    }
+
+    private String getBranchCode(String department) {
+        if (department == null) {
+            throw new BusinessException("Enrollment ID cannot be generated because department is missing.");
+        }
+        String dept = department.trim().toUpperCase();
+        return switch (dept) {
+            case "COMPUTER SCIENCE AND ENGINEERING", "COMPUTER SCIENCE" -> "CS";
+            case "ELECTRONICS AND COMMUNICATION ENGINEERING", "ELECTRONICS AND COMMUNICATION" -> "EC";
+            case "MECHANICAL ENGINEERING", "MECHANICAL" -> "ME";
+            case "CIVIL ENGINEERING", "CIVIL" -> "CE";
+            case "ARTIFICIAL INTELLIGENCE AND DATA SCIENCE" -> "AI";
+            case "INFORMATION TECHNOLOGY" -> "IT";
+            case "ELECTRICAL AND ELECTRONICS ENGINEERING" -> "EE";
+            default -> throw new BusinessException("Enrollment ID cannot be generated because no branch code is configured for the selected program/department: " + department);
+        };
+    }
+
+    private String getGenderCode(String gender) {
+        if (gender == null) {
+            throw new BusinessException("Enrollment ID cannot be generated because gender is missing.");
+        }
+        String g = gender.trim().toUpperCase();
+        if (g.equals("MALE")) return "M";
+        if (g.equals("FEMALE")) return "F";
+        if (g.equals("OTHER")) return "O";
+        throw new BusinessException("Enrollment ID cannot be generated because gender is invalid: " + gender);
     }
 
     @Override
@@ -120,14 +163,6 @@ public class StudentServiceImpl implements StudentService {
         Student student = studentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Student", "id", id));
 
-        // Check roll number uniqueness if changed
-        if (requestDto.getRollNumber() != null && !requestDto.getRollNumber().trim().isEmpty() && !student.getRollNumber().equalsIgnoreCase(requestDto.getRollNumber().trim())) {
-            if (studentRepository.existsByRollNumber(requestDto.getRollNumber().trim())) {
-                throw new BusinessException("A student with roll number '" + requestDto.getRollNumber() + "' already exists.");
-            }
-            student.setRollNumber(requestDto.getRollNumber().trim());
-        }
-
         // Check email uniqueness if changed
         if (!student.getEmail().equalsIgnoreCase(requestDto.getEmail().trim())) {
             if (studentRepository.existsByEmail(requestDto.getEmail().trim().toLowerCase())) {
@@ -136,6 +171,9 @@ public class StudentServiceImpl implements StudentService {
         }
 
         studentMapper.updateEntityFromDto(requestDto, student);
+        // StudentMapper explicitly ignores client-provided rollNumber.
+        // Therefore, the institutional Enrollment ID is completely immutable.
+
         Student updatedStudent = studentRepository.save(student);
         return studentMapper.toDto(updatedStudent);
     }

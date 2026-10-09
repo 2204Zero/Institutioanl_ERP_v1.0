@@ -31,6 +31,7 @@ public class SectionController {
     }
 
     @GetMapping("/{id}")
+    @org.springframework.security.access.prepost.PreAuthorize("@securityOwnershipService.canAccessSectionData(authentication, #id)")
     public ResponseEntity<SectionResponse> getById(@PathVariable Long id) {
         return ResponseEntity.ok(service.getById(id));
     }
@@ -68,6 +69,7 @@ public class SectionController {
     }
 
     @GetMapping("/{id}/students")
+    @org.springframework.security.access.prepost.PreAuthorize("@securityOwnershipService.canAccessSectionData(authentication, #id)")
     public ResponseEntity<List<SectionStudentResponse>> getStudents(@PathVariable Long id) {
         return ResponseEntity.ok(service.getStudents(id));
     }

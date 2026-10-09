@@ -74,14 +74,14 @@ class StudentControllerTest {
     @Test
     @DisplayName("Day 02 & 06: Should create student successfully and return 201")
     void testCreateStudentSuccess() throws Exception {
-        StudentRequestDto request = createSampleStudentRequest("TEST-CS-001", "rohan.test1@college.edu");
+        StudentRequestDto request = createSampleStudentRequest(null, "rohan.test1@college.edu");
 
         mockMvc.perform(post("/api/v1/students")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success", is(true)))
-                .andExpect(jsonPath("$.data.rollNumber", is("TEST-CS-001")))
+                .andExpect(jsonPath("$.data.rollNumber", startsWith("22CSM")))
                 .andExpect(jsonPath("$.data.email", is("rohan.test1@college.edu")))
                 .andExpect(jsonPath("$.data.status", is("ACTIVE")));
     }
@@ -105,13 +105,14 @@ class StudentControllerTest {
     @Test
     @DisplayName("Day 02: Should list students with pagination and search filter")
     void testListStudents() throws Exception {
-        StudentRequestDto request = createSampleStudentRequest("TEST-CS-002", "rohan.test2@college.edu");
+        StudentRequestDto request = createSampleStudentRequest(null, "rohan.test2@college.edu");
         mockMvc.perform(post("/api/v1/students")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)));
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated());
 
         mockMvc.perform(get("/api/v1/students")
-                        .param("search", "TEST-CS-002")
+                        .param("search", "rohan.test2")
                         .param("page", "0")
                         .param("size", "10"))
                 .andExpect(status().isOk())

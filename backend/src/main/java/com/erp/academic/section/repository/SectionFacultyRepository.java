@@ -13,6 +13,8 @@ public interface SectionFacultyRepository extends JpaRepository<SectionFaculty, 
 
     List<SectionFaculty> findByFacultyId(Long facultyId);
 
+    boolean existsBySectionIdAndFacultyId(Long sectionId, Long facultyId);
+
     boolean existsBySectionIdAndFacultyIdAndSubjectId(Long sectionId, Long facultyId, Long subjectId);
 
     void deleteBySectionId(Long sectionId);

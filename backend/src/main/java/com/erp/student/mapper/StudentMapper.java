@@ -20,7 +20,6 @@ public class StudentMapper {
     public Student toEntity(StudentRequestDto dto) {
         if (dto == null) return null;
         Student student = new Student();
-        student.setRollNumber(dto.getRollNumber().trim());
         student.setFirstName(dto.getFirstName().trim());
         student.setLastName(dto.getLastName().trim());
         student.setEmail(dto.getEmail().trim().toLowerCase());
@@ -44,7 +43,6 @@ public class StudentMapper {
 
     public void updateEntityFromDto(StudentRequestDto dto, Student student) {
         if (dto == null || student == null) return;
-        student.setRollNumber(dto.getRollNumber().trim());
         student.setFirstName(dto.getFirstName().trim());
         student.setLastName(dto.getLastName().trim());
         student.setEmail(dto.getEmail().trim().toLowerCase());

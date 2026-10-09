@@ -120,7 +120,7 @@ public class StudentModuleDemonstrationTest {
         MvcResult addStudentRes = studentMvc.perform(post("/api/v1/students")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(createDto)))
-                .andExpect(status().isCreated())
+                .andDo(org.springframework.test.web.servlet.result.MockMvcResultHandlers.print()).andExpect(status().isCreated())
                 .andReturn();
 
         String addStudentOut = addStudentRes.getResponse().getContentAsString();
@@ -130,7 +130,7 @@ public class StudentModuleDemonstrationTest {
 
         // 2. View Student by ID
         MvcResult getStudentRes = studentMvc.perform(get("/api/v1/students/" + studentId))
-                .andExpect(status().isOk())
+                .andDo(org.springframework.test.web.servlet.result.MockMvcResultHandlers.print()).andExpect(status().isOk())
                 .andReturn();
         printStep("2.2", "View Student by ID (GET /api/v1/students/" + studentId + ")", "Path variable id=" + studentId, getStudentRes.getResponse().getContentAsString(), 200);
 
@@ -140,7 +140,7 @@ public class StudentModuleDemonstrationTest {
         MvcResult updateStudentRes = studentMvc.perform(put("/api/v1/students/" + studentId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(createDto)))
-                .andExpect(status().isOk())
+                .andDo(org.springframework.test.web.servlet.result.MockMvcResultHandlers.print()).andExpect(status().isOk())
                 .andReturn();
         printStep("2.3", "Edit Student (PUT /api/v1/students/" + studentId + ")", createDto, updateStudentRes.getResponse().getContentAsString(), 200);
 
@@ -149,7 +149,7 @@ public class StudentModuleDemonstrationTest {
                         .param("search", "Palak")
                         .param("page", "0")
                         .param("size", "5"))
-                .andExpect(status().isOk())
+                .andDo(org.springframework.test.web.servlet.result.MockMvcResultHandlers.print()).andExpect(status().isOk())
                 .andReturn();
         printStep("2.4", "List Students (GET /api/v1/students?search=Palak&page=0&size=5)", "Query: search=Palak, page=0, size=5", listStudentsRes.getResponse().getContentAsString(), 200);
 
@@ -172,7 +172,7 @@ public class StudentModuleDemonstrationTest {
         MvcResult addGuardianRes = guardianMvc.perform(post("/api/v1/students/" + studentId + "/guardians")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(guardianDto)))
-                .andExpect(status().isCreated())
+                .andDo(org.springframework.test.web.servlet.result.MockMvcResultHandlers.print()).andExpect(status().isCreated())
                 .andReturn();
         String addGuardianOut = addGuardianRes.getResponse().getContentAsString();
         printStep("3.1", "Add & Link Guardian to Student (POST /api/v1/students/" + studentId + "/guardians)", guardianDto, addGuardianOut, 201);
@@ -181,7 +181,7 @@ public class StudentModuleDemonstrationTest {
 
         // View guardians for student
         MvcResult getStudentGuardiansRes = guardianMvc.perform(get("/api/v1/students/" + studentId + "/guardians"))
-                .andExpect(status().isOk())
+                .andDo(org.springframework.test.web.servlet.result.MockMvcResultHandlers.print()).andExpect(status().isOk())
                 .andReturn();
         printStep("3.2", "Get Guardians for Student (GET /api/v1/students/" + studentId + "/guardians)", "Path variable studentId=" + studentId, getStudentGuardiansRes.getResponse().getContentAsString(), 200);
 
@@ -190,7 +190,7 @@ public class StudentModuleDemonstrationTest {
         MvcResult updateGuardianRes = guardianMvc.perform(put("/guardians/" + guardianId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(guardianDto)))
-                .andExpect(status().isOk())
+                .andDo(org.springframework.test.web.servlet.result.MockMvcResultHandlers.print()).andExpect(status().isOk())
                 .andReturn();
         printStep("3.3", "Edit Guardian (PUT /guardians/" + guardianId + ")", guardianDto, updateGuardianRes.getResponse().getContentAsString(), 200);
 
@@ -209,7 +209,7 @@ public class StudentModuleDemonstrationTest {
         MvcResult uploadDocRes = documentMvc.perform(multipart("/api/v1/students/" + studentId + "/documents")
                         .file(aadhaarFile)
                         .param("documentType", DocumentType.AADHAAR.name()))
-                .andExpect(status().isCreated())
+                .andDo(org.springframework.test.web.servlet.result.MockMvcResultHandlers.print()).andExpect(status().isCreated())
                 .andReturn();
         String uploadDocOut = uploadDocRes.getResponse().getContentAsString();
         printStep("4.1", "Upload Aadhaar Document (POST /api/v1/students/" + studentId + "/documents)", "File: aadhaar_card_palak.pdf, Type: AADHAAR", uploadDocOut, 201);
@@ -218,13 +218,13 @@ public class StudentModuleDemonstrationTest {
 
         // List student documents
         MvcResult listDocsRes = documentMvc.perform(get("/api/v1/students/" + studentId + "/documents"))
-                .andExpect(status().isOk())
+                .andDo(org.springframework.test.web.servlet.result.MockMvcResultHandlers.print()).andExpect(status().isOk())
                 .andReturn();
         printStep("4.2", "List Student Documents (GET /api/v1/students/" + studentId + "/documents)", "Path variable studentId=" + studentId, listDocsRes.getResponse().getContentAsString(), 200);
 
         // View Document inline
         MvcResult viewDocRes = documentMvc.perform(get("/api/v1/documents/" + docId + "/view"))
-                .andExpect(status().isOk())
+                .andDo(org.springframework.test.web.servlet.result.MockMvcResultHandlers.print()).andExpect(status().isOk())
                 .andReturn();
         System.out.println("\n--> [STEP 4.3] View Document Inline (GET /api/v1/documents/" + docId + "/view)");
         System.out.println("    HTTP STATUS CODE : 200");
@@ -247,13 +247,13 @@ public class StudentModuleDemonstrationTest {
         MvcResult updateStatusRes = studentMvc.perform(patch("/api/v1/students/" + studentId + "/status")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(statusUpdate)))
-                .andExpect(status().isOk())
+                .andDo(org.springframework.test.web.servlet.result.MockMvcResultHandlers.print()).andExpect(status().isOk())
                 .andReturn();
         printStep("5.1", "Update Status to SUSPENDED (PATCH /api/v1/students/" + studentId + "/status)", statusUpdate, updateStatusRes.getResponse().getContentAsString(), 200);
 
         // View status history audit log
         MvcResult getHistoryRes = studentMvc.perform(get("/api/v1/students/" + studentId + "/status-history"))
-                .andExpect(status().isOk())
+                .andDo(org.springframework.test.web.servlet.result.MockMvcResultHandlers.print()).andExpect(status().isOk())
                 .andReturn();
         printStep("5.2", "View Student Status History Audit (GET /api/v1/students/" + studentId + "/status-history)", "Path variable id=" + studentId, getHistoryRes.getResponse().getContentAsString(), 200);
 

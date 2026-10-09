@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '../store/useAuthStore';
 import { useMyStudentId } from '../hooks/useMyStudentId';
 import type { AttendanceResponse } from '../types/attendance';
+import FacultyAttendance from './FacultyAttendance';
 import {
   Table,
   TableBody,
@@ -19,6 +20,10 @@ export default function Attendance() {
   const { user } = useAuthStore();
   const { data: myStudentId, isLoading: isLoadingId } = useMyStudentId();
   const isPersonalView = user?.role === 'STUDENT' || user?.role === 'PARENT';
+
+  if (user?.role === 'FACULTY') {
+    return <FacultyAttendance />;
+  }
 
   const { data: records, isLoading, isError } = useQuery<AttendanceResponse[]>({
     queryKey: ['attendance', isPersonalView, myStudentId],

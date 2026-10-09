@@ -130,7 +130,7 @@ export default function Layout() {
             
             <NavGroup title="Academics">
               <NavItem path="/dashboard/academics" icon={GraduationCap} label="My Timetable" />
-              <NavItem path="/dashboard/students" icon={Users} label="My Sections" />
+              <NavItem path="/dashboard/sections" icon={Users} label="My Sections" />
               <NavItem path="/dashboard/examinations" icon={FileText} label="Grading & Exams" comingSoon />
             </NavGroup>
             
