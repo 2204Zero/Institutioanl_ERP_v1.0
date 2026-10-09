@@ -67,12 +67,13 @@ export default function FacultyAttendance() {
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   // 1. Fetch Sections
-  const { data: sections, isLoading: loadingSections } = useQuery<Section[]>({
+  const { data: sections, isLoading: loadingSections, isError: isSectionsError, error: sectionsError } = useQuery<Section[]>({
     queryKey: ['faculty-sections'],
     queryFn: async () => {
       const res = await apiClient.get('/api/v1/faculty/me/sections');
       return res.data;
-    }
+    },
+    retry: false
   });
 
   // 2. Fetch Timetable
@@ -237,6 +238,7 @@ export default function FacultyAttendance() {
               ))}
             </select>
             {loadingSections && <div className="text-xs text-slate-400 mt-1 flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin"/> Loading sections...</div>}
+            {isSectionsError && <div className="text-xs text-red-500 mt-1 font-medium flex items-center gap-1"><AlertCircle className="w-3 h-3"/> Failed to load sections: {sectionsError instanceof Error ? sectionsError.message : 'Unknown error'}</div>}
           </div>
 
           {/* Schedule Selection */}

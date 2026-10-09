@@ -19,7 +19,7 @@ public class FeeStructureController {
     @PostMapping
     @PreAuthorize("hasAuthority('FEE_STRUCTURE_CREATE') or hasRole('FINANCE')")
     public ResponseEntity<FeeStructure> createFeeStructure(@RequestBody FeeStructure feeStructure) {
-        return ResponseEntity.ok(feeStructureService.createFeeStructure(feeStructure));
+        return org.springframework.http.ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(feeStructureService.createFeeStructure(feeStructure));
     }
 
     @GetMapping

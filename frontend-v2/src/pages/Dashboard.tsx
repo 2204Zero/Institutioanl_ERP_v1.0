@@ -45,7 +45,7 @@ export default function Dashboard() {
   const { data: appsData, isLoading: loadingApps } = useQuery<Application[]>({
     queryKey: ['dashboard-apps'],
     enabled: isAdmin,
-    queryFn: async () => (await apiClient.get('/api/v1/admissions/applications')).data
+    queryFn: async () => (await apiClient.get('/api/v1/admission-applications')).data
   });
 
   if (!isManagement) {

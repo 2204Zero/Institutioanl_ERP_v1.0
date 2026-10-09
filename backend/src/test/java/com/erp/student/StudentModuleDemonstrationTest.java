@@ -89,6 +89,7 @@ public class StudentModuleDemonstrationTest {
 
     @Test
     @DisplayName("Meeting Live Demo: Demonstrate Outputs for Day 01 through Day 06")
+    @org.springframework.security.test.context.support.WithMockUser(roles = {"ADMIN"})
     void runCompleteDemonstration() throws Exception {
         printHeader("DEMONSTRATION OF STUDENT INFORMATION SYSTEM (SIS) - PALAK AGARWAL");
 

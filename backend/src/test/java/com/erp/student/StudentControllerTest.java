@@ -104,6 +104,7 @@ class StudentControllerTest {
 
     @Test
     @DisplayName("Day 02: Should list students with pagination and search filter")
+    @org.springframework.security.test.context.support.WithMockUser(roles = {"ADMIN"})
     void testListStudents() throws Exception {
         StudentRequestDto request = createSampleStudentRequest(null, "rohan.test2@college.edu");
         mockMvc.perform(post("/api/v1/students")
@@ -115,6 +116,7 @@ class StudentControllerTest {
                         .param("search", "rohan.test2")
                         .param("page", "0")
                         .param("size", "10"))
+                .andDo(org.springframework.test.web.servlet.result.MockMvcResultHandlers.print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success", is(true)))
                 .andExpect(jsonPath("$.data.content", hasSize(greaterThanOrEqualTo(1))));
@@ -122,6 +124,7 @@ class StudentControllerTest {
 
     @Test
     @DisplayName("Day 05: Should update student status with audit logging")
+    @org.springframework.security.test.context.support.WithMockUser(roles = {"ADMIN"})
     void testUpdateStudentStatus() throws Exception {
         StudentRequestDto request = createSampleStudentRequest("TEST-CS-003", "rohan.test3@college.edu");
         MvcResult result = mockMvc.perform(post("/api/v1/students")

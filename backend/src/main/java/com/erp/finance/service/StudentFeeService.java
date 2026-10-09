@@ -26,15 +26,15 @@ public class StudentFeeService {
     @Transactional
     public StudentFee assignFeeStructure(Long studentId, Long feeStructureId, Long academicYearId) {
         FeeStructure structure = feeStructureRepository.findById(feeStructureId)
-                .orElseThrow(() -> new RuntimeException("Fee structure not found"));
+                .orElseThrow(() -> new IllegalArgumentException("Fee structure not found"));
                 
         if (!structure.getActive()) {
-            throw new RuntimeException("Cannot assign inactive fee structure");
+            throw new IllegalArgumentException("Cannot assign inactive fee structure");
         }
 
         // Check for duplicates
         if (studentFeeRepository.findByStudentIdAndAcademicYearId(studentId, academicYearId).isPresent()) {
-            throw new RuntimeException("Student fee already assigned for this academic year");
+            throw new IllegalArgumentException("Student fee already assigned for this academic year");
         }
 
         StudentFee studentFee = new StudentFee();

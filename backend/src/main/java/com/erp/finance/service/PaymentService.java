@@ -36,19 +36,19 @@ public class PaymentService {
     public Receipt recordPayment(Payment paymentDto, Long studentFeeId) {
         // 1. Validate student fee
         StudentFee studentFee = studentFeeRepository.findById(studentFeeId)
-                .orElseThrow(() -> new RuntimeException("Student Fee not found"));
+                .orElseThrow(() -> new IllegalArgumentException("Student Fee not found"));
 
         if (studentFee.getStatus() == StudentFeeStatus.PAID || studentFee.getStatus() == StudentFeeStatus.CANCELLED) {
-            throw new RuntimeException("Fee is already paid or cancelled");
+            throw new IllegalArgumentException("Fee is already paid or cancelled");
         }
 
         // 2. Validate amount
         BigDecimal paymentAmount = paymentDto.getAmount();
         if (paymentAmount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new RuntimeException("Payment amount must be greater than 0");
+            throw new IllegalArgumentException("Payment amount must be greater than 0");
         }
         if (paymentAmount.compareTo(studentFee.getOutstandingAmount()) > 0) {
-            throw new RuntimeException("Payment exceeds outstanding amount");
+            throw new IllegalArgumentException("Payment exceeds outstanding amount");
         }
 
         // 3. Create Payment

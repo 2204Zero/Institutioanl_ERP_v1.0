@@ -40,16 +40,17 @@ export default function FacultySections() {
   const [selectedSectionId, setSelectedSectionId] = useState<number | null>(null);
 
   // 1. Fetch assigned sections
-  const { data: sections, isLoading: loadingSections } = useQuery<Section[]>({
+  const { data: sections, isLoading: loadingSections, isError: isSectionsError, error: sectionsError } = useQuery<Section[]>({
     queryKey: ['faculty-sections'],
     queryFn: async () => {
       const res = await apiClient.get('/api/v1/faculty/me/sections');
       return res.data;
-    }
+    },
+    retry: false
   });
 
   // 2. Fetch section details
-  const { data: sectionDetails, isLoading: loadingDetails } = useQuery<Section>({
+  const { data: sectionDetails, isLoading: loadingDetails, isError: isDetailsError } = useQuery<Section>({
     queryKey: ['section-details', selectedSectionId],
     queryFn: async () => {
       const res = await apiClient.get(`/api/v1/sections/${selectedSectionId}`);
@@ -59,7 +60,7 @@ export default function FacultySections() {
   });
 
   // 3. Fetch students roster
-  const { data: roster, isLoading: loadingRoster } = useQuery<SectionStudent[]>({
+  const { data: roster, isLoading: loadingRoster, isError: isRosterError } = useQuery<SectionStudent[]>({
     queryKey: ['section-students', selectedSectionId],
     queryFn: async () => {
       const res = await apiClient.get(`/api/v1/sections/${selectedSectionId}/students`);
@@ -69,7 +70,7 @@ export default function FacultySections() {
   });
 
   // 4. Fetch section timetable
-  const { data: timetable, isLoading: loadingTimetable } = useQuery<TimetableSlot[]>({
+  const { data: timetable, isLoading: loadingTimetable, isError: isTimetableError } = useQuery<TimetableSlot[]>({
     queryKey: ['section-timetable', selectedSectionId],
     queryFn: async () => {
       const res = await apiClient.get(`/api/v1/timetable/section/${selectedSectionId}`);
@@ -112,6 +113,10 @@ export default function FacultySections() {
             
             {loadingSections ? (
               <div className="flex justify-center p-8 bg-white border border-slate-200"><Loader2 className="h-6 w-6 animate-spin text-slate-400" /></div>
+            ) : isSectionsError ? (
+              <div className="bg-white border border-red-200 bg-red-50 p-8 text-center text-sm text-red-600">
+                Failed to load sections: {sectionsError instanceof Error ? sectionsError.message : 'Unknown API error'}.
+              </div>
             ) : sections && sections.length > 0 ? (
               <div className="bg-white border border-slate-200 divide-y divide-slate-100">
                 {sections.map((section) => (
@@ -165,6 +170,8 @@ export default function FacultySections() {
                   
                   {loadingDetails ? (
                      <div className="h-10 bg-slate-100 animate-pulse rounded" />
+                  ) : isDetailsError ? (
+                     <p className="text-sm text-red-500 font-medium">Failed to load details. You might not have permission.</p>
                   ) : sectionDetails ? (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div>
@@ -181,7 +188,7 @@ export default function FacultySections() {
                       </div>
                     </div>
                   ) : (
-                    <p className="text-sm text-red-500">Failed to load details.</p>
+                    <p className="text-sm text-red-500 font-medium">No details available.</p>
                   )}
                   
                   <div className="pt-4 border-t border-slate-100 flex justify-end">
@@ -200,6 +207,10 @@ export default function FacultySections() {
                   <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 border-b border-slate-200 pb-2">Class Schedule</h3>
                   {loadingTimetable ? (
                     <div className="flex justify-center p-8 bg-white border border-slate-200"><Loader2 className="h-6 w-6 animate-spin text-slate-400" /></div>
+                  ) : isTimetableError ? (
+                    <div className="bg-white border border-red-200 bg-red-50 p-8 text-center text-sm text-red-600">
+                      Failed to load class schedule.
+                    </div>
                   ) : timetable && timetable.length > 0 ? (
                     <div className="bg-white border border-slate-200 divide-y divide-slate-100">
                       {daysOfWeek.map(day => {
@@ -243,6 +254,10 @@ export default function FacultySections() {
                   <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 border-b border-slate-200 pb-2">Student Roster</h3>
                   {loadingRoster ? (
                     <div className="flex justify-center p-8 bg-white border border-slate-200"><Loader2 className="h-6 w-6 animate-spin text-slate-400" /></div>
+                  ) : isRosterError ? (
+                    <div className="bg-white border border-red-200 bg-red-50 p-8 text-center text-sm text-red-600">
+                      Failed to load student roster.
+                    </div>
                   ) : roster && roster.length > 0 ? (
                     <div className="bg-white border border-slate-200">
                       <table className="w-full text-left text-sm">
