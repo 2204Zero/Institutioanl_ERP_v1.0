@@ -50,7 +50,7 @@ public class StudentDataLoader implements CommandLineRunner {
         Files.createDirectories(Paths.get("uploads/documents"));
 
         // Student 1: Aarav Sharma (Active)
-        Student s1 = new Student("2023-CSE-001", "Aarav", "Sharma", "aarav.sharma@college.edu",
+        Student s1 = new Student("23CSM001", "Aarav", "Sharma", "aarav.sharma@college.edu",
                 "+919876543210", LocalDate.of(2004, 6, 15), "MALE", "Computer Science and Engineering",
                 "2023-2027", LocalDate.of(2023, 8, 1));
         s1.setBloodGroup("O+");
@@ -90,7 +90,7 @@ public class StudentDataLoader implements CommandLineRunner {
         statusHistoryRepository.save(sh1);
 
         // Student 2: Diya Mehta (Active)
-        Student s2 = new Student("2023-CSE-002", "Diya", "Mehta", "diya.mehta@college.edu",
+        Student s2 = new Student("23CSF002", "Diya", "Mehta", "diya.mehta@college.edu",
                 "+919876543211", LocalDate.of(2004, 9, 22), "FEMALE", "Computer Science and Engineering",
                 "2023-2027", LocalDate.of(2023, 8, 1));
         s2.setBloodGroup("B+");
@@ -114,7 +114,7 @@ public class StudentDataLoader implements CommandLineRunner {
         statusHistoryRepository.save(sh2);
 
         // Student 3: Rohan Iyer (Suspended)
-        Student s3 = new Student("2022-ECE-015", "Rohan", "Iyer", "rohan.iyer@college.edu",
+        Student s3 = new Student("22ECM003", "Rohan", "Iyer", "rohan.iyer@college.edu",
                 "+919876543212", LocalDate.of(2003, 12, 5), "MALE", "Electronics and Communication Engineering",
                 "2022-2026", LocalDate.of(2022, 8, 1));
         s3.setBloodGroup("A+");
@@ -141,7 +141,7 @@ public class StudentDataLoader implements CommandLineRunner {
         statusHistoryRepository.save(sh3_2);
 
         // Student 4: Priya Singh (Graduated)
-        Student s4 = new Student("2020-MECH-042", "Priya", "Singh", "priya.singh@college.edu",
+        Student s4 = new Student("20MEF004", "Priya", "Singh", "priya.singh@college.edu",
                 "+919876543213", LocalDate.of(2002, 4, 18), "FEMALE", "Mechanical Engineering",
                 "2020-2024", LocalDate.of(2020, 8, 1));
         s4.setBloodGroup("AB+");
@@ -152,7 +152,7 @@ public class StudentDataLoader implements CommandLineRunner {
         studentRepository.save(s4);
 
         // Student 5: Vikram Rao (Alumni)
-        Student s5 = new Student("2019-CIVIL-009", "Vikram", "Rao", "vikram.rao@college.edu",
+        Student s5 = new Student("19CEM005", "Vikram", "Rao", "vikram.rao@college.edu",
                 "+919876543214", LocalDate.of(2001, 1, 30), "MALE", "Civil Engineering",
                 "2019-2023", LocalDate.of(2019, 8, 1));
         s5.setBloodGroup("O-");

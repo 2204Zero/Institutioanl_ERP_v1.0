@@ -15,6 +15,7 @@ import GuardiansList from './pages/GuardiansList';
 import AdminUsersList from './pages/AdminUsersList';
 import Admissions from './pages/Admissions';
 import Academics from './pages/Academics';
+import FacultySections from './pages/FacultySections';
 import Layout from './components/Layout';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from './components/ui/sonner';
@@ -120,6 +121,7 @@ function App() {
               <Route path="campuses" element={<RoleProtectedRoute allowedRoles={['SUPER_ADMIN']}><CampusesList /></RoleProtectedRoute>} />
               <Route path="admissions" element={<RoleProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN']}><Admissions /></RoleProtectedRoute>} />
               <Route path="academics" element={<RoleProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN', 'FACULTY']}><Academics /></RoleProtectedRoute>} />
+              <Route path="sections" element={<RoleProtectedRoute allowedRoles={['FACULTY']}><FacultySections /></RoleProtectedRoute>} />
               <Route path="guardians" element={<RoleProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN']}><GuardiansList /></RoleProtectedRoute>} />
               <Route path="admin/users" element={<RoleProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN']}><AdminUsersList /></RoleProtectedRoute>} />
             </Route>

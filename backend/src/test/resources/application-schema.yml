@@ -1,0 +1,11 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:schema_db
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    properties:
+      jakarta.persistence.schema-generation.scripts.action: create
+      jakarta.persistence.schema-generation.scripts.create-target: target/pg-schema.sql

@@ -24,3 +24,6 @@ logging:
     com.erp: DEBUG
     org.springframework.web: INFO
     org.hibernate.SQL: DEBUG
+
+  flyway:
+    enabled: false

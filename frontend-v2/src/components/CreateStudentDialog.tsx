@@ -138,9 +138,7 @@ export function CreateStudentDialog() {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <FormField control={form.control} name="rollNumber" render={({ field }) => (
-                <FormItem><FormLabel>Roll Number</FormLabel><FormControl><Input placeholder="CS24001" {...field} /></FormControl><FormMessage /></FormItem>
-              )} />
+
               <FormField control={form.control} name="dateOfBirth" render={({ field }) => (
                 <FormItem><FormLabel>Date of Birth*</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>
               )} />
