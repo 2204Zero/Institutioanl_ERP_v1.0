@@ -21,8 +21,8 @@ interface TimetableSlot {
   facultyId: number;
   roomId: number;
   dayOfWeek: string;
-  startTime: string;
-  endTime: string;
+  startTime: string | number[];
+  endTime: string | number[];
   isActive: boolean;
 }
 
@@ -201,10 +201,18 @@ export default function FacultyAttendance() {
   };
 
   const activeRoster = roster?.filter(s => s.isActive) || [];
-  const formatTime = (timeStr: string) => {
-    const [h, m] = timeStr.split(':');
+  const formatTime = (timeData: string | number[]) => {
+    let h, m;
+    if (Array.isArray(timeData)) {
+      h = timeData[0];
+      m = timeData[1] || 0;
+    } else {
+      const parts = timeData.split(':');
+      h = parseInt(parts[0], 10);
+      m = parseInt(parts[1], 10);
+    }
     const d = new Date();
-    d.setHours(parseInt(h), parseInt(m));
+    d.setHours(h, m);
     return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
   };
 
