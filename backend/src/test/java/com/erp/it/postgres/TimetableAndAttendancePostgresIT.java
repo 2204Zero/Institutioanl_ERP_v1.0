@@ -87,7 +87,7 @@ public class TimetableAndAttendancePostgresIT extends AbstractPostgresIT {
         jdbcTemplate.execute("INSERT INTO students (id, roll_number, first_name, last_name, email, phone, date_of_birth, gender, department, batch, enrollment_date, status) " +
                 "VALUES (902, 'ROLL902', 'Att', 'Student', 'att.student@college.edu', '1234567890', '2004-01-01', 'MALE', 'CSE', '2024-2028', '2024-08-01', 'ACTIVE') ON CONFLICT DO NOTHING");
 
-        jdbcTemplate.execute("INSERT INTO section_student (id, section_id, student_id) VALUES (902, 902, 902) ON CONFLICT DO NOTHING");
+        jdbcTemplate.execute("INSERT INTO section_student (id, section_id, student_id, is_active) VALUES (902, 902, 902, true) ON CONFLICT DO NOTHING");
 
         LocalDate testDate = LocalDate.of(2026, 10, 12); // A Monday
 
