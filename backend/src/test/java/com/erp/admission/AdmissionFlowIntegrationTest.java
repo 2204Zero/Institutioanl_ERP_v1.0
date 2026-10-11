@@ -2,8 +2,12 @@ package com.erp.admission;
 
 import com.erp.academic.academic_year.entity.AcademicYear;
 import com.erp.academic.academic_year.repository.AcademicYearRepository;
+import com.erp.academic.batch.entity.Batch;
+import com.erp.academic.batch.repository.BatchRepository;
 import com.erp.academic.program.entity.Program;
 import com.erp.academic.program.repository.ProgramRepository;
+import com.erp.academic.semester.entity.Semester;
+import com.erp.academic.semester.repository.SemesterRepository;
 import com.erp.admission.applicant.dto.ApplicantDto;
 import com.erp.admission.applicant.service.ApplicantService;
 import com.erp.admission.application.dto.AdmissionApplicationDto;
@@ -38,6 +42,8 @@ public class AdmissionFlowIntegrationTest {
 
     @Autowired private ProgramRepository programRepository;
     @Autowired private AcademicYearRepository academicYearRepository;
+    @Autowired private BatchRepository batchRepository;
+    @Autowired private SemesterRepository semesterRepository;
 
     @Test
     @Transactional
@@ -55,6 +61,24 @@ public class AdmissionFlowIntegrationTest {
         program.setDuration(4);
         program.setIsActive(true);
         program = programRepository.save(program);
+
+        Batch batch = new Batch();
+        batch.setName("B.Tech CS 2026 Batch");
+        batch.setCode("BTECH-CS-2026");
+        batch.setProgramId(program.getId());
+        batch.setAdmissionYear(2026);
+        batch.setAcademicYearId(year.getId());
+        batch.setIsActive(true);
+        batchRepository.save(batch);
+
+        Semester semester = new Semester();
+        semester.setAcademicYearId(year.getId());
+        semester.setSemesterNumber(1);
+        semester.setName("Fall 2026");
+        semester.setStartDate(LocalDate.of(2026, 8, 1));
+        semester.setEndDate(LocalDate.of(2026, 12, 15));
+        semester.setIsActive(true);
+        semesterRepository.save(semester);
 
         // 1. Create Applicant
         ApplicantDto applicantReq = ApplicantDto.builder()

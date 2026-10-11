@@ -20,7 +20,7 @@ public class CourseOfferingController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAuthority('COURSE_OFFERING_CREATE') or hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('COURSE_OFFERING_CREATE') or hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     public ResponseEntity<CourseOffering> create(@RequestBody Map<String, Object> payload) {
         Long courseId = ((Number) payload.get("courseId")).longValue();
         Long semesterId = ((Number) payload.get("semesterId")).longValue();

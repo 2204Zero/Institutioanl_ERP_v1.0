@@ -99,6 +99,17 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
     }
 
+    @ExceptionHandler(org.springframework.security.authentication.DisabledException.class)
+    public ResponseEntity<com.erp.common.exception.ApiErrorResponse> handleDisabledException(org.springframework.security.authentication.DisabledException ex, HttpServletRequest request) {
+        com.erp.common.exception.ApiErrorResponse errorResponse = com.erp.common.exception.ApiErrorResponse.of(
+                HttpStatus.UNAUTHORIZED.value(),
+                "INVALID_CREDENTIALS",
+                "Account is disabled",
+                request.getRequestURI()
+        );
+        return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
+    }
+
     @ExceptionHandler(com.erp.common.exception.InvalidTokenException.class)
     public ResponseEntity<com.erp.common.exception.ApiErrorResponse> handleInvalidTokenException(com.erp.common.exception.InvalidTokenException ex, HttpServletRequest request) {
         com.erp.common.exception.ApiErrorResponse errorResponse = com.erp.common.exception.ApiErrorResponse.of(

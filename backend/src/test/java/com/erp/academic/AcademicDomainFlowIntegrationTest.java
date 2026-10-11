@@ -81,6 +81,9 @@ class AcademicDomainFlowIntegrationTest {
     @Autowired
     private CourseOfferingService courseOfferingService;
 
+    @Autowired
+    private com.erp.faculty.repository.FacultyRepository facultyRepository;
+
     private Long academicYearId;
     private Long departmentId;
     private Long student1Id;
@@ -350,9 +353,16 @@ class AcademicDomainFlowIntegrationTest {
                 .hasMessageContaining("capacity exceeded");
 
         // Assign Faculty to Section
+        Long facultyId = 999L;
+        if (!facultyRepository.existsById(999L)) {
+            com.erp.faculty.entity.Faculty saved = facultyRepository.save(com.erp.faculty.entity.Faculty.builder()
+                .firstName("Prof").lastName("Test").officialEmail("p999@erp.com").isActive(true).build());
+            facultyId = saved.getId();
+        }
+        
         SectionFacultyResponse facultyAssignment = sectionService.assignFaculty(section.getId(),
                 SectionFacultyAssignRequest.builder()
-                        .facultyId(999L)
+                        .facultyId(facultyId)
                         .subjectId(aiTheory.getId())
                         .role("CLASS_TEACHER")
                         .build());

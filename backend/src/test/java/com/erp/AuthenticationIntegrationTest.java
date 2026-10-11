@@ -61,6 +61,19 @@ class AuthenticationIntegrationTest {
     }
 
     @Test
+    @DisplayName("Should reject authentication when account is disabled")
+    void shouldRejectAuthenticationWhenAccountIsDisabled() throws Exception {
+        LoginRequest loginRequest = new LoginRequest("disabled_user", "Password@123", null);
+
+        mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginRequest)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.code").value("INVALID_CREDENTIALS"));
+    }
+
+    @Test
     @DisplayName("Should reject authentication when username is nonexistent")
     void shouldRejectAuthenticationWhenUsernameDoesNotExist() throws Exception {
         LoginRequest loginRequest = new LoginRequest("unknown_user_404", "Password@123", null);
@@ -145,6 +158,20 @@ class AuthenticationIntegrationTest {
                         .header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value("TOKEN_REVOKED"));
+    }
+
+    @Test
+    @DisplayName("Should allow SUPER_ADMIN to login when requested role is ADMIN")
+    void shouldAllowSuperAdminToLoginViaAdminRole() throws Exception {
+        LoginRequest loginRequest = new LoginRequest("superadmin", "Admin@123", "ADMIN");
+
+        mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken").isNotEmpty())
+                .andExpect(jsonPath("$.username").value("superadmin"))
+                .andExpect(jsonPath("$.role").value("SUPER_ADMIN"));
     }
 }
 

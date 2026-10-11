@@ -42,7 +42,7 @@ jobs:
 
 
   backend:
-    name: Backend CI
+    name: Backend CI (H2)
     runs-on: ubuntu-latest
 
     steps:
@@ -56,6 +56,44 @@ jobs:
           java-version: 21
           cache: maven
 
-      - name: Build and test backend
+      - name: Build and test backend (H2)
         working-directory: backend
-        run: mvn clean verify
+        run: mvn clean test
+
+  backend-postgres-it:
+    name: Backend PostgreSQL Integration Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: edupulse_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres_test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+
+      - name: Run PostgreSQL Integration Tests
+        working-directory: backend
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/edupulse_test
+          SPRING_DATASOURCE_USERNAME: postgres
+          SPRING_DATASOURCE_PASSWORD: postgres_test_password
+        run: mvn verify -P postgres-it

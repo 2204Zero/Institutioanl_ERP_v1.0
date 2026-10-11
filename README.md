@@ -41,10 +41,22 @@ cd backend
 - H2 Console: `http://localhost:8080/h2-console` (`jdbc:h2:mem:erp_db`, User: `sa`, Password: empty)
 
 ### 2. Run Backend Tests
+
+#### Fast H2 Test Suite (Default Developer Workflow)
+Runs in-memory H2 unit, controller, and service tests without requiring Docker or external PostgreSQL services:
 ```bash
 cd backend
-.\mvnw.cmd test
+mvn clean test
 ```
+
+#### Dedicated PostgreSQL Integration Suite
+Runs Flyway V1-V4 migrations, identity-linking constraints, transaction rollback, and attendance concurrency tests against an isolated PostgreSQL 17 test database:
+```bash
+cd backend
+mvn verify -P postgres-it
+```
+> **Safety Notice**: The PostgreSQL integration test profile targets strictly the isolated test database `edupulse_test`. Connecting to `edupulse_erp` or `one` is strictly prohibited and blocked by fail-fast test security guards (`PostgresSafetyGuard`).
+
 
 ### 3. Run Frontend (React + Vite)
 ```bash

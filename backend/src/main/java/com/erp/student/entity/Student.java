@@ -77,6 +77,9 @@ public class Student {
     @Column(nullable = false, length = 30)
     private StudentStatus status = StudentStatus.ACTIVE;
 
+    @Column(name = "user_id", unique = true)
+    private Long userId;
+
     @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Guardian> guardians = new ArrayList<>();
 
@@ -294,5 +297,13 @@ public class Student {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 }

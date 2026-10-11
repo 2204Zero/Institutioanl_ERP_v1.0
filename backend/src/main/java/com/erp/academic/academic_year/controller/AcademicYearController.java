@@ -3,6 +3,7 @@ package com.erp.academic.academic_year.controller;
 import com.erp.academic.academic_year.dto.*;
 import com.erp.academic.academic_year.service.AcademicYearService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import lombok.RequiredArgsConstructor;
 
@@ -19,6 +20,7 @@ public class AcademicYearController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     public ResponseEntity<AcademicYearResponse> create(@RequestBody AcademicYearCreateRequest request) {
         return ResponseEntity.ok(service.create(request));
     }
@@ -34,11 +36,13 @@ public class AcademicYearController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     public ResponseEntity<AcademicYearResponse> update(@PathVariable Long id, @RequestBody AcademicYearUpdateRequest request) {
         return ResponseEntity.ok(service.update(id, request));
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.delete(id);
         return ResponseEntity.ok().build();

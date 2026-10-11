@@ -19,7 +19,7 @@ public class TimetableController {
     }
 
     @PostMapping("/allocate")
-    @PreAuthorize("hasAuthority('TIMETABLE_CREATE') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     public ResponseEntity<TimetableSlot> allocateSlot(@RequestBody TimetableSlot slot) {
         return ResponseEntity.ok(timetableService.allocateSlot(slot));
     }

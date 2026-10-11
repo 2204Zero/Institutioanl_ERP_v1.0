@@ -5,7 +5,9 @@ import com.erp.academic.course_registration.service.CourseRegistrationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/course-registrations")
@@ -14,7 +16,14 @@ public class CourseRegistrationController {
 
     private final CourseRegistrationService registrationService;
 
+    @GetMapping
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+    public ResponseEntity<List<CourseRegistration>> getRegistrations(@RequestParam Long studentId) {
+        return ResponseEntity.ok(registrationService.getByStudentId(studentId));
+    }
+
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     public ResponseEntity<CourseRegistration> registerStudent(
             @RequestParam Long studentId,
             @RequestParam Long courseOfferingId,
@@ -24,6 +33,7 @@ public class CourseRegistrationController {
     }
 
     @PatchMapping("/{id}/drop")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     public ResponseEntity<CourseRegistration> dropCourse(@PathVariable Long id) {
         return ResponseEntity.ok(registrationService.dropCourse(id));
     }

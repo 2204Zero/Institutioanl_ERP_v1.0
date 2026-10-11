@@ -94,4 +94,9 @@ public class CourseRegistrationService {
 
         return registrationRepository.save(registration);
     }
+
+    @Transactional(readOnly = true)
+    public List<CourseRegistration> getByStudentId(Long studentId) {
+        return registrationRepository.findByStudentId(studentId);
+    }
 }

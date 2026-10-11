@@ -5,6 +5,10 @@ import com.erp.admission.applicant.entity.Applicant;
 import com.erp.admission.application.entity.AdmissionApplication;
 import com.erp.admission.application.entity.ApplicationStatus;
 import com.erp.admission.application.repository.AdmissionApplicationRepository;
+import com.erp.academic.batch.entity.Batch;
+import com.erp.academic.batch.repository.BatchRepository;
+import com.erp.academic.semester.entity.Semester;
+import com.erp.academic.semester.repository.SemesterRepository;
 import com.erp.common.exception.BusinessException;
 import com.erp.common.exception.ResourceNotFoundException;
 import com.erp.student.entity.Student;
@@ -26,10 +30,12 @@ public class StudentOnboardingService {
     private final AdmissionApplicationRepository applicationRepository;
     private final StudentRepository studentRepository;
     private final StudentEnrollmentRepository studentEnrollmentRepository;
+    private final BatchRepository batchRepository;
+    private final SemesterRepository semesterRepository;
 
     @Transactional
     public Student onboardStudent(Long applicationId) {
-        AdmissionApplication application = applicationRepository.findById(applicationId)
+        AdmissionApplication application = applicationRepository.findByIdWithPessimisticLock(applicationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Application not found"));
 
         if (application.getStatus() != ApplicationStatus.ADMITTED) {
@@ -56,17 +62,28 @@ public class StudentOnboardingService {
                 program.getName() + " Batch",
                 LocalDate.now()
         );
+        // Resolve Batch
+        Batch matchingBatch = batchRepository.findByProgramId(program.getId()).stream()
+                .filter(b -> b.getAcademicYearId().equals(application.getAcademicYear().getId()))
+                .findFirst()
+                .orElseThrow(() -> new BusinessException("No valid Batch found for the selected Program and Academic Year. Please configure a Batch first."));
+
+        // Resolve Starting Semester (Semester 1 of the Academic Year)
+        Semester startingSemester = semesterRepository.findByAcademicYearId(application.getAcademicYear().getId()).stream()
+                .filter(s -> s.getSemesterNumber() == 1)
+                .findFirst()
+                .orElseThrow(() -> new BusinessException("No valid Semester 1 found for the selected Academic Year. Please configure Semester 1 first."));
+
         student.setAddress(applicant.getAddress());
         Student savedStudent = studentRepository.save(student);
 
-        // We assume Semester 1 is default for new admissions, but we'll mock the ID to 1L for simplicity 
         StudentEnrollment enrollment = new StudentEnrollment();
         enrollment.setEnrollmentNumber("ENR-" + savedStudent.getRollNumber());
         enrollment.setStudent(savedStudent);
         enrollment.setAcademicYearId(application.getAcademicYear().getId());
         enrollment.setProgramId(program.getId());
-        enrollment.setBatchId(1L); // Usually derived from AcademicYear/Program mapping
-        enrollment.setSemesterId(1L); // Starting semester
+        enrollment.setBatchId(matchingBatch.getId());
+        enrollment.setSemesterId(startingSemester.getId());
         enrollment.setEnrollmentDate(LocalDate.now());
         enrollment.setStatus(StudentStatus.ACTIVE);
         

@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,6 +21,7 @@ public class CourseController {
     private final CourseService service;
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     public ResponseEntity<CourseResponse> create(@Valid @RequestBody CourseCreateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.create(request));
     }
@@ -40,6 +42,7 @@ public class CourseController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     public ResponseEntity<CourseResponse> update(
             @PathVariable Long id,
             @Valid @RequestBody CourseUpdateRequest request) {
@@ -47,16 +50,19 @@ public class CourseController {
     }
 
     @PatchMapping("/{id}/deactivate")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     public ResponseEntity<CourseResponse> deactivate(@PathVariable Long id) {
         return ResponseEntity.ok(service.deactivate(id));
     }
 
     @PatchMapping("/{id}/activate")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     public ResponseEntity<CourseResponse> activate(@PathVariable Long id) {
         return ResponseEntity.ok(service.activate(id));
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.delete(id);
         return ResponseEntity.noContent().build();

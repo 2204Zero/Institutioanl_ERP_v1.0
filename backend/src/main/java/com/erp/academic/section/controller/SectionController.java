@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.List;
 
@@ -18,6 +19,7 @@ public class SectionController {
     private final SectionService service;
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     public ResponseEntity<SectionResponse> create(@Valid @RequestBody SectionCreateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.create(request));
     }
@@ -31,12 +33,13 @@ public class SectionController {
     }
 
     @GetMapping("/{id}")
-    @org.springframework.security.access.prepost.PreAuthorize("@securityOwnershipService.canAccessSectionData(authentication, #id)")
+    @PreAuthorize("@securityOwnershipService.canAccessSectionData(authentication, #id)")
     public ResponseEntity<SectionResponse> getById(@PathVariable Long id) {
         return ResponseEntity.ok(service.getById(id));
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     public ResponseEntity<SectionResponse> update(
             @PathVariable Long id,
             @Valid @RequestBody SectionUpdateRequest request) {
@@ -44,16 +47,19 @@ public class SectionController {
     }
 
     @PatchMapping("/{id}/deactivate")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     public ResponseEntity<SectionResponse> deactivate(@PathVariable Long id) {
         return ResponseEntity.ok(service.deactivate(id));
     }
 
     @PatchMapping("/{id}/activate")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     public ResponseEntity<SectionResponse> activate(@PathVariable Long id) {
         return ResponseEntity.ok(service.activate(id));
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.delete(id);
         return ResponseEntity.noContent().build();
@@ -62,6 +68,7 @@ public class SectionController {
     // ==================== Student Assignment ====================
 
     @PostMapping("/{id}/students")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     public ResponseEntity<List<SectionStudentResponse>> assignStudents(
             @PathVariable Long id,
             @Valid @RequestBody SectionStudentAssignRequest request) {
@@ -69,12 +76,13 @@ public class SectionController {
     }
 
     @GetMapping("/{id}/students")
-    @org.springframework.security.access.prepost.PreAuthorize("@securityOwnershipService.canAccessSectionData(authentication, #id)")
+    @PreAuthorize("@securityOwnershipService.canAccessSectionData(authentication, #id)")
     public ResponseEntity<List<SectionStudentResponse>> getStudents(@PathVariable Long id) {
         return ResponseEntity.ok(service.getStudents(id));
     }
 
     @DeleteMapping("/{id}/students/{studentId}")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     public ResponseEntity<Void> removeStudent(
             @PathVariable Long id,
             @PathVariable Long studentId) {
@@ -85,6 +93,7 @@ public class SectionController {
     // ==================== Faculty Association ====================
 
     @PostMapping("/{id}/faculty")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     public ResponseEntity<SectionFacultyResponse> assignFaculty(
             @PathVariable Long id,
             @Valid @RequestBody SectionFacultyAssignRequest request) {
@@ -97,6 +106,7 @@ public class SectionController {
     }
 
     @DeleteMapping("/{id}/faculty/{assignmentId}")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
     public ResponseEntity<Void> removeFaculty(
             @PathVariable Long id,
             @PathVariable Long assignmentId) {

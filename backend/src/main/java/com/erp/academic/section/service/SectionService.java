@@ -36,6 +36,7 @@ public class SectionService {
     private final CourseOfferingRepository courseOfferingRepository;
     private final StudentRepository studentRepository;
     private final SubjectRepository subjectRepository;
+    private final com.erp.faculty.repository.FacultyRepository facultyRepository;
     private final SectionMapper mapper;
 
     @Transactional
@@ -219,6 +220,10 @@ public class SectionService {
     public SectionFacultyResponse assignFaculty(Long sectionId, SectionFacultyAssignRequest request) {
         if (!repository.existsById(sectionId)) {
             throw new SectionNotFoundException(sectionId);
+        }
+
+        if (!facultyRepository.existsById(request.getFacultyId())) {
+            throw new ResourceNotFoundException("Faculty not found with id: " + request.getFacultyId());
         }
 
         String subjectName = null;

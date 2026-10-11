@@ -1,6 +1,7 @@
 package com.erp.security;
 
 import com.erp.student.repository.StudentRepository;
+import com.erp.student.entity.Student;
 import com.erp.guardian.repository.GuardianRepository;
 import com.erp.guardian.entity.Guardian;
 import com.erp.auth.model.UserPrincipal;
@@ -62,6 +63,13 @@ public class SecurityOwnershipService {
                 .anyMatch(role -> role.equals("ROLE_STUDENT"));
 
         if (isStudent) {
+            if (authentication.getPrincipal() instanceof UserPrincipal principal && principal.getId() != null) {
+                java.util.Optional<Student> studentOpt = studentRepository.findByUserId(principal.getId());
+                if (studentOpt.isPresent()) {
+                    return studentOpt.get().getId().equals(studentId);
+                }
+            }
+            // Backward-compatible fallback for unlinked legacy student accounts
             return studentRepository.findById(studentId)
                     .map(student -> student.getEmail() != null && student.getEmail().equalsIgnoreCase(userEmail))
                     .orElse(false);
@@ -109,7 +117,15 @@ public class SecurityOwnershipService {
 
         if (isFaculty) {
             try {
-                Long facultyId = facultyIdentityService.getFacultyIdForEmail(email);
+                Long facultyId = null;
+                if (authentication.getPrincipal() instanceof UserPrincipal principal && principal.getId() != null) {
+                    facultyId = facultyIdentityService.getCurrentFacultyId();
+                } else {
+                    facultyId = facultyIdentityService.getFacultyIdForEmail(email);
+                }
+                if (facultyId == null) {
+                    return false;
+                }
                 return sectionFacultyRepository.existsBySectionIdAndFacultyId(sectionId, facultyId);
             } catch (com.erp.common.exception.ResourceNotFoundException e) {
                 return false;
