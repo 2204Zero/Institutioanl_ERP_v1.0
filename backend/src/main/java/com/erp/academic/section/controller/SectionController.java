@@ -25,6 +25,7 @@ public class SectionController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'FACULTY', 'STUDENT')")
     public ResponseEntity<List<SectionResponse>> getAll(
             @RequestParam(required = false) String search,
             @RequestParam(required = false) Long courseOfferingId,
@@ -101,7 +102,7 @@ public class SectionController {
     }
 
     @GetMapping("/{id}/faculty")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'FACULTY')")
+    @PreAuthorize("@securityOwnershipService.canAccessSectionData(authentication, #id)")
     public ResponseEntity<List<SectionFacultyResponse>> getFaculty(@PathVariable Long id) {
         return ResponseEntity.ok(service.getFaculty(id));
     }

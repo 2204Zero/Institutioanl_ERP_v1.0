@@ -3,6 +3,7 @@ package com.erp.it.postgres;
 import com.erp.academic.timetable.entity.TimetableSlot;
 import com.erp.attendance.dto.BulkAttendanceRequest;
 import com.erp.attendance.dto.AttendanceRecordEntry;
+import com.erp.attendance.dto.AttendanceRecordRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -126,5 +127,61 @@ public class TimetableAndAttendancePostgresIT extends AbstractPostgresIT {
                 .andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(1))))
                 .andExpect(jsonPath("$[?(@.courseCode == 'CS903')].courseName", hasItem("Database Systems")))
                 .andExpect(jsonPath("$[?(@.courseCode == 'CS903')].semesterName", hasItem("Fall 2026 DB")));
+    }
+
+    @Test
+    @WithMockUser(username = "att.student@college.edu", roles = {"STUDENT"})
+    @DisplayName("E.4: GET /api/v1/attendance/student/{id} enforces IDOR protection in PostgreSQL")
+    void testStudentAttendanceIdorInPostgres() throws Exception {
+        jdbcTemplate.execute("INSERT INTO students (id, roll_number, first_name, last_name, email, phone, date_of_birth, gender, department, batch, enrollment_date, status) " +
+                "VALUES (904, 'ROLL904', 'Student', 'One', 'att.student@college.edu', '1234567891', '2004-01-01', 'MALE', 'CSE', '2024-2028', '2024-08-01', 'ACTIVE') ON CONFLICT DO NOTHING");
+        jdbcTemplate.execute("INSERT INTO students (id, roll_number, first_name, last_name, email, phone, date_of_birth, gender, department, batch, enrollment_date, status) " +
+                "VALUES (905, 'ROLL905', 'Student', 'Two', 'other.student@college.edu', '1234567892', '2004-01-01', 'FEMALE', 'CSE', '2024-2028', '2024-08-01', 'ACTIVE') ON CONFLICT DO NOTHING");
+
+        // Own attendance -> 200 OK
+        mockMvc.perform(get("/api/v1/attendance/student/904"))
+                .andExpect(status().isOk());
+
+        // Cross-student attendance -> 403 Forbidden (IDOR prevented)
+        mockMvc.perform(get("/api/v1/attendance/student/905"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(username = "fac_single@erp.com", roles = {"FACULTY"})
+    @DisplayName("E.5: Single-record attendance POST /api/v1/attendance enforces valid schedule and ownership in PostgreSQL")
+    void testSingleRecordAttendanceValidationInPostgres() throws Exception {
+        jdbcTemplate.execute("INSERT INTO course (id, code, name, department_id, credits, is_active) VALUES (906, 'CS906', 'Test Course 6', 1, 3, true) ON CONFLICT DO NOTHING");
+        jdbcTemplate.execute("INSERT INTO semester (id, name, is_active) VALUES (906, 'Fall 2026 Test 6', true) ON CONFLICT DO NOTHING");
+        jdbcTemplate.execute("INSERT INTO course_offering (id, course_id, semester_id, max_capacity, is_published) VALUES (906, 906, 906, 60, true) ON CONFLICT DO NOTHING");
+        jdbcTemplate.execute("INSERT INTO section (id, name, course_offering_id, capacity, current_enrollment, is_active) VALUES (906, 'Section 906', 906, 50, 0, true) ON CONFLICT DO NOTHING");
+        jdbcTemplate.execute("INSERT INTO room (id, name, capacity, is_active) VALUES (906, 'R906', 60, true) ON CONFLICT DO NOTHING");
+        jdbcTemplate.execute("INSERT INTO faculty (faculty_id, first_name, last_name, official_email) VALUES (906, 'Single', 'Faculty', 'fac_single@erp.com') ON CONFLICT DO NOTHING");
+        jdbcTemplate.execute("INSERT INTO section_faculty (id, section_id, faculty_id, subject_id, role) VALUES (906, 906, 906, 1, 'PRIMARY') ON CONFLICT DO NOTHING");
+        jdbcTemplate.execute("INSERT INTO timetable_slot (id, section_id, faculty_id, room_id, day_of_week, start_time, end_time, is_active) " +
+                "VALUES (906, 906, 906, 906, 'MONDAY', '09:00:00', '10:00:00', true) ON CONFLICT DO NOTHING");
+        jdbcTemplate.execute("INSERT INTO students (id, roll_number, first_name, last_name, email, phone, date_of_birth, gender, department, batch, enrollment_date, status) " +
+                "VALUES (906, 'ROLL906', 'Single', 'Student', 'single.student@college.edu', '1234567893', '2004-01-01', 'MALE', 'CSE', '2024-2028', '2024-08-01', 'ACTIVE') ON CONFLICT DO NOTHING");
+        jdbcTemplate.execute("INSERT INTO section_student (id, section_id, student_id, is_active) VALUES (906, 906, 906, true) ON CONFLICT DO NOTHING");
+
+        // 1. Missing schedule ID with invalid course code -> 400 Bad Request
+        AttendanceRecordRequest invalidReq = new AttendanceRecordRequest(906L, "INVALID", "PRESENT", "Note", LocalDate.now(), null);
+        mockMvc.perform(post("/api/v1/attendance")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidReq)))
+                .andExpect(status().isBadRequest());
+
+        // 2. Valid single attendance -> 201 Created
+        AttendanceRecordRequest validReq = new AttendanceRecordRequest(906L, "CS906", "PRESENT", "Note", LocalDate.of(2026, 10, 19), 906L);
+        mockMvc.perform(post("/api/v1/attendance")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(validReq)))
+                .andExpect(status().isCreated());
+
+        // 3. Duplicate single attendance on same date -> 409 Conflict
+        mockMvc.perform(post("/api/v1/attendance")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(validReq)))
+                .andExpect(status().isConflict());
     }
 }

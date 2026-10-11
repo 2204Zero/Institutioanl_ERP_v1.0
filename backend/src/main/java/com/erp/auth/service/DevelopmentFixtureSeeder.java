@@ -29,11 +29,6 @@ public class DevelopmentFixtureSeeder {
     @EventListener(ApplicationReadyEvent.class)
     @Transactional
     public void seedTestUsers() {
-        if (userRepository.count() > 1) { // Maybe superadmin is already there
-            log.info("Test users already seeded or database not empty.");
-            return;
-        }
-
         seedUser("admin", "Admin@123", "admin@erp.com", Role.ADMIN);
         seedUser("faculty", "Faculty@123", "faculty@erp.com", Role.FACULTY);
         seedUser("student", "Student@123", "student@erp.com", Role.STUDENT);
@@ -41,8 +36,10 @@ public class DevelopmentFixtureSeeder {
         seedUser("finance", "Finance@123", "finance@erp.com", Role.FINANCE);
         seedUser("user", "password", "user@erp.com", Role.STUDENT); // generic user
         
-        AppUser disabledUser = new AppUser("disabled_user", passwordEncoder.encode("Password@123"), "disabled@erp.com", Role.STUDENT, false);
-        userRepository.save(disabledUser);
+        if (!userRepository.existsByUsernameIgnoreCase("disabled_user")) {
+            AppUser disabledUser = new AppUser("disabled_user", passwordEncoder.encode("Password@123"), "disabled@erp.com", Role.STUDENT, false);
+            userRepository.save(disabledUser);
+        }
 
         log.info("Development/Test user fixtures seeded successfully.");
     }

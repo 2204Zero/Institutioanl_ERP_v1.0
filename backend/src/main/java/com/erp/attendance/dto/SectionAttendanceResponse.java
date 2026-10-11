@@ -1,5 +1,6 @@
 package com.erp.attendance.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,6 +15,7 @@ import java.util.List;
 public class SectionAttendanceResponse {
     private Long sectionId;
     private Long scheduleId;
+    @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate date;
     private List<StudentAttendanceResponse> records;
 }
