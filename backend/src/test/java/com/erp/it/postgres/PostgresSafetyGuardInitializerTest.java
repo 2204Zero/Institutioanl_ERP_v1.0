@@ -31,6 +31,7 @@ class PostgresSafetyGuardInitializerTest {
     @ParameterizedTest
     @ValueSource(strings = {
             "jdbc:postgresql://localhost:5432/edupulse_erp",
+            "jdbc:postgresql://localhost:5432/EDUPULSE_ERP",
             "jdbc:postgresql://prod-db:5432/edupulse_erp?ssl=true"
     })
     @DisplayName("Should abort context initialization with SecurityException for edupulse_erp before any bean creation")
@@ -49,6 +50,7 @@ class PostgresSafetyGuardInitializerTest {
     @ParameterizedTest
     @ValueSource(strings = {
             "jdbc:postgresql://localhost:5432/one",
+            "jdbc:postgresql://localhost:5432/ONE",
             "jdbc:postgresql://10.0.0.1:5432/one"
     })
     @DisplayName("Should abort context initialization with SecurityException for 'one' before any bean creation")

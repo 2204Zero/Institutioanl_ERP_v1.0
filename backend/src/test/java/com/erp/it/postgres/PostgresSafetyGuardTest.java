@@ -28,7 +28,8 @@ class PostgresSafetyGuardTest {
     @ParameterizedTest
     @ValueSource(strings = {
             "jdbc:postgresql://localhost:5432/edupulse_erp",
-            "jdbc:postgresql://localhost:5432/edupulse_erp?ssl=true",
+            "jdbc:postgresql://localhost:5432/EDUPULSE_ERP",
+            "jdbc:postgresql://localhost:5432/EduPulse_ERP?ssl=true",
             "jdbc:postgresql://db.prod.internal:5432/edupulse_erp",
             "jdbc:postgresql://localhost/edupulse_erp"
     })
@@ -43,7 +44,8 @@ class PostgresSafetyGuardTest {
     @ParameterizedTest
     @ValueSource(strings = {
             "jdbc:postgresql://localhost:5432/one",
-            "jdbc:postgresql://localhost:5432/one?currentSchema=public",
+            "jdbc:postgresql://localhost:5432/ONE",
+            "jdbc:postgresql://localhost:5432/One?currentSchema=public",
             "jdbc:postgresql://127.0.0.1:5432/one"
     })
     @DisplayName("Should strictly reject any connection to protected database 'one'")
