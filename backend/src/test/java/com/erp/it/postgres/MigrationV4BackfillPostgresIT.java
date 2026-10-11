@@ -50,11 +50,11 @@ public class MigrationV4BackfillPostgresIT extends AbstractPostgresIT {
 
         // Step 2: Insert representative legacy fixtures into the isolated V3 schema
         // Users (V2 table)
-        jdbcTemplate.execute("INSERT INTO " + ISOLATED_SCHEMA + ".users (id, username, password_hash, email, role, is_active) " +
+        jdbcTemplate.execute("INSERT INTO " + ISOLATED_SCHEMA + ".users (id, username, password, email, role, enabled) " +
                 "VALUES (10, 'fac_match', 'hash', 'faculty@erp.com', 'FACULTY', true)");
-        jdbcTemplate.execute("INSERT INTO " + ISOLATED_SCHEMA + ".users (id, username, password_hash, email, role, is_active) " +
+        jdbcTemplate.execute("INSERT INTO " + ISOLATED_SCHEMA + ".users (id, username, password, email, role, enabled) " +
                 "VALUES (20, 'stu_match', 'hash', 'matchingstudent@college.edu', 'STUDENT', true)");
-        jdbcTemplate.execute("INSERT INTO " + ISOLATED_SCHEMA + ".users (id, username, password_hash, email, role, is_active) " +
+        jdbcTemplate.execute("INSERT INTO " + ISOLATED_SCHEMA + ".users (id, username, password, email, role, enabled) " +
                 "VALUES (30, 'orphan_student', 'hash', 'teststudent@erp.com', 'STUDENT', true)");
 
         // Faculty (V1/V3 table - no user_id column yet!)

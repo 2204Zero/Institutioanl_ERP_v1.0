@@ -46,7 +46,7 @@ public class TimetableAndAttendancePostgresIT extends AbstractPostgresIT {
         jdbcTemplate.execute("INSERT INTO semester (id, name, is_active) VALUES (901, 'Fall 2026 Test', true) ON CONFLICT DO NOTHING");
         jdbcTemplate.execute("INSERT INTO course_offering (id, course_id, semester_id, max_capacity, is_published) VALUES (901, 901, 901, 60, true) ON CONFLICT DO NOTHING");
         jdbcTemplate.execute("INSERT INTO section (id, name, course_offering_id, capacity, current_enrollment, is_active) VALUES (901, 'Section 901', 901, 50, 0, true) ON CONFLICT DO NOTHING");
-        jdbcTemplate.execute("INSERT INTO room (id, room_number, building, capacity, is_active) VALUES (901, 'R901', 'Main Hall', 60, true) ON CONFLICT DO NOTHING");
+        jdbcTemplate.execute("INSERT INTO room (id, name, capacity, is_active) VALUES (901, 'R901', 60, true) ON CONFLICT DO NOTHING");
 
         TimetableSlot slot = TimetableSlot.builder()
                 .sectionId(901L)
@@ -73,7 +73,7 @@ public class TimetableAndAttendancePostgresIT extends AbstractPostgresIT {
         jdbcTemplate.execute("INSERT INTO semester (id, name, is_active) VALUES (902, 'Fall 2026 Test 2', true) ON CONFLICT DO NOTHING");
         jdbcTemplate.execute("INSERT INTO course_offering (id, course_id, semester_id, max_capacity, is_published) VALUES (902, 902, 902, 60, true) ON CONFLICT DO NOTHING");
         jdbcTemplate.execute("INSERT INTO section (id, name, course_offering_id, capacity, current_enrollment, is_active) VALUES (902, 'Section 902', 902, 50, 0, true) ON CONFLICT DO NOTHING");
-        jdbcTemplate.execute("INSERT INTO room (id, room_number, building, capacity, is_active) VALUES (902, 'R902', 'Main Hall 2', 60, true) ON CONFLICT DO NOTHING");
+        jdbcTemplate.execute("INSERT INTO room (id, name, capacity, is_active) VALUES (902, 'R902', 60, true) ON CONFLICT DO NOTHING");
 
         jdbcTemplate.execute("INSERT INTO faculty (faculty_id, first_name, last_name, official_email) " +
                 "VALUES (902, 'Att', 'Faculty', 'fac_attendance@erp.com') ON CONFLICT DO NOTHING");

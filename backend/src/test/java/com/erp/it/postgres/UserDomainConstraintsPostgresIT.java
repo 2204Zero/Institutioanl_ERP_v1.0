@@ -5,7 +5,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -14,6 +18,9 @@ public class UserDomainConstraintsPostgresIT extends AbstractPostgresIT {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private PlatformTransactionManager transactionManager;
 
     @Test
     @DisplayName("C.1: Multiple students can simultaneously have user_id = NULL (nullable unique constraint)")
@@ -30,7 +37,7 @@ public class UserDomainConstraintsPostgresIT extends AbstractPostgresIT {
     @DisplayName("C.2: Duplicate non-null faculty.user_id values are rejected by uq_faculty_user_id")
     void testDuplicateFacultyUserIdRejected() {
         // Insert user
-        jdbcTemplate.execute("INSERT INTO users (id, username, password_hash, email, role, is_active) " +
+        jdbcTemplate.execute("INSERT INTO users (id, username, password, email, role, enabled) " +
                 "VALUES (7001, 'fac_dup_test', 'hash', 'facdup@erp.com', 'FACULTY', true)");
 
         // Insert first faculty with user_id = 7001
@@ -48,7 +55,7 @@ public class UserDomainConstraintsPostgresIT extends AbstractPostgresIT {
     @DisplayName("C.3: Duplicate non-null students.user_id values are rejected by uq_students_user_id")
     void testDuplicateStudentUserIdRejected() {
         // Insert user
-        jdbcTemplate.execute("INSERT INTO users (id, username, password_hash, email, role, is_active) " +
+        jdbcTemplate.execute("INSERT INTO users (id, username, password, email, role, enabled) " +
                 "VALUES (7002, 'stu_dup_test', 'hash', 'studup@erp.com', 'STUDENT', true)");
 
         // Insert first student with user_id = 7002
@@ -66,13 +73,21 @@ public class UserDomainConstraintsPostgresIT extends AbstractPostgresIT {
     @DisplayName("C.4: Non-existent user references are rejected by foreign keys fk_faculty_user and fk_students_user")
     void testForeignKeyRejectsNonExistentUser() {
         assertThrows(DataIntegrityViolationException.class, () -> {
-            jdbcTemplate.execute("INSERT INTO faculty (faculty_id, first_name, last_name, official_email, user_id) " +
-                    "VALUES (8301, 'Invalid', 'Faculty', 'invalid@erp.com', 999999)");
+            new TransactionTemplate(transactionManager, new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_REQUIRES_NEW))
+                    .execute(status -> {
+                        jdbcTemplate.execute("INSERT INTO faculty (faculty_id, first_name, last_name, official_email, user_id) " +
+                                "VALUES (8301, 'Invalid', 'Faculty', 'invalid@erp.com', 999999)");
+                        return null;
+                    });
         });
 
         assertThrows(DataIntegrityViolationException.class, () -> {
-            jdbcTemplate.execute("INSERT INTO students (id, roll_number, first_name, last_name, email, phone, date_of_birth, gender, department, batch, enrollment_date, status, user_id) " +
-                    "VALUES (8302, 'ROLL8302', 'Invalid', 'Stu', 'invalid.stu@college.edu', '1234567890', '2004-01-01', 'MALE', 'CSE', '2024-2028', '2024-08-01', 'ACTIVE', 999999)");
+            new TransactionTemplate(transactionManager, new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_REQUIRES_NEW))
+                    .execute(status -> {
+                        jdbcTemplate.execute("INSERT INTO students (id, roll_number, first_name, last_name, email, phone, date_of_birth, gender, department, batch, enrollment_date, status, user_id) " +
+                                "VALUES (8302, 'ROLL8302', 'Invalid', 'Stu', 'invalid.stu@college.edu', '1234567890', '2004-01-01', 'MALE', 'CSE', '2024-2028', '2024-08-01', 'ACTIVE', 999999)");
+                        return null;
+                    });
         });
     }
 
@@ -80,7 +95,7 @@ public class UserDomainConstraintsPostgresIT extends AbstractPostgresIT {
     @DisplayName("C.5: Deleting a user sets user_id to NULL on faculty and students via ON DELETE SET NULL")
     void testOnDeleteSetNullBehavior() {
         // Create user
-        jdbcTemplate.execute("INSERT INTO users (id, username, password_hash, email, role, is_active) " +
+        jdbcTemplate.execute("INSERT INTO users (id, username, password, email, role, enabled) " +
                 "VALUES (7003, 'user_to_delete', 'hash', 'del@erp.com', 'FACULTY', true)");
 
         // Create faculty referencing user 7003
