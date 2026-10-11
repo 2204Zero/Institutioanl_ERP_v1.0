@@ -1,6 +1,7 @@
 package com.erp.academic.course_registration.controller;
 
-import com.erp.academic.course_registration.entity.CourseRegistration;
+import com.erp.academic.course_registration.dto.CourseRegistrationResponse;
+import com.erp.academic.course_registration.mapper.CourseRegistrationMapper;
 import com.erp.academic.course_registration.service.CourseRegistrationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -15,26 +16,33 @@ import java.util.List;
 public class CourseRegistrationController {
 
     private final CourseRegistrationService registrationService;
+    private final CourseRegistrationMapper registrationMapper;
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
-    public ResponseEntity<List<CourseRegistration>> getRegistrations(@RequestParam Long studentId) {
-        return ResponseEntity.ok(registrationService.getByStudentId(studentId));
+    public ResponseEntity<List<CourseRegistrationResponse>> getRegistrations(@RequestParam Long studentId) {
+        List<CourseRegistrationResponse> responses = registrationService.getByStudentId(studentId)
+                .stream()
+                .map(registrationMapper::toResponse)
+                .toList();
+        return ResponseEntity.ok(responses);
     }
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
-    public ResponseEntity<CourseRegistration> registerStudent(
+    public ResponseEntity<CourseRegistrationResponse> registerStudent(
             @RequestParam Long studentId,
             @RequestParam Long courseOfferingId,
             @RequestParam Long sectionId) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(registrationService.registerStudent(studentId, courseOfferingId, sectionId));
+                .body(registrationMapper.toResponse(
+                        registrationService.registerStudent(studentId, courseOfferingId, sectionId)));
     }
 
     @PatchMapping("/{id}/drop")
     @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
-    public ResponseEntity<CourseRegistration> dropCourse(@PathVariable Long id) {
-        return ResponseEntity.ok(registrationService.dropCourse(id));
+    public ResponseEntity<CourseRegistrationResponse> dropCourse(@PathVariable Long id) {
+        return ResponseEntity.ok(
+                registrationMapper.toResponse(registrationService.dropCourse(id)));
     }
 }
