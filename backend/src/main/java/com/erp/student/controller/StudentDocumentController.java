@@ -13,6 +13,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -29,6 +30,7 @@ public class StudentDocumentController {
     }
 
     @PostMapping(value = "/api/v1/students/{studentId}/documents", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("@securityOwnershipService.canAccessStudentData(authentication, #studentId) or hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @Operation(summary = "Upload Student Document",
             description = "Uploads Aadhaar, Transfer Certificate, Migration, Marksheet, or Photograph")
     public ResponseEntity<ApiResponse<StudentDocumentResponseDto>> uploadDocument(
@@ -41,6 +43,7 @@ public class StudentDocumentController {
     }
 
     @GetMapping("/api/v1/students/{studentId}/documents")
+    @PreAuthorize("@securityOwnershipService.canAccessStudentData(authentication, #studentId) or hasAnyRole('ADMIN', 'SUPER_ADMIN', 'FACULTY')")
     @Operation(summary = "List Student Documents", description = "Retrieves metadata of all uploaded documents for a student")
     public ResponseEntity<ApiResponse<List<StudentDocumentResponseDto>>> getDocumentsByStudent(@PathVariable Long studentId) {
         List<StudentDocumentResponseDto> documents = documentService.getDocumentsByStudentId(studentId);
@@ -48,6 +51,7 @@ public class StudentDocumentController {
     }
 
     @GetMapping("/api/v1/documents/{id}/metadata")
+    @PreAuthorize("@securityOwnershipService.canAccessDocumentData(authentication, #id) or hasAnyRole('ADMIN', 'SUPER_ADMIN', 'FACULTY')")
     @Operation(summary = "Get Document Metadata", description = "Retrieves document metadata by ID")
     public ResponseEntity<ApiResponse<StudentDocumentResponseDto>> getDocumentMetadata(@PathVariable Long id) {
         StudentDocumentResponseDto metadata = documentService.getDocumentMetadata(id);
@@ -55,6 +59,7 @@ public class StudentDocumentController {
     }
 
     @GetMapping("/api/v1/documents/{id}/download")
+    @PreAuthorize("@securityOwnershipService.canAccessDocumentData(authentication, #id) or hasAnyRole('ADMIN', 'SUPER_ADMIN', 'FACULTY')")
     @Operation(summary = "Download Document", description = "Streams document file with Content-Disposition attachment header")
     public ResponseEntity<Resource> downloadDocument(@PathVariable Long id) {
         Resource resource = documentService.loadDocumentAsResource(id);
@@ -68,6 +73,7 @@ public class StudentDocumentController {
     }
 
     @GetMapping("/api/v1/documents/{id}/view")
+    @PreAuthorize("@securityOwnershipService.canAccessDocumentData(authentication, #id) or hasAnyRole('ADMIN', 'SUPER_ADMIN', 'FACULTY')")
     @Operation(summary = "View Document", description = "Streams document inline for browser previewing (PDF/Images)")
     public ResponseEntity<Resource> viewDocument(@PathVariable Long id) {
         Resource resource = documentService.loadDocumentAsResource(id);
@@ -81,6 +87,7 @@ public class StudentDocumentController {
     }
 
     @DeleteMapping("/api/v1/documents/{id}")
+    @PreAuthorize("@securityOwnershipService.canDeleteDocument(authentication, #id) or hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @Operation(summary = "Delete Document", description = "Deletes document record and underlying disk file")
     public ResponseEntity<ApiResponse<Void>> deleteDocument(@PathVariable Long id) {
         documentService.deleteDocument(id);

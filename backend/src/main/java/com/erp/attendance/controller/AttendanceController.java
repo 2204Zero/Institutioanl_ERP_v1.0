@@ -33,7 +33,7 @@ public class AttendanceController {
 
     @PostMapping("/bulk")
     @Operation(summary = "Take bulk attendance for a section", description = "Restricted to Faculty teaching the section")
-    @PreAuthorize("hasRole('FACULTY')")
+    @PreAuthorize("hasAnyRole('FACULTY', 'ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<SectionAttendanceResponse> recordBulkAttendance(
             @Valid @RequestBody BulkAttendanceRequest request,
             Authentication authentication) {
@@ -51,7 +51,7 @@ public class AttendanceController {
 
     @GetMapping("/section/{sectionId}")
     @Operation(summary = "Get attendance for a section by date", description = "Accessible by Faculty assigned to the section")
-    @PreAuthorize("hasRole('FACULTY')") // In real prod, could use @PreAuthorize("@securityOwnershipService.canAccessSection(authentication, #sectionId)")
+    @PreAuthorize("hasAnyRole('FACULTY', 'ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<SectionAttendanceResponse> getSectionAttendance(
             @PathVariable Long sectionId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,

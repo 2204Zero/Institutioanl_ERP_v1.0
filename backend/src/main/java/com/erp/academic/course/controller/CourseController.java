@@ -27,6 +27,7 @@ public class CourseController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'FACULTY', 'STUDENT')")
     public ResponseEntity<List<CourseResponse>> getAll(
             @RequestParam(required = false) String search,
             @RequestParam(required = false) Long departmentId,
@@ -37,6 +38,7 @@ public class CourseController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'FACULTY', 'STUDENT')")
     public ResponseEntity<CourseResponse> getById(@PathVariable Long id) {
         return ResponseEntity.ok(service.getById(id));
     }

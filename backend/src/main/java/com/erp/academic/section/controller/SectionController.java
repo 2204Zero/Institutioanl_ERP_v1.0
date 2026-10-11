@@ -101,6 +101,7 @@ public class SectionController {
     }
 
     @GetMapping("/{id}/faculty")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'FACULTY')")
     public ResponseEntity<List<SectionFacultyResponse>> getFaculty(@PathVariable Long id) {
         return ResponseEntity.ok(service.getFaculty(id));
     }

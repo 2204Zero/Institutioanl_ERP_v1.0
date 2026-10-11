@@ -62,6 +62,7 @@ class GuardianControllerTest {
 
     @Test
     @DisplayName("Day 03: Should create guardian and link with student")
+    @org.springframework.security.test.context.support.WithMockUser(roles = {"ADMIN"})
     void testGuardianFlow() throws Exception {
         // 1. Create a student first
         StudentRequestDto studentReq = new StudentRequestDto();

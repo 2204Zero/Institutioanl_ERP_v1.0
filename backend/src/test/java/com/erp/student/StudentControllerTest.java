@@ -73,6 +73,7 @@ class StudentControllerTest {
 
     @Test
     @DisplayName("Day 02 & 06: Should create student successfully and return 201")
+    @org.springframework.security.test.context.support.WithMockUser(roles = {"ADMIN"})
     void testCreateStudentSuccess() throws Exception {
         StudentRequestDto request = createSampleStudentRequest(null, "rohan.test1@college.edu");
 

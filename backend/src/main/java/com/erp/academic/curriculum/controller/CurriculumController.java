@@ -25,6 +25,7 @@ public class CurriculumController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'FACULTY', 'STUDENT')")
     public ResponseEntity<List<CurriculumResponse>> getAll(
             @RequestParam(required = false) Long programId,
             @RequestParam(required = false) Long semesterId,
@@ -34,6 +35,7 @@ public class CurriculumController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'FACULTY', 'STUDENT')")
     public ResponseEntity<CurriculumResponse> getById(@PathVariable Long id) {
         return ResponseEntity.ok(service.getById(id));
     }
@@ -74,6 +76,7 @@ public class CurriculumController {
     }
 
     @GetMapping("/{id}/courses")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'FACULTY', 'STUDENT')")
     public ResponseEntity<List<CurriculumCourseResponse>> getCourses(@PathVariable Long id) {
         return ResponseEntity.ok(service.getCourses(id));
     }

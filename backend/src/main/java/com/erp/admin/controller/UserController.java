@@ -56,7 +56,7 @@ public class UserController {
 
     @GetMapping
     @Operation(summary = "List system users", description = "Restricted to Administrators with USER_MANAGE permission")
-    @PreAuthorize("hasAuthority('USER_MANAGE') or hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('USER_MANAGE') or hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<List<UserSummary>> listUsers() {
         List<UserSummary> users = userRepository.findAll().stream()
                 .map(user -> new UserSummary(user.getId(), user.getUsername(), user.getEmail(), user.getRole().name(), user.isEnabled()))
@@ -67,7 +67,7 @@ public class UserController {
     @PostMapping
     @Transactional
     @Operation(summary = "Create a new user account", description = "Restricted to Administrators with USER_MANAGE permission")
-    @PreAuthorize("hasAuthority('USER_MANAGE') or hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('USER_MANAGE') or hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<Map<String, String>> createUser(@RequestBody CreateUserRequest request) {
         if (userRepository.existsByUsernameIgnoreCase(request.username())) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", "Username already exists"));

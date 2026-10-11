@@ -31,6 +31,7 @@ public class StudentController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @Operation(summary = "Add Student", description = "Creates a new student profile in the institution")
     public ResponseEntity<ApiResponse<StudentResponseDto>> createStudent(@Valid @RequestBody StudentRequestDto requestDto) {
         StudentResponseDto created = studentService.createStudent(requestDto);
@@ -53,7 +54,7 @@ public class StudentController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("@securityOwnershipService.canAccessStudentData(authentication, #id) or hasAnyRole('ADMIN', 'FACULTY', 'FINANCE')")
+    @PreAuthorize("@securityOwnershipService.canAccessStudentData(authentication, #id) or hasAnyRole('ADMIN', 'FACULTY', 'FINANCE', 'SUPER_ADMIN')")
     @Operation(summary = "View Student by ID", description = "Fetches complete student profile including guardians and documents")
     public ResponseEntity<ApiResponse<StudentResponseDto>> getStudentById(
             @Parameter(description = "Student primary ID") @PathVariable Long id) {
@@ -62,6 +63,7 @@ public class StudentController {
     }
 
     @GetMapping("/roll/{rollNumber}")
+    @PreAuthorize("@securityOwnershipService.canAccessStudentDataByRollNumber(authentication, #rollNumber) or hasAnyRole('ADMIN', 'FACULTY', 'FINANCE', 'SUPER_ADMIN')")
     @Operation(summary = "View Student by Roll Number", description = "Fetches student profile by their unique roll number")
     public ResponseEntity<ApiResponse<StudentResponseDto>> getStudentByRollNumber(@PathVariable String rollNumber) {
         StudentResponseDto student = studentService.getStudentByRollNumber(rollNumber);
@@ -69,6 +71,7 @@ public class StudentController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @Operation(summary = "Edit Student", description = "Updates an existing student profile")
     public ResponseEntity<ApiResponse<StudentResponseDto>> updateStudent(
             @PathVariable Long id,
@@ -78,6 +81,7 @@ public class StudentController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @Operation(summary = "Delete Student", description = "Removes a student profile and associated records")
     public ResponseEntity<ApiResponse<Void>> deleteStudent(@PathVariable Long id) {
         studentService.deleteStudent(id);
@@ -85,6 +89,7 @@ public class StudentController {
     }
 
     @PatchMapping("/{id}/status")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @Operation(summary = "Update Student Status", description = "Updates student enrollment status (ACTIVE, INACTIVE, SUSPENDED, GRADUATED, ALUMNI) with audit remarks")
     public ResponseEntity<ApiResponse<StudentResponseDto>> updateStudentStatus(
             @PathVariable Long id,
@@ -94,6 +99,7 @@ public class StudentController {
     }
 
     @GetMapping("/{id}/status-history")
+    @PreAuthorize("@securityOwnershipService.canAccessStudentData(authentication, #id) or hasAnyRole('ADMIN', 'FACULTY', 'SUPER_ADMIN')")
     @Operation(summary = "View Student Status History", description = "Returns chronological audit log of status changes for a student")
     public ResponseEntity<ApiResponse<List<StudentStatusHistory>>> getStatusHistory(@PathVariable Long id) {
         List<StudentStatusHistory> history = studentService.getStatusHistory(id);

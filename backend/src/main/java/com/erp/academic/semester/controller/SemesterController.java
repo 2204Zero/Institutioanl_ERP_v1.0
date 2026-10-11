@@ -31,6 +31,7 @@ public class SemesterController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'FACULTY', 'STUDENT')")
     public ResponseEntity<List<SemesterResponse>> getAll(
             @RequestParam(required = false) Long academicYearId,
             @RequestParam(required = false) Boolean isActive) {
@@ -38,6 +39,7 @@ public class SemesterController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'FACULTY', 'STUDENT')")
     public ResponseEntity<SemesterResponse> getById(@PathVariable Long id) {
         return ResponseEntity.ok(service.getById(id));
     }

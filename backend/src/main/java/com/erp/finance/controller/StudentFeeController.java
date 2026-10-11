@@ -17,13 +17,13 @@ public class StudentFeeController {
     }
 
     @PostMapping("/assign")
-    @PreAuthorize("hasAuthority('FEE_ASSIGNMENT_CREATE') or hasRole('FINANCE')")
+    @PreAuthorize("hasAuthority('FEE_ASSIGNMENT_CREATE') or hasAnyRole('FINANCE', 'ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<StudentFee> assignFee(@RequestParam Long studentId, @RequestParam Long feeStructureId, @RequestParam Long academicYearId) {
         return ResponseEntity.ok(studentFeeService.assignFeeStructure(studentId, feeStructureId, academicYearId));
     }
 
     @GetMapping
-    @PreAuthorize("hasAuthority('FEE_ASSIGNMENT_VIEW') or hasRole('FINANCE')")
+    @PreAuthorize("hasAuthority('FEE_ASSIGNMENT_VIEW') or hasAnyRole('FINANCE', 'ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<List<StudentFee>> getAllStudentFees() {
         return ResponseEntity.ok(studentFeeService.getAllStudentFees());
     }

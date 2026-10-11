@@ -4,6 +4,8 @@ import com.erp.student.repository.StudentRepository;
 import com.erp.student.entity.Student;
 import com.erp.guardian.repository.GuardianRepository;
 import com.erp.guardian.entity.Guardian;
+import com.erp.student.repository.StudentDocumentRepository;
+import com.erp.student.entity.StudentDocument;
 import com.erp.auth.model.UserPrincipal;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -16,15 +18,18 @@ public class SecurityOwnershipService {
 
     private final StudentRepository studentRepository;
     private final GuardianRepository guardianRepository;
+    private final StudentDocumentRepository studentDocumentRepository;
     private final com.erp.faculty.service.FacultyIdentityService facultyIdentityService;
     private final com.erp.academic.section.repository.SectionFacultyRepository sectionFacultyRepository;
 
     public SecurityOwnershipService(StudentRepository studentRepository, 
                                     GuardianRepository guardianRepository,
+                                    StudentDocumentRepository studentDocumentRepository,
                                     com.erp.faculty.service.FacultyIdentityService facultyIdentityService,
                                     com.erp.academic.section.repository.SectionFacultyRepository sectionFacultyRepository) {
         this.studentRepository = studentRepository;
         this.guardianRepository = guardianRepository;
+        this.studentDocumentRepository = studentDocumentRepository;
         this.facultyIdentityService = facultyIdentityService;
         this.sectionFacultyRepository = sectionFacultyRepository;
     }
@@ -86,6 +91,87 @@ public class SecurityOwnershipService {
         }
 
         return false;
+    }
+
+    public boolean canAccessStudentDataByRollNumber(Authentication authentication, String rollNumber) {
+        if (authentication == null || rollNumber == null) {
+            return false;
+        }
+
+        boolean isPrivileged = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(role -> role.equals("ROLE_ADMIN") || role.equals("ROLE_SUPER_ADMIN") || role.equals("ROLE_FACULTY") || role.equals("ROLE_FINANCE"));
+
+        if (isPrivileged) {
+            return true;
+        }
+
+        return studentRepository.findByRollNumber(rollNumber)
+                .map(student -> canAccessStudentData(authentication, student.getId()))
+                .orElse(false);
+    }
+
+    public boolean canAccessDocumentData(Authentication authentication, Long documentId) {
+        if (authentication == null || documentId == null) {
+            return false;
+        }
+
+        boolean isPrivileged = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(role -> role.equals("ROLE_ADMIN") || role.equals("ROLE_SUPER_ADMIN") || role.equals("ROLE_FACULTY"));
+
+        if (isPrivileged) {
+            return true;
+        }
+
+        return studentDocumentRepository.findById(documentId)
+                .map(doc -> doc.getStudent() != null && canAccessStudentData(authentication, doc.getStudent().getId()))
+                .orElse(false);
+    }
+
+    public boolean canDeleteDocument(Authentication authentication, Long documentId) {
+        if (authentication == null || documentId == null) {
+            return false;
+        }
+
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(role -> role.equals("ROLE_ADMIN") || role.equals("ROLE_SUPER_ADMIN"));
+
+        if (isAdmin) {
+            return true;
+        }
+
+        return studentDocumentRepository.findById(documentId)
+                .map(doc -> doc.getStudent() != null && canAccessStudentData(authentication, doc.getStudent().getId()))
+                .orElse(false);
+    }
+
+    public boolean canAccessGuardianData(Authentication authentication, Long guardianId) {
+        if (authentication == null || guardianId == null) {
+            return false;
+        }
+
+        boolean isPrivileged = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(role -> role.equals("ROLE_ADMIN") || role.equals("ROLE_SUPER_ADMIN"));
+
+        if (isPrivileged) {
+            return true;
+        }
+
+        return guardianRepository.findById(guardianId)
+                .map(guardian -> {
+                    if (guardian.getStudent() != null && canAccessStudentData(authentication, guardian.getStudent().getId())) {
+                        return true;
+                    }
+                    String email = authentication.getName();
+                    if (authentication.getPrincipal() instanceof UserPrincipal principal && principal.getEmail() != null) {
+                        email = principal.getEmail();
+                    }
+                    return guardian.getEmail() != null && guardian.getEmail().equalsIgnoreCase(email);
+                })
+                .orElse(false);
     }
 
     public boolean canAccessSectionData(Authentication authentication, Long sectionId) {

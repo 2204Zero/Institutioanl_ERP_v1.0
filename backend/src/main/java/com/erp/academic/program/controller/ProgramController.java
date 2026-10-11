@@ -31,6 +31,7 @@ public class ProgramController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'FACULTY', 'STUDENT')")
     public ResponseEntity<List<ProgramResponse>> getAll(
             @RequestParam(required = false) String search,
             @RequestParam(required = false) Long departmentId,
@@ -40,6 +41,7 @@ public class ProgramController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'FACULTY', 'STUDENT')")
     public ResponseEntity<ProgramResponse> getById(@PathVariable Long id) {
         return ResponseEntity.ok(service.getById(id));
     }

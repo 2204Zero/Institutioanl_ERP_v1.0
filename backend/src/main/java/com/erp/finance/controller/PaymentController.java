@@ -18,7 +18,7 @@ public class PaymentController {
     }
 
     @PostMapping("/student-fee/{studentFeeId}")
-    @PreAuthorize("hasAuthority('PAYMENT_CREATE') or hasRole('FINANCE') or hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PAYMENT_CREATE') or hasAnyRole('FINANCE', 'ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<Receipt> recordPayment(@PathVariable Long studentFeeId, @RequestBody Payment payment) {
         Receipt receipt = paymentService.recordPayment(payment, studentFeeId);
         return ResponseEntity.ok(receipt);

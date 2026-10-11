@@ -34,6 +34,7 @@ public class CourseOfferingController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'FACULTY', 'STUDENT')")
     public ResponseEntity<List<CourseOfferingResponse>> getAll() {
         return ResponseEntity.ok(service.getAllCourseOfferings());
     }

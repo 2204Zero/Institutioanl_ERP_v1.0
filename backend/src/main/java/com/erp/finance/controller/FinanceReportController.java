@@ -16,7 +16,7 @@ public class FinanceReportController {
     }
 
     @GetMapping("/summary")
-    @PreAuthorize("hasAuthority('FINANCE_REPORT_VIEW') or hasRole('FINANCE')")
+    @PreAuthorize("hasAuthority('FINANCE_REPORT_VIEW') or hasAnyRole('FINANCE', 'ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<Map<String, Object>> getSummary() {
         return ResponseEntity.ok(financeReportService.getFinancialSummary());
     }

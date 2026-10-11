@@ -17,13 +17,13 @@ public class FeeStructureController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAuthority('FEE_STRUCTURE_CREATE') or hasRole('FINANCE')")
+    @PreAuthorize("hasAuthority('FEE_STRUCTURE_CREATE') or hasAnyRole('FINANCE', 'ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<FeeStructure> createFeeStructure(@RequestBody FeeStructure feeStructure) {
         return org.springframework.http.ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(feeStructureService.createFeeStructure(feeStructure));
     }
 
     @GetMapping
-    @PreAuthorize("hasAuthority('FEE_STRUCTURE_VIEW') or hasRole('FINANCE')")
+    @PreAuthorize("hasAuthority('FEE_STRUCTURE_VIEW') or hasAnyRole('FINANCE', 'ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<List<FeeStructure>> getAll() {
         return ResponseEntity.ok(feeStructureService.getAll());
     }

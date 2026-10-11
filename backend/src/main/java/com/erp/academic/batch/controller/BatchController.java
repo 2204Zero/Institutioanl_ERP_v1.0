@@ -31,6 +31,7 @@ public class BatchController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'FACULTY', 'STUDENT')")
     public ResponseEntity<List<BatchResponse>> getAll(
             @RequestParam(required = false) String search,
             @RequestParam(required = false) Long programId,
@@ -40,6 +41,7 @@ public class BatchController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'FACULTY', 'STUDENT')")
     public ResponseEntity<BatchResponse> getById(@PathVariable Long id) {
         return ResponseEntity.ok(service.getById(id));
     }
