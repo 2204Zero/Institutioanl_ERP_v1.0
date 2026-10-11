@@ -17,7 +17,7 @@ public class AdmissionApplicationController {
     private final AdmissionApplicationService applicationService;
 
     @PostMapping("/draft")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN') or (hasRole('STUDENT') and @securityOwnershipService.canAccessApplicant(authentication, #applicantId))")
     public ResponseEntity<AdmissionApplicationDto> createDraft(
             @RequestParam Long applicantId,
             @RequestParam Long programId,
@@ -31,7 +31,7 @@ public class AdmissionApplicationController {
     public ResponseEntity<java.util.List<AdmissionApplicationDto>> getAllApplications() { return ResponseEntity.ok(applicationService.getAllApplications()); }
 
     @PostMapping("/{id}/submit")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN') or (hasRole('STUDENT') and @securityOwnershipService.canAccessAdmissionApplication(authentication, #id))")
     public ResponseEntity<AdmissionApplicationDto> submitApplication(@PathVariable Long id) {
         return ResponseEntity.ok(applicationService.submitApplication(id));
     }

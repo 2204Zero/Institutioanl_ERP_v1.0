@@ -16,6 +16,7 @@ public class ApplicantController {
     private final ApplicantService applicantService;
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<ApplicantDto> registerApplicant(@RequestBody ApplicantDto request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(applicantService.registerApplicant(request));
     }

@@ -21,17 +21,23 @@ public class SecurityOwnershipService {
     private final StudentDocumentRepository studentDocumentRepository;
     private final com.erp.faculty.service.FacultyIdentityService facultyIdentityService;
     private final com.erp.academic.section.repository.SectionFacultyRepository sectionFacultyRepository;
+    private final com.erp.academic.section.repository.SectionStudentRepository sectionStudentRepository;
+    private final com.erp.admission.application.repository.AdmissionApplicationRepository admissionApplicationRepository;
 
     public SecurityOwnershipService(StudentRepository studentRepository, 
                                     GuardianRepository guardianRepository,
                                     StudentDocumentRepository studentDocumentRepository,
                                     com.erp.faculty.service.FacultyIdentityService facultyIdentityService,
-                                    com.erp.academic.section.repository.SectionFacultyRepository sectionFacultyRepository) {
+                                    com.erp.academic.section.repository.SectionFacultyRepository sectionFacultyRepository,
+                                    com.erp.academic.section.repository.SectionStudentRepository sectionStudentRepository,
+                                    com.erp.admission.application.repository.AdmissionApplicationRepository admissionApplicationRepository) {
         this.studentRepository = studentRepository;
         this.guardianRepository = guardianRepository;
         this.studentDocumentRepository = studentDocumentRepository;
         this.facultyIdentityService = facultyIdentityService;
         this.sectionFacultyRepository = sectionFacultyRepository;
+        this.sectionStudentRepository = sectionStudentRepository;
+        this.admissionApplicationRepository = admissionApplicationRepository;
     }
 
     public boolean canAccessStudentData(Authentication authentication, Long studentId) {
@@ -220,6 +226,61 @@ public class SecurityOwnershipService {
 
         // 3. Student/Parent role access - preserve existing behavior if they need access, but typically they don't have access to full section details unless explicitly given.
         // I will return true for student and parent if they are allowed by the current model. Currently in canAccessStudentData they are handled. For section, let's keep it restricted.
+        return false;
+    }
+
+    public boolean canAccessApplicant(Authentication authentication, Long applicantId) {
+        if (authentication == null || applicantId == null) {
+            return false;
+        }
+
+        boolean isPrivileged = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(role -> role.equals("ROLE_ADMIN") || role.equals("ROLE_SUPER_ADMIN"));
+
+        if (isPrivileged) {
+            return true;
+        }
+
+        boolean isStudent = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(role -> role.equals("ROLE_STUDENT"));
+
+        if (isStudent) {
+            // In the current modular monolith schema, Applicant is not linked to AppUser or Student (no user_id).
+            // Per Phase 9.18 safety specification:
+            // Do not infer applicant ownership from matching names or arbitrary caller-supplied IDs.
+            // If no trustworthy relationship exists between the authenticated account and an applicant,
+            // reject unlinked student accounts safely until a persistent applicant identity relationship is provisioned.
+            return false;
+        }
+
+        return false;
+    }
+
+    public boolean canAccessAdmissionApplication(Authentication authentication, Long applicationId) {
+        if (authentication == null || applicationId == null) {
+            return false;
+        }
+
+        boolean isPrivileged = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(role -> role.equals("ROLE_ADMIN") || role.equals("ROLE_SUPER_ADMIN"));
+
+        if (isPrivileged) {
+            return true;
+        }
+
+        boolean isStudent = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(role -> role.equals("ROLE_STUDENT"));
+
+        if (isStudent) {
+            return admissionApplicationRepository.findById(applicationId)
+                    .map(app -> app.getApplicant() != null && canAccessApplicant(authentication, app.getApplicant().getId()))
+                    .orElse(false);
+        }
+
         return false;
     }
 }

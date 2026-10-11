@@ -19,7 +19,7 @@ public class ApplicantDocumentController {
     private final DocumentVerificationService documentService;
 
     @PostMapping("/upload")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN') or (hasRole('STUDENT') and @securityOwnershipService.canAccessApplicant(authentication, #request.applicantId))")
     public ResponseEntity<ApplicantDocument> uploadDocument(@RequestBody DocumentUploadRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(documentService.uploadDocument(request));
     }
@@ -34,7 +34,7 @@ public class ApplicantDocumentController {
     }
 
     @GetMapping("/applicant/{applicantId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'FACULTY')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'FACULTY') or (hasRole('STUDENT') and @securityOwnershipService.canAccessApplicant(authentication, #applicantId))")
     public ResponseEntity<List<ApplicantDocument>> getApplicantDocuments(@PathVariable Long applicantId) {
         return ResponseEntity.ok(documentService.getApplicantDocuments(applicantId));
     }
