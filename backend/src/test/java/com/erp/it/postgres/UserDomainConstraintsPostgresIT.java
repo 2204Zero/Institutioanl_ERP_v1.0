@@ -27,7 +27,7 @@ public class UserDomainConstraintsPostgresIT extends AbstractPostgresIT {
     }
 
     @Test
-    @DisplayName("C.2: Duplicate non-null faculty.user_id values are rejected by uk_faculty_user_id")
+    @DisplayName("C.2: Duplicate non-null faculty.user_id values are rejected by uq_faculty_user_id")
     void testDuplicateFacultyUserIdRejected() {
         // Insert user
         jdbcTemplate.execute("INSERT INTO users (id, username, password_hash, email, role, is_active) " +
@@ -45,7 +45,7 @@ public class UserDomainConstraintsPostgresIT extends AbstractPostgresIT {
     }
 
     @Test
-    @DisplayName("C.3: Duplicate non-null students.user_id values are rejected by uk_students_user_id")
+    @DisplayName("C.3: Duplicate non-null students.user_id values are rejected by uq_students_user_id")
     void testDuplicateStudentUserIdRejected() {
         // Insert user
         jdbcTemplate.execute("INSERT INTO users (id, username, password_hash, email, role, is_active) " +

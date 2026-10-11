@@ -74,7 +74,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U postgres"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -93,7 +93,7 @@ jobs:
       - name: Run PostgreSQL Integration Tests
         working-directory: backend
         env:
-          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/edupulse_test
-          SPRING_DATASOURCE_USERNAME: postgres
-          SPRING_DATASOURCE_PASSWORD: postgres_test_password
-        run: mvn verify -P postgres-it
+          PGTEST_DATASOURCE_URL: jdbc:postgresql://localhost:5432/edupulse_test
+          PGTEST_DATASOURCE_USERNAME: postgres
+          PGTEST_DATASOURCE_PASSWORD: postgres_test_password
+        run: mvn verify -P postgres-it -Dtest=none -DfailIfNoTests=false

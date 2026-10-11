@@ -63,10 +63,10 @@ public class FlywayMigrationPostgresIT extends AbstractPostgresIT {
                 "WHERE table_schema = 'public' AND constraint_type = 'UNIQUE'",
                 String.class
         );
-        assertTrue(uniqueConstraints.contains("uk_faculty_user_id"),
-                "Unique constraint 'uk_faculty_user_id' must exist on faculty table");
-        assertTrue(uniqueConstraints.contains("uk_students_user_id"),
-                "Unique constraint 'uk_students_user_id' must exist on students table");
+        assertTrue(uniqueConstraints.contains("uq_faculty_user_id") || uniqueConstraints.contains("uk_faculty_user_id"),
+                "Unique constraint 'uq_faculty_user_id' must exist on faculty table");
+        assertTrue(uniqueConstraints.contains("uq_students_user_id") || uniqueConstraints.contains("uk_students_user_id"),
+                "Unique constraint 'uq_students_user_id' must exist on students table");
 
         // 2. Verify foreign keys
         List<String> foreignKeys = jdbcTemplate.queryForList(

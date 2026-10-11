@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/edupulse_test}
-    username: ${SPRING_DATASOURCE_USERNAME:postgres}
-    password: ${SPRING_DATASOURCE_PASSWORD:postgres_test_password}
+    url: ${PGTEST_DATASOURCE_URL:${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/edupulse_test}}
+    username: ${PGTEST_DATASOURCE_USERNAME:${SPRING_DATASOURCE_USERNAME:postgres}}
+    password: ${PGTEST_DATASOURCE_PASSWORD:${SPRING_DATASOURCE_PASSWORD:postgres_test_password}}
     driver-class-name: org.postgresql.Driver
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
