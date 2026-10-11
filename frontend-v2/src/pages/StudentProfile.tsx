@@ -22,6 +22,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../components/ui/dropdown-menu";
+import { StudentAcademicTab } from '../components/StudentAcademicTab';
+import { formatLocalDate } from '../lib/utils';
 
 export default function StudentProfile() {
   const { id } = useParams<{ id: string }>();
@@ -53,15 +55,21 @@ export default function StudentProfile() {
 
   const statusMutation = useMutation({
     mutationFn: async (newStatus: string) => {
-      const res = await apiClient.patch(`/api/v1/students/${id}/status`, { status: newStatus, remarks: 'Updated via portal' });
+      const res = await apiClient.patch(`/api/v1/students/${id}/status`, {
+        status: newStatus,
+        reason: 'Updated via portal',
+        effectiveDate: formatLocalDate()
+      });
       return res.data;
     },
     onSuccess: () => {
       toast.success('Status updated successfully');
       queryClient.invalidateQueries({ queryKey: ['student', id] });
+      queryClient.invalidateQueries({ queryKey: ['students'] });
     },
-    onError: () => {
-      toast.error('Failed to update status');
+    onError: (error: any) => {
+      const msg = error.response?.data?.message || error.response?.data?.error || 'Failed to update status';
+      toast.error(msg);
     }
   });
 
@@ -223,7 +231,11 @@ export default function StudentProfile() {
             </>
           )}
 
-          {(activeTab === 'academic' || activeTab === 'attendance' || activeTab === 'fees' || activeTab === 'history') && (
+          {activeTab === 'academic' && (
+            <StudentAcademicTab studentId={Number(id)} />
+          )}
+
+          {(activeTab === 'attendance' || activeTab === 'fees' || activeTab === 'history') && (
             <div className="flex flex-col items-center justify-center p-12 bg-slate-50 border border-slate-200">
                <div className="w-10 h-10 bg-slate-200 flex items-center justify-center mb-3">
                  <ShieldAlert className="w-5 h-5 text-slate-400" />

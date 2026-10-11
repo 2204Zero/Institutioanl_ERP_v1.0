@@ -25,7 +25,7 @@ public class TimetableController {
     }
 
     @GetMapping("/section/{sectionId}")
-    @PreAuthorize("hasAnyRole('STUDENT', 'FACULTY', 'ADMIN', 'PARENT')")
+    @PreAuthorize("hasAnyRole('STUDENT', 'FACULTY', 'ADMIN', 'PARENT', 'SUPER_ADMIN')")
     public ResponseEntity<List<TimetableSlot>> getSectionTimetable(@PathVariable Long sectionId) {
         return ResponseEntity.ok(timetableService.getSectionTimetable(sectionId));
     }

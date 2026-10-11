@@ -3,6 +3,8 @@ package com.erp.academic.course_offering.service;
 import com.erp.academic.course.entity.Course;
 import com.erp.academic.course.repository.CourseRepository;
 import com.erp.academic.course_offering.entity.CourseOffering;
+import com.erp.academic.course_offering.dto.CourseOfferingResponse;
+import com.erp.academic.course_offering.mapper.CourseOfferingMapper;
 import com.erp.academic.course_offering.repository.CourseOfferingRepository;
 import com.erp.academic.semester.entity.Semester;
 import com.erp.academic.semester.repository.SemesterRepository;
@@ -21,6 +23,7 @@ public class CourseOfferingService {
     private final CourseOfferingRepository courseOfferingRepository;
     private final CourseRepository courseRepository;
     private final SemesterRepository semesterRepository;
+    private final CourseOfferingMapper courseOfferingMapper;
 
     @Transactional
     public CourseOffering createCourseOffering(Long courseId, Long semesterId, Integer maxCapacity) {
@@ -48,7 +51,10 @@ public class CourseOfferingService {
         return courseOfferingRepository.save(offering);
     }
 
-    public List<CourseOffering> getAllCourseOfferings() {
-        return courseOfferingRepository.findAll();
+    @Transactional(readOnly = true)
+    public List<CourseOfferingResponse> getAllCourseOfferings() {
+        return courseOfferingRepository.findAll().stream()
+                .map(courseOfferingMapper::toResponse)
+                .toList();
     }
 }

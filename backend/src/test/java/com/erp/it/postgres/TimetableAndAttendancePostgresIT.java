@@ -19,7 +19,8 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 
-import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -109,5 +110,21 @@ public class TimetableAndAttendancePostgresIT extends AbstractPostgresIT {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isConflict());
+    }
+
+    @Test
+    @WithMockUser(username = "student", roles = {"STUDENT"})
+    @DisplayName("E.3: GET /api/v1/course-offerings serializes cleanly without ByteBuddy proxy errors in PostgreSQL")
+    void testCourseOfferingSerializationInPostgres() throws Exception {
+        jdbcTemplate.execute("INSERT INTO course (id, code, name, department_id, credits, is_active) VALUES (903, 'CS903', 'Database Systems', 1, 4, true) ON CONFLICT DO NOTHING");
+        jdbcTemplate.execute("INSERT INTO semester (id, name, is_active) VALUES (903, 'Fall 2026 DB', true) ON CONFLICT DO NOTHING");
+        jdbcTemplate.execute("INSERT INTO course_offering (id, course_id, semester_id, max_capacity, is_published) VALUES (903, 903, 903, 50, true) ON CONFLICT DO NOTHING");
+
+        mockMvc.perform(get("/api/v1/course-offerings")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(1))))
+                .andExpect(jsonPath("$[?(@.courseCode == 'CS903')].courseName", hasItem("Database Systems")))
+                .andExpect(jsonPath("$[?(@.courseCode == 'CS903')].semesterName", hasItem("Fall 2026 DB")));
     }
 }

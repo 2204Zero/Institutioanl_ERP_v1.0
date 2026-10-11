@@ -38,6 +38,11 @@ export default function Login() {
   };
 
   const handleDemoFill = () => {
+    if (import.meta.env.PROD) {
+      toast.info('Demo login is not configured for production environments. Please log in with your institutional credentials.');
+      return;
+    }
+
     switch(activeTab) {
       case 'ADMIN':
         setUsername('admin');
@@ -60,6 +65,7 @@ export default function Login() {
         setPassword('Parent@123');
         break;
     }
+    toast.info(`Filled dev fixtures for ${activeTab}. Requires backend 'dev' profile.`);
   };
 
   return (

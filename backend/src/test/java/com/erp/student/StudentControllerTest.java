@@ -155,4 +155,59 @@ class StudentControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data", hasSize(greaterThanOrEqualTo(2))));
     }
+
+    @Test
+    @DisplayName("Should reject invalid status transition and return 400 without state mutation")
+    @org.springframework.security.test.context.support.WithMockUser(roles = {"ADMIN"})
+    void testInvalidStatusTransitionReturnsBadRequest() throws Exception {
+        StudentRequestDto request = createSampleStudentRequest("TEST-CS-INV", "rohan.invalid@college.edu");
+        MvcResult result = mockMvc.perform(post("/api/v1/students")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        String responseBody = result.getResponse().getContentAsString();
+        long studentId = objectMapper.readTree(responseBody).path("data").path("id").asLong();
+
+        // From ACTIVE, direct transition to ALUMNI is invalid (must go through GRADUATED first)
+        StudentStatusUpdateDto invalidUpdate = new StudentStatusUpdateDto(
+                StudentStatus.ALUMNI,
+                "Premature alumni status",
+                "principal",
+                java.time.LocalDate.now()
+        );
+
+        mockMvc.perform(patch("/api/v1/students/" + studentId + "/status")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidUpdate)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message", containsString("Invalid status transition from ACTIVE to ALUMNI")));
+
+        mockMvc.perform(get("/api/v1/students/" + studentId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status", is("ACTIVE")));
+    }
+
+    @Test
+    @DisplayName("Should reject status update with missing effectiveDate and return 400")
+    @org.springframework.security.test.context.support.WithMockUser(roles = {"ADMIN"})
+    void testStatusUpdateMissingEffectiveDateReturnsBadRequest() throws Exception {
+        StudentRequestDto request = createSampleStudentRequest("TEST-CS-NODATE", "rohan.nodate@college.edu");
+        MvcResult result = mockMvc.perform(post("/api/v1/students")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        String responseBody = result.getResponse().getContentAsString();
+        long studentId = objectMapper.readTree(responseBody).path("data").path("id").asLong();
+
+        String payloadMissingDate = "{\"status\": \"ACTIVE\", \"reason\": \"Activation without date\"}";
+
+        mockMvc.perform(patch("/api/v1/students/" + studentId + "/status")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(payloadMissingDate))
+                .andExpect(status().isBadRequest());
+    }
 }

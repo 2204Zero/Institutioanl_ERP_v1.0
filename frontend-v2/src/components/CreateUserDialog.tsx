@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -38,6 +38,25 @@ const userSchema = z.object({
   email: z.string().email("Invalid email"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   role: z.string().min(1, "Role is required"),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+}).superRefine((data, ctx) => {
+  if (data.role === 'FACULTY') {
+    if (!data.firstName || data.firstName.trim() === '') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "First name is required for Faculty role",
+        path: ["firstName"],
+      });
+    }
+    if (!data.lastName || data.lastName.trim() === '') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Last name is required for Faculty role",
+        path: ["lastName"],
+      });
+    }
+  }
 });
 
 type FormValues = z.infer<typeof userSchema>;
@@ -54,8 +73,12 @@ export function CreateUserDialog() {
       email: '',
       password: '',
       role: 'STUDENT',
+      firstName: '',
+      lastName: '',
     } as FormValues,
   });
+
+  const selectedRole = useWatch({ control: form.control, name: 'role' });
 
   const mutation = useMutation({
     mutationFn: async (data: any) => {
@@ -69,7 +92,8 @@ export function CreateUserDialog() {
       setOpen(false);
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to create user');
+      const serverError = error.response?.data?.error || error.response?.data?.message;
+      toast.error(serverError || 'Failed to create user');
     },
   });
 
@@ -176,6 +200,37 @@ export function CreateUserDialog() {
                 </FormItem>
               )}
             />
+
+            {selectedRole === 'FACULTY' && (
+              <div className="grid grid-cols-2 gap-3">
+                <FormField
+                  control={form.control}
+                  name="firstName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>First Name <span className="text-red-500">*</span></FormLabel>
+                      <FormControl>
+                        <Input placeholder="John" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="lastName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Last Name <span className="text-red-500">*</span></FormLabel>
+                      <FormControl>
+                        <Input placeholder="Doe" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            )}
 
             <Button type="submit" className="w-full mt-6" disabled={mutation.isPending}>
               {mutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
