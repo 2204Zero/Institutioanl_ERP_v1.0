@@ -14,13 +14,17 @@ import com.erp.academic.section.service.SectionService;
 import com.erp.common.exception.BusinessException;
 import com.erp.common.exception.ResourceNotFoundException;
 import com.erp.student.entity.Student;
+import com.erp.student.entity.StudentStatus;
 import com.erp.student.repository.StudentRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -35,14 +39,37 @@ public class CourseRegistrationService {
 
     @Transactional
     public CourseRegistration registerStudent(Long studentId, Long courseOfferingId, Long sectionId) {
-        if (registrationRepository.existsByStudentIdAndCourseOfferingId(studentId, courseOfferingId)) {
-            throw new BusinessException("Student is already registered for this course offering");
-        }
-
         Student student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Student not found"));
+
+        if (student.getStatus() != null && student.getStatus() != StudentStatus.ACTIVE) {
+            throw new BusinessException("Student account is not active for course registration");
+        }
+
+        Optional<CourseRegistration> existingOpt = registrationRepository.findByStudentIdAndCourseOfferingId(studentId, courseOfferingId);
+        if (existingOpt.isPresent()) {
+            CourseRegistration existing = existingOpt.get();
+            if (existing.getStatus() == RegistrationStatus.REGISTERED) {
+                throw new BusinessException("Student is already registered for this course offering");
+            }
+        }
+
         CourseOffering offering = courseOfferingRepository.findById(courseOfferingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Course Offering not found"));
+
+        if (Boolean.FALSE.equals(offering.getIsPublished())) {
+            throw new BusinessException("Course offering is not published for registration");
+        }
+
+        if (offering.getSemester() != null) {
+            if (Boolean.FALSE.equals(offering.getSemester().getIsActive())) {
+                throw new BusinessException("Cannot register for course in an inactive semester");
+            }
+            if (offering.getSemester().getEndDate() != null && LocalDate.now().isAfter(offering.getSemester().getEndDate())) {
+                throw new BusinessException("Registration window closed: semester has ended");
+            }
+        }
+
         Section section = sectionRepository.findById(sectionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Section not found"));
 
@@ -50,18 +77,30 @@ public class CourseRegistrationService {
             throw new BusinessException("Section does not belong to the specified course offering");
         }
 
-        // Check Prerequisites (Simplified check for demonstration)
-        List<CoursePrerequisite> prerequisites = prerequisiteRepository.findByCourseId(offering.getCourse().getId());
-        if (!prerequisites.isEmpty()) {
-            // In a real scenario, we'd check StudentAcademicRecord to see if they passed the prerequisite courses.
-            // For now, we will assume they have or let it pass for the demo.
+        if (Boolean.FALSE.equals(section.getIsActive())) {
+            throw new BusinessException("Cannot register for an inactive section");
         }
 
-        // Lock a seat in the section by assigning the student physically
+        // Check Prerequisites (Prerequisite course completion records not tracked at course-level in current schema)
+        List<CoursePrerequisite> prerequisites = prerequisiteRepository.findByCourseId(offering.getCourse().getId());
+        if (!prerequisites.isEmpty()) {
+            // Documented gap: course-specific completion grades are not stored in student_academic_records
+        }
+
+        // Lock a seat in the section by assigning the student physically via pessimistic write lock in SectionService
         SectionStudentAssignRequest assignReq = SectionStudentAssignRequest.builder()
                 .studentIds(List.of(studentId))
                 .build();
-        sectionService.assignStudents(sectionId, assignReq); // This natively checks capacity and throws error if full
+        sectionService.assignStudents(sectionId, assignReq);
+
+        if (existingOpt.isPresent()) {
+            CourseRegistration existing = existingOpt.get();
+            existing.setSection(section);
+            existing.setStatus(RegistrationStatus.REGISTERED);
+            existing.setRegisteredAt(Instant.now());
+            existing.setDroppedAt(null);
+            return registrationRepository.save(existing);
+        }
 
         CourseRegistration registration = CourseRegistration.builder()
                 .student(student)
@@ -82,17 +121,40 @@ public class CourseRegistrationService {
             throw new BusinessException("Course is already dropped");
         }
 
+        if (registration.getCourseOffering() != null && registration.getCourseOffering().getSemester() != null) {
+            var semester = registration.getCourseOffering().getSemester();
+            if (semester.getEndDate() != null && LocalDate.now().isAfter(semester.getEndDate())) {
+                throw new BusinessException("Withdrawal window closed: semester has ended");
+            }
+        }
+
         registration.setStatus(RegistrationStatus.DROPPED);
         registration.setDroppedAt(Instant.now());
 
-        // We should theoretically remove them from SectionStudent as well, freeing up capacity.
-        // For brevity, we assume sectionService has a removeStudent method, or we decrement manually.
         Section section = registration.getSection();
-        int currentEnrollment = section.getCurrentEnrollment() != null ? section.getCurrentEnrollment() : 1;
-        section.setCurrentEnrollment(Math.max(0, currentEnrollment - 1));
-        sectionRepository.save(section);
+        if (section != null) {
+            try {
+                sectionService.removeStudent(section.getId(), registration.getStudent().getId());
+            } catch (Exception e) {
+                int currentEnrollment = section.getCurrentEnrollment() != null ? section.getCurrentEnrollment() : 1;
+                section.setCurrentEnrollment(Math.max(0, currentEnrollment - 1));
+                sectionRepository.save(section);
+            }
+        }
 
         return registrationRepository.save(registration);
+    }
+
+    @Transactional
+    public CourseRegistration withdrawStudentRegistration(Long registrationId, Long authenticatedStudentId) {
+        CourseRegistration registration = registrationRepository.findById(registrationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Registration not found"));
+
+        if (!registration.getStudent().getId().equals(authenticatedStudentId)) {
+            throw new AccessDeniedException("Cannot withdraw registration belonging to another student");
+        }
+
+        return dropCourse(registrationId);
     }
 
     @Transactional(readOnly = true)

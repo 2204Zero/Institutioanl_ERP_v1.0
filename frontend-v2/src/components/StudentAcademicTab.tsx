@@ -32,74 +32,101 @@ interface CourseRegistration {
 export function StudentAcademicTab({ studentId }: { studentId: number }) {
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
+  const isStudent = user?.role === 'STUDENT';
   const canManage = user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN';
+  const isAuthorized = isStudent || canManage;
 
   const [selectedCourseOfferingId, setSelectedCourseOfferingId] = useState<string>('');
   const [selectedSectionId, setSelectedSectionId] = useState<string>('');
 
   const { data: registrationsResponse, isLoading: isLoadingRegistrations } = useQuery({
-    queryKey: ['course-registrations', studentId],
+    queryKey: isStudent ? ['student-me-course-registrations'] : ['course-registrations', studentId],
     queryFn: async () => {
-      const res = await apiClient.get(`/api/v1/course-registrations`, {
+      if (isStudent) {
+        const res = await apiClient.get('/api/v1/students/me/course-registrations');
+        return res.data;
+      }
+      const res = await apiClient.get('/api/v1/course-registrations', {
         params: { studentId }
       });
       return res.data;
     },
-    enabled: canManage && !!studentId
+    enabled: isStudent || (canManage && !!studentId)
   });
 
   const { data: offeringsResponse } = useQuery({
     queryKey: ['course-offerings'],
     queryFn: async () => {
-      const res = await apiClient.get(`/api/v1/course-offerings`);
+      const res = await apiClient.get('/api/v1/course-offerings');
       return res.data;
     },
-    enabled: canManage
+    enabled: isAuthorized
   });
 
   const { data: sectionsResponse } = useQuery({
     queryKey: ['sections', selectedCourseOfferingId],
     queryFn: async () => {
-      const res = await apiClient.get(`/api/v1/sections`, {
+      const res = await apiClient.get('/api/v1/sections', {
         params: { courseOfferingId: selectedCourseOfferingId }
       });
       return res.data;
     },
-    enabled: canManage && !!selectedCourseOfferingId
+    enabled: isAuthorized && !!selectedCourseOfferingId
   });
 
   const registerMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiClient.post(`/api/v1/course-registrations`, null, {
-        params: {
-          studentId,
-          courseOfferingId: selectedCourseOfferingId,
-          sectionId: selectedSectionId
-        }
-      });
-      return res.data;
+      if (isStudent) {
+        const res = await apiClient.post('/api/v1/students/me/course-registrations', {
+          courseOfferingId: Number(selectedCourseOfferingId),
+          sectionId: Number(selectedSectionId)
+        });
+        return res.data;
+      } else {
+        const res = await apiClient.post('/api/v1/course-registrations', null, {
+          params: {
+            studentId,
+            courseOfferingId: selectedCourseOfferingId,
+            sectionId: selectedSectionId
+          }
+        });
+        return res.data;
+      }
     },
     onSuccess: () => {
-      toast.success('Student registered successfully');
+      toast.success(isStudent ? 'Course registered successfully' : 'Student registered successfully');
       setSelectedCourseOfferingId('');
       setSelectedSectionId('');
-      queryClient.invalidateQueries({ queryKey: ['course-registrations', studentId] });
+      if (isStudent) {
+        queryClient.invalidateQueries({ queryKey: ['student-me-course-registrations'] });
+      } else {
+        queryClient.invalidateQueries({ queryKey: ['course-registrations', studentId] });
+      }
       queryClient.invalidateQueries({ queryKey: ['sections'] });
     },
     onError: (err: any) => {
-      const msg = err.response?.data?.message || 'Failed to register student';
+      const msg = err.response?.data?.message || 'Failed to register course';
       toast.error(msg);
     }
   });
 
   const dropMutation = useMutation({
     mutationFn: async (registrationId: number) => {
-      const res = await apiClient.patch(`/api/v1/course-registrations/${registrationId}/drop`);
-      return res.data;
+      if (isStudent) {
+        const res = await apiClient.delete(`/api/v1/students/me/course-registrations/${registrationId}`);
+        return res.data;
+      } else {
+        const res = await apiClient.patch(`/api/v1/course-registrations/${registrationId}/drop`);
+        return res.data;
+      }
     },
     onSuccess: () => {
-      toast.success('Registration dropped successfully');
-      queryClient.invalidateQueries({ queryKey: ['course-registrations', studentId] });
+      toast.success(isStudent ? 'Course withdrawn successfully' : 'Registration dropped successfully');
+      if (isStudent) {
+        queryClient.invalidateQueries({ queryKey: ['student-me-course-registrations'] });
+      } else {
+        queryClient.invalidateQueries({ queryKey: ['course-registrations', studentId] });
+      }
       queryClient.invalidateQueries({ queryKey: ['sections'] });
     },
     onError: (err: any) => {
@@ -110,8 +137,8 @@ export function StudentAcademicTab({ studentId }: { studentId: number }) {
 
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canManage) {
-      toast.error('Only administrators can register students for courses');
+    if (!isAuthorized) {
+      toast.error('You do not have permission to register for courses');
       return;
     }
     if (!selectedCourseOfferingId || !selectedSectionId) {
@@ -138,7 +165,14 @@ export function StudentAcademicTab({ studentId }: { studentId: number }) {
   const offerings: CourseOffering[] = offeringsResponse || [];
   const sections: Section[] = sectionsResponse || [];
 
-  if (!canManage) {
+  const registeredOfferingIds = new Set(
+    registrations
+      .filter(r => r.status === 'REGISTERED')
+      .map(r => r.courseOffering?.id)
+      .filter(Boolean)
+  );
+
+  if (!isAuthorized) {
     return (
       <div className="border border-slate-200 bg-white">
         <div className="px-4 py-3 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
@@ -150,7 +184,7 @@ export function StudentAcademicTab({ studentId }: { studentId: number }) {
           </div>
           <h4 className="text-sm font-bold uppercase tracking-wider text-slate-900">Registration Access Restricted</h4>
           <p className="text-slate-500 text-xs text-center max-w-md mt-1">
-            Course registrations are managed directly by Academic Administrators. Student and self-service registration tracking is currently restricted on this endpoint.
+            Course registrations are managed directly by Academic Administrators or self-service by enrolled students.
           </p>
         </div>
       </div>
@@ -161,7 +195,9 @@ export function StudentAcademicTab({ studentId }: { studentId: number }) {
     <div className="space-y-6">
       <div className="border border-slate-200 bg-white">
         <div className="px-4 py-3 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">Current Registrations</h3>
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">
+            {isStudent ? 'My Course Registrations' : 'Current Registrations'}
+          </h3>
         </div>
         <div className="p-0">
           {isLoadingRegistrations ? (
@@ -185,9 +221,11 @@ export function StudentAcademicTab({ studentId }: { studentId: number }) {
                       )}
                     </div>
                     <div>
-                      <p className="font-bold text-slate-900 text-sm">{reg.courseOffering.course.name} ({reg.courseOffering.course.code})</p>
+                      <p className="font-bold text-slate-900 text-sm">
+                        {reg.courseOffering?.course?.name || 'Course'} ({reg.courseOffering?.course?.code || 'N/A'})
+                      </p>
                       <p className="text-xs text-slate-500 mt-0.5">
-                        Section: {reg.section.name} &bull; Semester: {reg.courseOffering.semester.name}
+                        Section: {reg.section?.name || 'N/A'} &bull; Semester: {reg.courseOffering?.semester?.name || 'N/A'}
                       </p>
                       <div className="flex items-center mt-1.5 space-x-2">
                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
@@ -206,13 +244,16 @@ export function StudentAcademicTab({ studentId }: { studentId: number }) {
                         size="sm"
                         className="text-orange-600 border-orange-200 hover:bg-orange-50"
                         onClick={() => {
-                          if (window.confirm('Are you sure you want to drop this course?')) {
+                          const confirmMsg = isStudent
+                            ? 'Are you sure you want to withdraw from this course?'
+                            : 'Are you sure you want to drop this course?';
+                          if (window.confirm(confirmMsg)) {
                             dropMutation.mutate(reg.id);
                           }
                         }}
                         disabled={dropMutation.isPending}
                       >
-                        <Trash2 className="w-3.5 h-3.5 mr-1" /> Drop
+                        <Trash2 className="w-3.5 h-3.5 mr-1" /> {isStudent ? 'Withdraw' : 'Drop'}
                       </Button>
                     )}
                   </div>
@@ -225,7 +266,9 @@ export function StudentAcademicTab({ studentId }: { studentId: number }) {
 
       <div className="border border-slate-200 bg-white">
         <div className="px-4 py-3 border-b border-slate-200 bg-slate-50">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">Register for Course</h3>
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">
+            {isStudent ? 'Register for a Course' : 'Register Student for Course'}
+          </h3>
         </div>
         <div className="p-4">
           <form onSubmit={handleRegister} className="space-y-4">
@@ -242,11 +285,14 @@ export function StudentAcademicTab({ studentId }: { studentId: number }) {
                   disabled={registerMutation.isPending}
                 >
                   <option value="">-- Select Course Offering --</option>
-                  {offerings.filter(o => o.isPublished).map(o => (
-                    <option key={o.id} value={o.id}>
-                      {o.course.name} - {o.semester.name}
-                    </option>
-                  ))}
+                  {offerings.filter(o => o.isPublished).map(o => {
+                    const isAlreadyRegistered = registeredOfferingIds.has(o.id);
+                    return (
+                      <option key={o.id} value={o.id} disabled={isAlreadyRegistered}>
+                        {o.course?.name} - {o.semester?.name}{isAlreadyRegistered ? ' (Already Registered)' : ''}
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
               <div className="space-y-1.5">
@@ -276,7 +322,7 @@ export function StudentAcademicTab({ studentId }: { studentId: number }) {
             <div className="flex justify-end pt-2">
               <Button type="submit" disabled={!selectedCourseOfferingId || !selectedSectionId || registerMutation.isPending}>
                 {registerMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
-                Register Student
+                {isStudent ? 'Register for Course' : 'Register Student'}
               </Button>
             </div>
           </form>

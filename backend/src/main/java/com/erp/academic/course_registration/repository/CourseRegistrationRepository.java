@@ -18,4 +18,7 @@ public interface CourseRegistrationRepository extends JpaRepository<CourseRegist
 
     List<CourseRegistration> findByCourseOfferingId(Long courseOfferingId);
     boolean existsByStudentIdAndCourseOfferingId(Long studentId, Long courseOfferingId);
+
+    @EntityGraph(attributePaths = {"courseOffering", "courseOffering.course", "courseOffering.semester", "section", "student"})
+    Optional<CourseRegistration> findByStudentIdAndCourseOfferingId(Long studentId, Long courseOfferingId);
 }
