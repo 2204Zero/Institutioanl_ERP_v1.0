@@ -20,12 +20,12 @@ public class FlywayMigrationPostgresIT extends AbstractPostgresIT {
     private JdbcTemplate jdbcTemplate;
 
     @Test
-    @DisplayName("A.1: Flyway migrations V1 through V4 apply cleanly and schema is at version 4")
+    @DisplayName("A.1: Flyway migrations V1 through V5 apply cleanly and schema is at version 5")
     void testFlywayVersionIsCurrent() {
         MigrationInfo current = flyway.info().current();
         assertNotNull(current, "Current migration info should not be null");
-        assertEquals("4", current.getVersion().getVersion(), "Flyway schema should be migrated to version 4");
-        assertTrue(current.getState().isApplied(), "Version 4 migration must be in APPLIED state");
+        assertEquals("5", current.getVersion().getVersion(), "Flyway schema should be migrated to version 5");
+        assertTrue(current.getState().isApplied(), "Version 5 migration must be in APPLIED state");
     }
 
     @Test
