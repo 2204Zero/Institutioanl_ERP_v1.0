@@ -1,4 +1,4 @@
-# Institutional ERP v1.0
+# EduPulse
 
 > **Canonical Enterprise Resource Planning Documentation for Higher Education Institutions**  
 > *Architected with Java 21 LTS, Spring Boot 3.3.4, PostgreSQL 17/18, Flyway Migrations, React 19, and Vite 8.*
@@ -10,13 +10,35 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17%2F18-4169E1?logo=postgresql&logoColor=white)](edupulse/docker-compose.yml)
 [![Flyway](https://img.shields.io/badge/Flyway-V1--V5_Active-CC0200?logo=flyway&logoColor=white)](backend/src/main/resources/db/migration/)
 [![Build & Test](https://img.shields.io/badge/CI_Pipeline-GitHub_Actions-2088FF?logo=githubactions&logoColor=white)](.github/workflows/ci.yml)
-[![License Status](https://img.shields.io/badge/License-Owner_Decision_Pending-lightgrey)](#20-license-acknowledgements--owner-action-register)
+[![License Status](https://img.shields.io/badge/License-Owner_Decision_Pending-lightgrey)](#21-license-acknowledgements--owner-action-register)
 
 ---
+
+### Core Team Members & Project Contributors
+
+| Member Name | Project Role | Git Author / Profile | Key Responsibilities & Contributions |
+| :--- | :--- | :--- | :--- |
+| **Lakshya Goyal** | Project Lead & Full-Stack / System Integration Lead | [`2204Zero`](https://github.com/2204Zero)<br/>`lakshyagoyal701@gmail.com` | Overall EduPulse system integration; end-to-end coordination across backend, frontend, database, and deployment; system-wide audits and bug tracking; frontend hardening and integration fixes; cross-module regression testing; release preparation, deployment configuration, project documentation, and final acceptance/demo coordination. |
+| **Palak Agarwal** | Student Information System (SIS) Lead | `inagarwalpalak2005@gmail.com`<br/>*(Profile link pending)* | End-to-end design and implementation of the Student Information System (SIS); Student Profile CRUD, pagination, and multi-field search (`com.erp.student`); Guardian management and 1:N relational linking (`com.erp.guardian`); Student document repository (`StudentDocument`); Student status lifecycle state machine with immutable audit logging (`StudentStatusHistoryService`); 35 automated test cases in the master SIS test suite (100% pass rate); Automated demo harness `StudentModuleDemonstrationTest.java` and companion scripts (`run_student_demo.ps1`, `run_student_demo.bat`). |
+| **Manish Sharma** | Security & Access Control Lead | `sharmamanish48118@gmail.com`<br/>*(Profile link pending)* | Enterprise authentication, JWT bearer token lifecycle, and database-backed session management (`Session` entity, `SessionService`); Dynamic user-role assignment with JPA `@ElementCollection` and role normalization (`RoleAssignmentService`); Method-level security enforcement (`@EnableMethodSecurity`) and custom JSON error handling (`JwtAuthenticationEntryPoint`, `CustomAccessDeniedHandler`); Secure password recovery workflow with 15-minute single-use UUID tokens (`PasswordResetToken`); Security integration test suites (`AuthenticationIntegrationTest`, `RbacAndPermissionIntegrationTest`). |
+| **Lakshya Singhal** | Frontend Architect & Lead Hardening | [`lakshyasinghal08`](https://github.com/lakshyasinghal08)<br/>`lakshyasinghal92@gmail.com` | Enterprise frontend architecture across `src/` and `frontend-v2/` (React 19, Vite 8, TanStack Query v5, Zustand, Tailwind CSS); Centralized typed HTTP client (`apiClient`), Axios interceptors, correlation IDs, and token refresh queues (`DATA_LAYER_README.md`, `INTEGRATION_README.md`); Generic in-memory cache manager with TTL invalidation; Responsive administrative dashboard with KPI metrics and role-based route guards (`RoleGuard`); PostgreSQL integration test harness, concurrency hardening (`FinanceConcurrencyPostgresIT`), and fail-fast test security guards (`PostgresSafetyGuard`). |
+| **Prashant Jain** | Institutional & Campus Lead | `prashantjain.code@gmail.com`<br/>*(Profile link pending)* | Institution metadata, accreditation records, and multi-campus relational hierarchy (`CampusController`, `InstitutionController`); Campus registration, facility details, and directory endpoints; Academic scheduling security evaluators and timetable constraint validation (`AcademicSchedulingSecurity.java`); Co-authored Git branch registry conventions (`docs/Branch-Registry.md`). |
+
+### 12-Week Team Progress Reports, Research Paper & SRS
+
+- 📄 **Complete Team Progress Reports (Weeks 01–12)**: [Google Drive Folder — Comprehensive Team Weekly Reports](https://drive.google.com/drive/folders/1qEcbbcQ26jBKeXZZCySOKK-qaf-Bnw73?usp=sharing)
+- 📑 **Project Research Paper**: [Google Docs — EduPulse Academic Research Paper](https://docs.google.com/document/d/1RAmW976_6uEVzBNaWRyCj6-VceCNl2DV/edit?usp=sharing&ouid=107702636253744643600&rtpof=true&sd=true)
+- 📋 **Software Requirements Specification (SRS)**: [Google Docs — EduPulse Software Requirements Specification (SRS)](https://docs.google.com/document/d/1DItdPC9wVLq4hNJcIpa7_gOUHRfnTDBj/edit?usp=sharing&ouid=107702636253744643600&rtpof=true&sd=true)
 
 ## 📑 Table of Contents
 
 1. [Project Introduction & Identity](#1-project-introduction--identity)
+   - [Core Team Members & Project Contributors](#core-team-members--project-contributors)
+   - [12-Week Team Progress Reports, Research Paper & SRS](#12-week-team-progress-reports-research-paper--srs)
+   - [Application Screenshots](#application-screenshots)
+   - [Quick Start Guide](#quick-start-guide)
+   - [Release Verification Summary](#release-verification-summary)
+   - [Repository Directory Structure](#repository-directory-structure)
 2. [Abstract](#2-abstract)
 3. [Problem Statement & Objectives](#3-problem-statement--objectives)
 4. [Scope, Boundaries & User Roles](#4-scope-boundaries--user-roles)
@@ -34,26 +56,224 @@
 16. [API Documentation & Conventions](#16-api-documentation--conventions)
 17. [Deployment & Container Architecture](#17-deployment--container-architecture)
 18. [Roadmap, Known Limitations & Future Work](#18-roadmap-known-limitations--future-work)
-19. [Contributing & Governance](#19-contributing--governance)
-20. [License, Acknowledgements & Owner-Action Register](#20-license-acknowledgements--owner-action-register)
+19. [Practical Troubleshooting Guide](#19-practical-troubleshooting-guide)
+20. [Contributing & Governance](#20-contributing--governance)
+21. [License, Acknowledgements & Owner-Action Register](#21-license-acknowledgements--owner-action-register)
 
 ---
 
 ## 1. Project Introduction & Identity
 
-**Institutional ERP v1.0** is an enterprise-grade academic and administrative management platform engineered to unify university operations into a cohesive, secure, and performant modular monolith. Designed for universities, colleges, and polytechnic institutes, the system integrates student records, guardian directories, document archiving, academic lifecycle transitions, role-based access control, fee billing, and campus infrastructure.
+**EduPulse** is an enterprise-grade academic and administrative management platform engineered to unify university operations into a cohesive, secure, and performant modular monolith. Designed for universities, colleges, and polytechnic institutes, the system integrates student records, guardian directories, document archiving, academic lifecycle transitions, role-based access control, fee billing, and campus infrastructure.
 
 - **Primary Repository**: [`Institutioanl_ERP_v1.0`](https://github.com/2204Zero/Institutioanl_ERP_v1.0.git)
-- **Authoritative Frontend**: [`frontend-v2/`](frontend-v2) (React 19, Vite 8, TanStack Query v5, Tailwind CSS, Radix UI, port 5173)
-- **Authoritative Backend**: [`backend/`](backend) (Spring Boot 3.3.4, Java 21 LTS, Spring Security, Hibernate 6, port 8081)
-- **Primary Database**: PostgreSQL 17/18 with Flyway versioned migrations (`V1` to `V5`)
-- **Active Release Baseline**: `v1.0-RC1` (Branch: `develop` / Release Candidate)
+- **Authoritative Frontend**: [`frontend-v2/`](frontend-v2) (React 19 / Vite 8 SPA running on port 5173)
+- **Secondary Frontend**: [`frontend/`](frontend) / [`src/`](src) (React 18 / Vite 5 initial sprint client)
+- **Authoritative Backend**: [`backend/`](backend) (Spring Boot 3.3.4 REST service running on port 8081)
+- **Primary Database**: PostgreSQL 17 / 18 Alpine (Docker Compose configured with Flyway migrations `V1`–`V5`)
+- **Active Release Baseline**: `v1.0-RC1` (Branch: `develop`, Commit: `dcd9524`)
+
+### Application Screenshots
+
+| Authentication & Role Switcher | System Governance & Dashboard |
+| :---: | :---: |
+| ![EduPulse Login Screen](docs/screenshots/01-login-authentication.png)<br/>*Unified login with multi-role preview selector* | ![EduPulse Admin Dashboard](docs/screenshots/02-admin-dashboard.png)<br/>*Administrative governance dashboard & metrics* |
+| **Student Information Directory** | **Student Profile & Academic Detail** |
+| ![EduPulse Student Directory](docs/screenshots/03-student-directory.png)<br/>*Searchable SIS directory with lifecycle status tags* | ![EduPulse Student Detail](docs/screenshots/04-student-profile-detail.png)<br/>*Individual student profile with multi-tab record views* |
+| **Finance & Fee Management** | **Academics Core & Course Catalog** |
+| ![EduPulse Finance Portal](docs/screenshots/05-finance-accounts.png)<br/>*Institutional fee collection and account balances* | ![EduPulse Academics Management](docs/screenshots/06-academics-management.png)<br/>*Academic programs, course offerings, and semesters* |
+
+### Quick Start Guide
+
+The fastest path to run EduPulse locally requires zero external database installation using the in-memory developer profile:
+
+#### 1. Zero-Dependency Developer Run (Fastest Path — H2 Profile)
+- **Prerequisites**: JDK 21 LTS (Temurin/OpenJDK) & Node.js 22 LTS (npm 10+)
+- **Terminal 1 (Backend REST Service)**:
+  ```powershell
+  cd backend
+  .\mvnw.cmd spring-boot:run
+  ```
+  *Starts Spring Boot on port 8081 using in-memory H2 with pre-seeded demo accounts and Swagger UI enabled.*
+- **Terminal 2 (Authoritative Frontend SPA)**:
+  ```powershell
+  cd frontend-v2
+  npm install
+  npm run dev
+  ```
+  *Starts the React 19 application on http://localhost:5173 with automated proxy forwarding to port 8081.*
+
+#### 2. Full Containerized Stack Run (PostgreSQL 18 + Infrastructure)
+- **Step 1 — Start Services**:
+  ```powershell
+  cd edupulse
+  docker compose up -d
+  ```
+  *Starts PostgreSQL 18 (port 5432), Redis 7 (port 6379), RabbitMQ 3 (port 5672/15672), and MinIO (port 9000).*
+- **Step 2 — Launch Backend with Production Profile**:
+  ```powershell
+  cd ..\backend
+  .\mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=prod -Dspring-boot.run.arguments="--DB_PASSWORD=edupulse_secure_password_2026 --JWT_SECRET=404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970"
+  ```
+  *Automatically applies Flyway migrations `V1` through `V5` against PostgreSQL.*
+- **Step 3 — Launch Frontend**:
+  ```powershell
+  cd ..\frontend-v2
+  npm run dev
+  ```
+
+#### 3. Verified Local Access Endpoints
+- **Web Application UI**: [`http://localhost:5173`](http://localhost:5173)
+- **Backend REST API**: `http://localhost:8081/api/v1`
+- **Interactive Swagger UI**: [`http://localhost:8081/swagger-ui.html`](http://localhost:8081/swagger-ui.html)
+- **OpenAPI v3 Specification**: `http://localhost:8081/v3/api-docs`
+- **H2 Console (Dev Profile)**: `http://localhost:8081/h2-console` (`jdbc:h2:mem:erp_db`, User: `sa`, Password: *empty*)
+- **Default Superadmin Credentials**: `superadmin` / `Admin@123` (or click "Use Demo Login" on `/login`)
+
+*For advanced configuration, production deployment, and environment variables, see [Section 15: Installation Guide](#15-installation--local-development-guide).*
+
+### Release Verification Summary
+
+The table below summarizes verified release evidence for baseline `v1.0-RC1`:
+
+| Verification Area | Verified Result | Evidence Source | Last Verified |
+| :--- | :--- | :--- | :---: |
+| **Release Baseline** | `v1.0-RC1` (Branch: `develop`, Commit: `dcd9524`) | Git working tree & commit logs | 2026-10-12 |
+| **Backend Unit & Security Suites (H2)** | **49 Passed / 0 Failed / 0 Errors** | `mvn clean test` (`backend/src/test/java/com/erp/`) | 2026-10-12 |
+| **SIS Master Acceptance Suite** | **35 / 35 Passed (100% Pass Rate)** | [`docs/test-cases/ALL_MODULES_COMPLETE_TEST_SUITE.txt`](docs/test-cases/ALL_MODULES_COMPLETE_TEST_SUITE.txt) | 2026-10-12 |
+| **PostgreSQL 17 Integration Tests** | **10 IT Suites Passed** (`FlywayMigrationPostgresIT`, `FinanceConcurrencyPostgresIT`, etc.) | `mvn verify -P postgres-it` against `edupulse_test` | 2026-10-12 |
+| **Integration Test Safety Guard** | Active (`PostgresSafetyGuard` aborts on `edupulse_erp` / `one`) | `backend/src/test/java/com/erp/it/postgres/PostgresSafetyGuard.java` | 2026-10-12 |
+| **Authoritative Frontend Build (`frontend-v2`)** | **Clean Build** (TypeScript 5 `tsc -b` & Vite 8 bundle, 0 errors) | `npm run build` in `frontend-v2/` | 2026-10-12 |
+| **Secondary Frontend Build (`frontend`)** | **Clean Build** (TypeScript 5 `tsc` & Vite 5 bundle, 0 errors) | `npm run build` in `frontend/` | 2026-10-12 |
+| **Browser Workflow Acceptance** | **18 / 18 Routes & Flows Accepted** | [`docs/testing/master-test-report.md#5-live-browser-end-to-end-acceptance-ledger`](docs/testing/master-test-report.md#5-live-browser-end-to-end-acceptance-ledger) | 2026-10-12 |
+| **Continuous Integration Pipeline** | GitHub Actions 3-job matrix (`frontend`, `backend`, `backend-postgres-it`) | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) | 2026-10-12 |
+| **Known Limitations & Deferred Scope** | Attendance, Documents, and Audit tabs on Student Detail show explicit pending notices | `frontend-v2/src/pages/StudentDetail.tsx` (see [Section 18.4](#184-documented-limitations)) | 2026-10-12 |
+
+*Full test breakdown and execution logs available in [`docs/testing/master-test-report.md`](docs/testing/master-test-report.md).*
+
+### Repository Directory Structure
+
+The following tree represents the verified, meaningful organization of the repository across backend services, frontend applications, deployment infrastructure, migrations, tests, and documentation:
+
+```text
+Institutional_ERP_v1.0/
+├── README.md                                  # Canonical project entry point & master architecture guide
+├── CONTRIBUTING.md                            # Contribution guidelines, branching rules & PR standards
+├── SECURITY.md                                # Vulnerability disclosure policy & security controls
+├── CHANGELOG.md                               # Version history & release candidate audit logs
+├── DATA_LAYER_README.md                       # Frontend data layer, caching & HTTP client architecture
+├── INTEGRATION_README.md                      # Frontend–backend integration flow & JWT queue guide
+├── package.json                               # Root package manifest (React 18 / legacy frontend tooling)
+├── tsconfig.json                              # TypeScript configuration for root client source
+├── vite.config.ts                             # Vite configuration for root client
+├── tailwind.config.js                         # Tailwind CSS configuration for root client
+├── .dockerignore                              # Root Docker build exclusion rules
+├── .gitignore                                 # Git version control exclusions
+├── run_student_demo.ps1                       # Automated PowerShell one-click SIS demo runner
+├── run_student_demo.bat                       # Automated Windows Batch one-click SIS demo runner
+│
+├── backend/                                   # Spring Boot 3.3.4 (Java 21 LTS) backend service
+│   ├── pom.xml                                # Maven build descriptor and dependency definitions
+│   ├── mvnw / mvnw.cmd                        # Maven wrapper executables
+│   ├── .dockerignore                          # Backend Docker build exclusion rules
+│   ├── java security/                         # Sprint security documentation
+│   │   └── Day_1_to_6_Documentation.md        # Session, auth, user, role & recovery sprint notes
+│   └── src/
+│       ├── main/
+│       │   ├── java/com/erp/                  # Core domain packages (modular monolith)
+│       │   │   ├── academic/                  # Programs, courses, academic calendar, offerings
+│       │   │   ├── admin/                     # System administrative management
+│       │   │   ├── admission/                 # Student admissions workflow
+│       │   │   ├── attendance/                # Class session & student attendance tracking
+│       │   │   ├── auth/                      # Authentication, sessions, user management
+│       │   │   ├── campus/                    # Campus facilities & directory controllers
+│       │   │   ├── common/                    # Shared DTOs, utilities, exceptions
+│       │   │   ├── config/                    # Spring configuration & OpenAPI 3 definitions
+│       │   │   ├── dashboard/                 # KPI metrics aggregation endpoints
+│       │   │   ├── department/                # Academic departments management
+│       │   │   ├── faculty/                   # Faculty profiles & workload allocations
+│       │   │   ├── finance/                   # Fee structures, billing, payment processing
+│       │   │   ├── guardian/                  # Student guardian directory & relationships
+│       │   │   ├── institution/               # Institution profile & governance
+│       │   │   ├── security/                  # JWT filters, entry points, access handlers
+│       │   │   └── student/                   # Student entity, profile CRUD, docs, status history
+│       │   └── resources/
+│       │       ├── application.yml            # Core Spring runtime configuration (port 8081, dev active)
+│       │       ├── application-dev.yml        # In-memory H2 dev profile & demo superadmin seed
+│       │       ├── application-prod.yml       # Production profile (PostgreSQL datasource, Flyway enabled)
+│       │       ├── application-test.yml       # Integration test profile configuration
+│       │       └── db/migration/              # Flyway database migrations
+│       │           ├── V1__baseline_erp_schema.sql
+│       │           ├── V2__persistent_user_management.sql
+│       │           ├── V3__enforce_faculty_fk.sql
+│       │           ├── V4__link_users_to_domain_entities.sql
+│       │           └── V5__payment_idempotency.sql
+│       └── test/java/com/erp/                 # Automated test suites
+│           ├── AuthenticationIntegrationTest.java
+│           ├── RbacAndPermissionIntegrationTest.java
+│           ├── campus/ / institution/         # Controller & MockMvc unit tests
+│           ├── guardian/ / student/           # SIS unit tests & demo harness
+│           └── it/postgres/                   # PostgreSQL 17 integration tests & PostgresSafetyGuard
+│
+├── frontend-v2/                               # Authoritative modern React 19 frontend application
+│   ├── package.json                           # Dependencies: React 19, Vite 8, TanStack Query v5, Zustand
+│   ├── vite.config.ts                         # Vite configuration (port 5173, proxy rules)
+│   ├── tsconfig.json                          # TypeScript configuration
+│   ├── tailwind.config.js                     # Tailwind CSS design system tokens
+│   ├── README.md                              # Vite/React template documentation
+│   └── src/
+│       ├── components/                        # UI components (dialogs, tables, navigation, layouts)
+│       ├── config/                            # API endpoints & environment constants
+│       ├── hooks/                             # Custom React hooks (queries, mutations, auth)
+│       ├── pages/                             # Route views (Dashboard, Campuses, Students, Finance)
+│       ├── store/                             # Client-side state stores (Zustand)
+│       └── types/                             # TypeScript type definitions and interfaces
+│
+├── src/                                       # Secondary / initial sprint frontend source
+│   ├── components/ / config/ / hooks/         # Modular React 18 component structure
+│   ├── pages/ / services/ / store/ / types/   # Integration services, Axios client, token storage
+│   └── utils/                                 # Cache manager, pagination & filter utilities
+│
+├── edupulse/                                  # Infrastructure, database containerization & DBA scripts
+│   ├── docker-compose.yml                     # Local compose (Postgres 18, Redis 7, RabbitMQ 3, MinIO)
+│   ├── docker-compose.prod.yml                # Production multi-stage container deployment
+│   ├── .env.example                           # Safe environment variable configuration template
+│   ├── README.md                              # Database operations, HikariCP & backup documentation
+│   └── V1_create_core_database.sql ...        # 3NF database design scripts (V1 through V26)
+│
+├── database/                                  # Relational schema reference DDL and seed scripts
+│   ├── schema/                                # Day-wise table definitions (students, guardians, docs, status)
+│   └── seeds/                                 # Initial development seed records
+│
+├── docs/                                      # Comprehensive project documentation repository
+│   ├── Branch-Registry.md                     # Official Git branch naming rules & contributor registry
+│   ├── screenshots/                           # Verified UI screenshots for documentation
+│   ├── project-overview/
+│   │   └── abstract.md                        # Academic abstract, problem statement & criteria
+│   ├── architecture/
+│   │   └── system-architecture.md             # 4-Tier architecture, sequence & component diagrams
+│   ├── database/
+│   │   └── schema-design.md                   # Relational schema design & foreign key rules
+│   ├── reports/
+│   │   └── weekly-progress-reports.md         # Team contributor registry & sprint logs (Days 01–06)
+│   ├── testing/
+│   │   └── master-test-report.md              # Unified QA report, test matrix & browser audit ledger
+│   ├── test-cases/                            # Automated test specifications
+│   │   ├── ALL_MODULES_COMPLETE_TEST_SUITE.txt# 35-Test SIS acceptance & traceability matrix
+│   │   └── day01_... to day06_...             # Day-by-day test case definitions
+│   └── API/
+│       └── student-api-spec.md                # REST API specifications, DTOs & curl commands
+│
+└── .github/
+    └── workflows/
+        └── ci.yml                             # GitHub Actions CI matrix (Frontend, Backend H2, Postgres IT)
+```
 
 ---
 
 ## 2. Abstract
 
-Modern higher education institutions struggle with operational silos, fragmented student records, uncoordinated fee tracking, and insecure credential management. **Institutional ERP v1.0** addresses these challenges by delivering a centralized, multi-tenant capable, modular monolith built on **Spring Boot 3.3.4 (Java 21 LTS)** and a modern **React 19** frontend.
+Modern higher education institutions struggle with operational silos, fragmented student records, uncoordinated fee tracking, and insecure credential management. **EduPulse** addresses these challenges by delivering a centralized, multi-tenant capable, modular monolith built on **Spring Boot 3.3.4 (Java 21 LTS)** and a modern **React 19** frontend.
 
 The platform provides a comprehensive **Student Information System (SIS)** supporting multi-attribute search, guardian linking, multipart document archiving, and an immutable academic status transition state machine (Active, Inactive, Suspended, Graduated, Alumni). Security is enforced through stateless JWT authentication backed by database-tracked session revocation, method-level Role-Based Access Control (`@PreAuthorize`), and strict Insecure Direct Object Reference (IDOR) mitigations. Database integrity is preserved across 5 Flyway migrations (`V1` to `V5`), enforcing relational cascades, payment idempotency keys, and automated identity linking.
 
@@ -98,9 +318,7 @@ Higher education administrative operations suffer from four core operational fai
 | **Flyway Migrations (V1–V5)** | **Complete** | `backend/src/main/resources/db/migration/` | Baseline, users, FKs, identity links, idempotency |
 | **Academic Programs & Courses** | **Verified (API/UI)** | `academic/` controllers, `AcademicPrograms.tsx` | Degree programs and courses directory |
 | **Finance & Fee Structures** | **Verified (API/UI)** | `finance/` controllers, `FeeStructures.tsx` | Fee categories and payment transactions |
-| **Attendance Student Tab** | **Explicitly Deferred** | `StudentDetail.tsx` | UI displays explicit notice: *"Module Unreachable"* |
-| **Document Storage Student Tab**| **Explicitly Deferred**| `StudentDetail.tsx` | UI displays explicit notice: *"Coming soon"* |
-| **Audit Trail Student Tab** | **Explicitly Deferred** | `StudentDetail.tsx` | UI displays explicit notice: *"Integration pending"* |
+| **Student Detail Sub-Tabs (Attendance, Docs, Audit)** | **Explicitly Deferred** | `StudentDetail.tsx` | Student sub-views display explicit pending notices (see [Section 18.4](#184-documented-limitations)) |
 
 ### 4.2 Stakeholders & User Roles
 
@@ -291,7 +509,7 @@ All schema modifications are strictly managed via Flyway versioned migrations lo
 - **Single-Use Password Recovery**: 15-minute single-use UUID tokens marked with a `used` boolean flag thwart replay attacks (`PasswordResetToken`).
 - **Method-Level Security**: Controllers enforce granular access via `@PreAuthorize("hasAuthority('...')")`.
 - **Insecure Direct Object Reference (IDOR) Mitigation**: Endpoints serving student-specific documents or profiles verify that the caller identity matches requested resource ownership.
-- **Fail-Fast Test Safety Guard (`PostgresSafetyGuard`)**: Strictly aborts test execution if connection URLs target operational databases (`edupulse_erp` or `one`).
+- **Fail-Fast Test Safety Guard (`PostgresSafetyGuard`)**: Enforces environment isolation by aborting integration tests that target operational databases (see [Testing](#14-testing-documentation-qa--cicd-evidence)).
 
 *Full security policy available in [SECURITY.md](SECURITY.md) and [`backend/java security/Day_1_to_6_Documentation.md`](<backend/java security/Day_1_to_6_Documentation.md>).*
 
@@ -299,14 +517,17 @@ All schema modifications are strictly managed via Flyway versioned migrations lo
 
 ## 10. Team Members, Roles & Contributions
 
-The project was developed collaboratively across dedicated functional modules:
+For contributor profiles, Git author identities, and end-to-end responsibilities, see the opening [Core Team Members & Project Contributors](#core-team-members--project-contributors) table.
 
-| Member Name | Official Project Role | Primary Owned Modules | Major Verified Deliverables | Evidence Sources |
-| :--- | :--- | :--- | :--- | :--- |
-| **Palak Agarwal** | Student Information System (SIS) Lead | Student Profile, Guardians, Documents, Status History | SIS Controller & Services, 35-test master suite, `run_student_demo.ps1` | [`docs/test-cases/`](docs/test-cases/), `backend/src/main/java/com/erp/student/` |
-| **Manish Sharma** | Security & Access Control Lead | Authentication, Sessions, User Roles, Password Recovery | `SessionService`, `AuthenticationIntegrationTest`, RBAC method security | [`backend/java security/Day_1_to_6_Documentation.md`](<backend/java security/Day_1_to_6_Documentation.md>) |
-| **Lakshya Singhal** | Frontend Architect & Full-Stack Integrator | Data Management Layer, Dashboard, Integration Architecture | `frontend-v2/`, `DATA_LAYER_README.md`, `INTEGRATION_README.md`, Postgres IT safety | [`DATA_LAYER_README.md`](DATA_LAYER_README.md), [`INTEGRATION_README.md`](INTEGRATION_README.md), [`frontend-v2/`](frontend-v2) |
-| **Prashant Jain** | Institution & Campus Lead | Campuses, Departments, Academic Security Constraints | `CampusController`, `InstitutionController`, `AcademicSchedulingSecurity.java` | `backend/src/main/java/com/erp/campus/`, `institution/` |
+The matrix below maps each member's module ownership to verified deliverables and repository evidence:
+
+| Member Name | Primary Owned Modules | Major Verified Deliverables | Repository Evidence Sources |
+| :--- | :--- | :--- | :--- |
+| **Lakshya Goyal** | System Integration, Release Hardening, Documentation | Overall EduPulse integration, release candidate hardening, documentation system | Git history, release audit reports |
+| **Palak Agarwal** | Student Profile, Guardians, Documents, Status History | SIS Controller & Services, 35-test master suite, `run_student_demo.ps1` | [`docs/test-cases/`](docs/test-cases/), `backend/src/main/java/com/erp/student/` |
+| **Manish Sharma** | Authentication, Sessions, User Roles, Password Recovery | `SessionService`, `AuthenticationIntegrationTest`, RBAC method security | [`backend/java security/Day_1_to_6_Documentation.md`](<backend/java security/Day_1_to_6_Documentation.md>) |
+| **Lakshya Singhal** | Data Management Layer, Dashboard, Integration Architecture | `frontend-v2/`, `DATA_LAYER_README.md`, `INTEGRATION_README.md`, Postgres IT safety | [`DATA_LAYER_README.md`](DATA_LAYER_README.md), [`INTEGRATION_README.md`](INTEGRATION_README.md), [`frontend-v2/`](frontend-v2) |
+| **Prashant Jain** | Campuses, Departments, Academic Security Constraints | `CampusController`, `InstitutionController`, `AcademicSchedulingSecurity.java` | `backend/src/main/java/com/erp/campus/`, `institution/` |
 
 *Official Git branch allocations and conventions are recorded in [`docs/Branch-Registry.md`](docs/Branch-Registry.md).*
 
@@ -327,22 +548,23 @@ Development progressed through structured sprint days documented in [`docs/repor
 | **Days 01–06**| Enterprise Security & RBAC | Manish Sharma | Database session management, dynamic user roles, single-use password reset |
 | **Days 01–06**| Frontend Architecture & Integration| Lakshya Singhal | TanStack Query v5 data layer, Axios interceptors, responsive administrative UI |
 | **Days 01–06**| Infrastructure & Campus Governance| Prashant Jain | Institution accreditation, campus facilities directory, scheduling security |
+| **Release Sprint**| System Integration & Release Hardening| Lakshya Goyal | Cross-module integration, dual-profile CI, documentation consolidation, RC1 release audit |
 
 ---
 
 ## 12. Project Documents & Deliverables Index
 
 All technical documents and architecture reports are maintained in descriptive files:
-- **Academic Abstract & Scope**: [`docs/project-overview/abstract.md`](docs/project-overview/abstract.md)
-- **System Architecture Blueprint**: [`docs/architecture/system-architecture.md`](docs/architecture/system-architecture.md)
-- **Frontend Data Management Architecture**: [`DATA_LAYER_README.md`](DATA_LAYER_README.md)
-- **Frontend–Backend Integration Flow**: [`INTEGRATION_README.md`](INTEGRATION_README.md)
-- **Security Engineering Report**: [`backend/java security/Day_1_to_6_Documentation.md`](<backend/java security/Day_1_to_6_Documentation.md>)
-- **Database Schema Design**: [`docs/database/schema-design.md`](docs/database/schema-design.md)
-- **Weekly Progress Reports & Sprint Logs**: [`docs/reports/weekly-progress-reports.md`](docs/reports/weekly-progress-reports.md)
-- **Consolidated Master Test Report**: [`docs/testing/master-test-report.md`](docs/testing/master-test-report.md)
-- **REST API Specifications**: [`docs/API/student-api-spec.md`](docs/API/student-api-spec.md)
-- **Branch Management Registry**: [`docs/Branch-Registry.md`](docs/Branch-Registry.md)
+- **Academic Abstract & Scope**: [`docs/project-overview/abstract.md`](docs/project-overview/abstract.md) — Institutional context, problem definition, objectives, and acceptance criteria.
+- **System Architecture Blueprint**: [`docs/architecture/system-architecture.md`](docs/architecture/system-architecture.md) — 4-Tier design, subsystem boundaries, sequence workflows, and component interaction diagrams.
+- **Frontend Data Management Architecture**: [`DATA_LAYER_README.md`](DATA_LAYER_README.md) — Cache manager, TanStack Query integration, and Axios client token handling.
+- **Frontend–Backend Integration Flow**: [`INTEGRATION_README.md`](INTEGRATION_README.md) — End-to-end authentication lifecycle, refresh token queue, and cross-origin handling.
+- **Security Engineering Report**: [`backend/java security/Day_1_to_6_Documentation.md`](<backend/java security/Day_1_to_6_Documentation.md>) — JWT architecture, session tracking, RBAC enforcement, and password reset flows.
+- **Database Schema Design**: [`docs/database/schema-design.md`](docs/database/schema-design.md) — Relational entity relationships, Flyway migration sequence, and integrity constraints.
+- **Weekly Progress Reports & Sprint Logs**: [`docs/reports/weekly-progress-reports.md`](docs/reports/weekly-progress-reports.md) — Day-by-day contributor sprint logs (Days 01–06) and deliverable audits.
+- **Consolidated Master Test Report**: [`docs/testing/master-test-report.md`](docs/testing/master-test-report.md) — QA verification matrix, unit/integration pass rates, and browser audit ledger.
+- **REST API Specifications**: [`docs/API/student-api-spec.md`](docs/API/student-api-spec.md) — Endpoint schemas, request/response DTOs, and curl execution examples.
+- **Branch Management Registry**: [`docs/Branch-Registry.md`](docs/Branch-Registry.md) — Git workflow conventions, branch ownership, and contributor allocations.
 
 ---
 
@@ -363,7 +585,7 @@ The repository includes automated demonstration scripts that execute end-to-end 
 - **Java Demonstration Test**: [`backend/src/test/java/com/erp/student/StudentModuleDemonstrationTest.java`](backend/src/test/java/com/erp/student/StudentModuleDemonstrationTest.java)
 
 ### 13.2 Video Walkthrough Status
-Recorded video files and presentation URLs are catalogued in the [Owner-Action Register](#20-license-acknowledgements--owner-action-register) pending project owner upload.
+Recorded video files and presentation URLs are catalogued in the [Owner-Action Register](#21-license-acknowledgements--owner-action-register) pending project owner upload.
 
 ---
 
@@ -436,6 +658,23 @@ Testing is decoupled into two complementary execution profiles:
    ```
    - Web Application: `http://localhost:5173`
 
+### 15.3 Configuration & Environment Variables Reference
+
+| Variable Name | Required / Profile | Default / Example Value | Service | Operational Purpose |
+| :--- | :--- | :--- | :--- | :--- |
+| `POSTGRES_DB` | Optional (Docker) | `edupulse_erp` | PostgreSQL | Name of the primary operational database |
+| `POSTGRES_USER` | Optional (Docker) | `edupulse_admin` | PostgreSQL | Database administrative username |
+| `POSTGRES_PASSWORD` | Required (Prod) | `your_strong_postgres_password_here` | PostgreSQL | Database user password (template in `edupulse/.env.example`) |
+| `DB_PASSWORD` | Required (Prod Profile) | *Provided via environment* | Backend | Injected into Spring Boot datasource in `application-prod.yml` |
+| `JWT_SECRET` | Required (Prod Profile) | *256-bit hex/base64 string* | Backend | HMAC-SHA256 signature key for stateless JWT issuance |
+| `REDIS_PASSWORD` | Optional (Docker) | `edupulse_redis_secret_2026` | Redis | Password for Redis cache session storage |
+| `RABBITMQ_DEFAULT_USER` | Optional (Docker) | `edupulse_mq` | RabbitMQ | Message broker administrative username |
+| `RABBITMQ_DEFAULT_PASS` | Required (Prod) | `your_strong_rabbitmq_password_here` | RabbitMQ | Message broker administrative password |
+| `MINIO_ROOT_USER` | Optional (Docker) | `edupulse_minio_admin` | MinIO | S3-compatible object storage access key |
+| `MINIO_ROOT_PASSWORD` | Required (Prod) | `your_strong_minio_password_here` | MinIO | S3-compatible object storage secret key |
+
+*Complete environment template available in [`edupulse/.env.example`](edupulse/.env.example). Never commit production secrets to Git.*
+
 ---
 
 ## 16. API Documentation & Conventions
@@ -501,7 +740,81 @@ The platform supports both development and production container deployment:
 
 ---
 
-## 19. Contributing & Governance
+## 19. Practical Troubleshooting Guide
+
+This guide provides targeted diagnostics and non-destructive remedies for common configuration and operational issues grounded in the EduPulse codebase:
+
+### 19.1 PostgreSQL Integration Tests Aborted by Safety Guard
+- **Observable Symptom**:
+  ```text
+  java.lang.SecurityException: UNSAFE TEST ENVIRONMENT DETECTED!
+  Target database URL does not point to edupulse_test. Execution aborted.
+  ```
+- **Likely Cause**: `PostgresSafetyGuard` strictly prohibits executing integration test suites against operational databases (`edupulse_erp` or `one`) to protect transactional data.
+- **Safe Diagnostic**: Verify the active test connection string:
+  ```powershell
+  $env:PGTEST_DATASOURCE_URL
+  ```
+- **Remediation**: Explicitly target the isolated test database `edupulse_test`:
+  ```powershell
+  $env:PGTEST_DATASOURCE_URL="jdbc:postgresql://localhost:5432/edupulse_test"
+  $env:PGTEST_DATASOURCE_USERNAME="postgres"
+  $env:PGTEST_DATASOURCE_PASSWORD="postgres_test_password"
+  mvn verify -P postgres-it
+  ```
+  *Never disable or bypass safety guards. See [Section 14.1: Testing Architecture](#141-dual-profile-testing-architecture).*
+
+### 19.2 Backend Port 8081 Occupied / Bind Failure
+- **Observable Symptom**:
+  ```text
+  Web server failed to start. Port 8081 was already in use.
+  ```
+- **Likely Cause**: A previously executed Spring Boot process is still listening on TCP port 8081.
+- **Safe Diagnostic**: Identify the listening PID in PowerShell:
+  ```powershell
+  Get-NetTCPConnection -LocalPort 8081 -State Listen | Select-Object OwningProcess
+  ```
+- **Remediation**: Terminate the specific process:
+  ```powershell
+  Stop-Process -Id <PID>
+  ```
+  Alternatively, run on an ephemeral port: `./mvnw.cmd spring-boot:run -Dspring-boot.run.arguments="--server.port=8082"`.
+
+### 19.3 Flyway Migration Checksum / Validation Mismatch
+- **Observable Symptom**:
+  ```text
+  org.flywaydb.core.api.exception.FlywayValidateException: Validate failed: 
+  Migration checksum mismatch for migration version 1
+  ```
+- **Likely Cause**: One of the versioned SQL scripts in `backend/src/main/resources/db/migration/` (`V1` through `V5`) was modified after having already been executed against the database, causing its SHA-256 hash to differ from `flyway_schema_history`.
+- **Safe Diagnostic**: Inspect uncommitted edits to migration files:
+  ```bash
+  git diff backend/src/main/resources/db/migration/
+  ```
+- **Remediation**: Revert any modifications to existing historical migration files:
+  ```bash
+  git checkout -- backend/src/main/resources/db/migration/
+  ```
+  If schema changes are necessary, create a new sequential version file (e.g., `V6__...sql`). Never manually modify or delete rows from `flyway_schema_history`. See [Section 8.1: Flyway Migrations Ledger](#81-flyway-versioned-migrations-ledger).
+
+### 19.4 Frontend API Proxy Connection Refused (`ERR_CONNECTION_REFUSED`)
+- **Observable Symptom**: Browser developer console displays `AxiosError: Network Error` or `net::ERR_CONNECTION_REFUSED` when loading `/dashboard` or `/students`.
+- **Likely Cause**: The Vite development server proxy forwards `/api` requests to `http://localhost:8081`. If the backend service is stopped or still starting up, requests fail.
+- **Safe Diagnostic**: Test backend responsiveness in a browser or terminal:
+  ```powershell
+  curl -I http://localhost:8081/swagger-ui.html
+  ```
+- **Remediation**: Ensure the Spring Boot backend is running (`cd backend && .\mvnw.cmd spring-boot:run`). Verify `frontend-v2/vite.config.ts` proxy rules target `http://localhost:8081`. See [INTEGRATION_README.md](INTEGRATION_README.md).
+
+### 19.5 JWT Authentication Expiration / Automatic Redirect to `/login`
+- **Observable Symptom**: Authenticated requests abruptly fail with `401 Unauthorized` (`ApiErrorResponse`), and the client redirects to `/login`.
+- **Likely Cause**: The JWT token exceeded its expiry window or the server was restarted in `dev` mode with in-memory H2, resetting the database `sessions` table.
+- **Safe Diagnostic**: Check `localStorage.getItem("token")` in the browser console.
+- **Remediation**: Click **"Use Demo Login"** on `/login` or submit valid credentials (`superadmin` / `Admin@123`) to create a fresh authenticated session. See [SECURITY.md](SECURITY.md).
+
+---
+
+## 20. Contributing & Governance
 
 - **Contributing Guide**: Please review [CONTRIBUTING.md](CONTRIBUTING.md) for branch naming standards, commit message formats, and PR verification requirements.
 - **Security Policy**: Read [SECURITY.md](SECURITY.md) for vulnerability disclosure protocols.
@@ -510,7 +823,7 @@ The platform supports both development and production container deployment:
 
 ---
 
-## 20. License, Acknowledgements & Owner-Action Register
+## 21. License, Acknowledgements & Owner-Action Register
 
 ### License Status
 The repository currently operates under internal institutional copyright. Open-source license selection (e.g., MIT, Apache 2.0) is pending project owner determination.
