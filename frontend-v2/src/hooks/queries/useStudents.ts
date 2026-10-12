@@ -33,8 +33,8 @@ export const useStudents = (filters?: { page?: number; size?: number; search?: s
       const params = new URLSearchParams();
       if (filters?.page) params.append('page', filters.page.toString());
       if (filters?.size) params.append('size', filters.size.toString());
-      // The backend StudentController might use a simple list or pagination. We assume pagination as typical Spring Boot returns.
-      const response = await apiClient.get<PaginatedResponse<Student>>('/students', { params });
+      // Backend mapped to: /api/v1/students
+      const response = await apiClient.get<PaginatedResponse<Student>>('/api/v1/students', { params });
       return response.data;
     },
   });
@@ -44,7 +44,7 @@ export const useStudent = (id?: number) => {
   return useQuery({
     queryKey: ['students', id],
     queryFn: async () => {
-      const response = await apiClient.get<Student>(`/students/${id}`);
+      const response = await apiClient.get<Student>(`/api/v1/students/${id}`);
       return response.data;
     },
     enabled: !!id,
@@ -56,7 +56,7 @@ export const useStudentGuardians = (studentId?: number) => {
     queryKey: ['guardians', studentId],
     queryFn: async () => {
       // Backend mapped to: /api/v1/students/{studentId}/guardians
-      const response = await apiClient.get<Guardian[]>(`/students/${studentId}/guardians`);
+      const response = await apiClient.get<Guardian[]>(`/api/v1/students/${studentId}/guardians`);
       return response.data;
     },
     enabled: !!studentId,
@@ -68,7 +68,7 @@ export const useStudentDocuments = (studentId?: number) => {
     queryKey: ['documents', studentId],
     queryFn: async () => {
       // Backend mapped to: /api/v1/students/{studentId}/documents
-      const response = await apiClient.get<StudentDocument[]>(`/students/${studentId}/documents`);
+      const response = await apiClient.get<StudentDocument[]>(`/api/v1/students/${studentId}/documents`);
       return response.data;
     },
     enabled: !!studentId,

@@ -1,0 +1,107 @@
+# ==============================================================================
+# EduPulse Production Infrastructure Compose
+# ==============================================================================
+# This Compose configuration is hardened for production use.
+# All service credentials MUST be provided via environment variables.
+# Running without required variables will fail immediately.
+# ==============================================================================
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: edupulse_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-edupulse_erp}
+      POSTGRES_USER: ${POSTGRES_USER:-edupulse_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD environment variable is required}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - edupulse_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-edupulse_admin} -d $${POSTGRES_DB:-edupulse_erp}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    container_name: edupulse_redis
+    restart: always
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD environment variable is required}
+    command: ["sh", "-c", "exec redis-server --appendonly yes --requirepass \"$$REDIS_PASSWORD\""]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - edupulse_net
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: edupulse_rabbitmq
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-edupulse_mq}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:?RABBITMQ_DEFAULT_PASS environment variable is required}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - edupulse_net
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+
+  minio:
+    image: minio/minio:latest
+    container_name: edupulse_minio
+    restart: always
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-edupulse_minio_admin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD environment variable is required}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - edupulse_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+networks:
+  edupulse_net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  rabbitmq_data:
+    driver: local
+  minio_data:
+    driver: local

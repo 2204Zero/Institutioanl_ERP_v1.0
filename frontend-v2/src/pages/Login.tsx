@@ -38,14 +38,14 @@ export default function Login() {
   };
 
   const handleDemoFill = () => {
-    if (import.meta.env.PROD) {
-      toast.info('Demo login is not configured for production environments. Please log in with your institutional credentials.');
-      return;
-    }
-
     switch(activeTab) {
       case 'ADMIN':
-        setUsername('admin');
+        // Default to 'superadmin' which exists in all environments (prod and dev), or toggle to 'admin'
+        if (username === 'superadmin') {
+          setUsername('admin');
+        } else {
+          setUsername('superadmin');
+        }
         setPassword('Admin@123');
         break;
       case 'FACULTY':
@@ -65,7 +65,7 @@ export default function Login() {
         setPassword('Parent@123');
         break;
     }
-    toast.info(`Filled dev fixtures for ${activeTab}. Requires backend 'dev' profile.`);
+    toast.info(`Filled demo credentials for ${activeTab}.`);
   };
 
   return (
@@ -118,9 +118,11 @@ export default function Login() {
                 <label className="text-sm font-semibold text-slate-700">
                   {activeTab === 'STUDENT' ? 'Student Email' : activeTab === 'PARENT' ? 'Parent Email' : 'Username or Email'}
                 </label>
-                <button type="button" onClick={handleDemoFill} className="text-xs text-blue-600 hover:underline font-medium">
-                  Use Demo Login
-                </button>
+                {!import.meta.env.PROD && (
+                  <button type="button" onClick={handleDemoFill} className="text-xs text-blue-600 hover:underline font-medium">
+                    Use Demo Login
+                  </button>
+                )}
               </div>
               <Input
                 type="text"
@@ -139,7 +141,7 @@ export default function Login() {
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                  placeholder="••••••••"
                   required
                   className="h-12 bg-slate-50 border-slate-200 focus-visible:ring-black text-slate-900 transition-all rounded-xl pr-10"
                 />

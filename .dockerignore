@@ -1,0 +1,47 @@
+# Version control
+.git/
+.gitignore
+
+# Environment & Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.jks
+*.crt
+
+# Node & Frontend build outputs
+node_modules/
+dist/
+build/
+.vite/
+frontend-v2/node_modules/
+frontend-v2/dist/
+
+# Java & Backend build outputs
+**/target/
+**/*.jar
+**/*.war
+
+# Database dumps & backups
+backups/
+*.dump
+*.sql.gz
+*.bak
+
+# Logs & Temp files
+logs/
+*.log
+tmp/
+temp/
+scratch/
+
+# IDE & OS metadata
+.idea/
+.vscode/
+.eclipse/
+*.iml
+.DS_Store
+Thumbs.db

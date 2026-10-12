@@ -48,8 +48,7 @@ export function CreateCampusDialog() {
 
   const mutation = useMutation({
     mutationFn: async (data: any) => {
-      // NOTE: Intentionally using the backend's typo 'campuss' here to ensure connectivity
-      const res = await apiClient.post('/api/v1/campuss', data);
+      const res = await apiClient.post('/api/v1/campuses', data);
       return res.data;
     },
     onSuccess: () => {

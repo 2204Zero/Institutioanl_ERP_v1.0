@@ -28,7 +28,6 @@ export default function CampusesList() {
   const { data: campuses, isLoading, isError } = useQuery<CampusResponse[]>({
     queryKey: ['campuses'],
     queryFn: async () => {
-      // NOTE: Using backend typo '/campuss'
       const res = await apiClient.get('/api/v1/campuses');
       return res.data || [];
     }
@@ -36,7 +35,7 @@ export default function CampusesList() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      await apiClient.delete(`/api/v1/campuss/${id}`);
+      await apiClient.delete(`/api/v1/campuses/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['campuses'] });

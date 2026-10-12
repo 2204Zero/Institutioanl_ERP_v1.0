@@ -7,6 +7,8 @@ import com.erp.student.dto.StudentResponseDto;
 import com.erp.student.dto.StudentStatusUpdateDto;
 import com.erp.student.entity.StudentStatus;
 import com.erp.student.entity.StudentStatusHistory;
+import com.erp.student.entity.Student;
+import com.erp.student.service.StudentIdentityService;
 import com.erp.student.service.StudentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -25,9 +27,11 @@ import java.util.List;
 public class StudentController {
 
     private final StudentService studentService;
+    private final StudentIdentityService studentIdentityService;
 
-    public StudentController(StudentService studentService) {
+    public StudentController(StudentService studentService, StudentIdentityService studentIdentityService) {
         this.studentService = studentService;
+        this.studentIdentityService = studentIdentityService;
     }
 
     @PostMapping
@@ -51,6 +55,15 @@ public class StudentController {
             @RequestParam(defaultValue = "desc") String sortDir) {
         PageResponse<StudentResponseDto> students = studentService.getAllStudents(page, size, search, status, department, sortBy, sortDir);
         return ResponseEntity.ok(ApiResponse.success(students));
+    }
+
+    @GetMapping("/me")
+    @PreAuthorize("hasRole('STUDENT')")
+    @Operation(summary = "View Current Student Profile", description = "Fetches complete student profile for the authenticated student")
+    public ResponseEntity<ApiResponse<StudentResponseDto>> getCurrentStudentProfile() {
+        Student student = studentIdentityService.getCurrentStudent();
+        StudentResponseDto studentDto = studentService.getStudentById(student.getId());
+        return ResponseEntity.ok(ApiResponse.success(studentDto));
     }
 
     @GetMapping("/{id}")

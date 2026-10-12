@@ -43,7 +43,7 @@ export const API_CONFIG = {
   IS_PROD: CURRENT_ENV === 'production',
 
   // Base URL: Points to Spring Boot API gateway or direct microservices
-  BASE_URL: getEnvVariable('VITE_API_BASE_URL', CURRENT_ENV === 'production' ? 'https://api.erp.institution.edu/v1' : 'http://localhost:8080'),
+  BASE_URL: getEnvVariable('VITE_API_BASE_URL', CURRENT_ENV === 'production' ? 'https://api.erp.institution.edu/v1' : 'http://localhost:8081'),
   TIMEOUT: parseInt(getEnvVariable('VITE_API_TIMEOUT', '15000'), 10),
   API_VERSION: getEnvVariable('VITE_API_VERSION', 'v1'),
   USE_MOCK: getEnvVariable('VITE_USE_MOCK_API', 'false') === 'true',
