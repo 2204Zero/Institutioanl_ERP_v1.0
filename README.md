@@ -388,37 +388,37 @@ The platform adopts a 4-Tier Modular Monolith design that guarantees ACID transa
 
 ```mermaid
 graph TB
-    subgraph Client Layer [Client Layer (Port 5173)]
-        UI[React 19 + Vite 8 SPA]
-        Router[React Router DOM]
-        State[TanStack Query v5 + Zustand]
-        Client[Axios Client with JWT Interceptors]
+    subgraph ClientLayer ["Client Layer (Port 5173)"]
+        UI["React 19 + Vite 8 SPA"]
+        Router["React Router DOM"]
+        State["TanStack Query v5 + Zustand"]
+        Client["Axios Client with JWT Interceptors"]
     end
 
-    subgraph Security Layer [Security & Gateway (Port 8081)]
-        Filter[JwtAuthenticationFilter]
-        Entry[JwtAuthenticationEntryPoint]
-        MethodSec[@EnableMethodSecurity]
-        SessionMgr[Database Session Tracker]
+    subgraph SecurityLayer ["Security & Gateway (Port 8081)"]
+        Filter["JwtAuthenticationFilter"]
+        Entry["JwtAuthenticationEntryPoint"]
+        MethodSec["@EnableMethodSecurity"]
+        SessionMgr["Database Session Tracker"]
     end
 
-    subgraph Service Layer [Modular Monolith Domain Services]
-        SIS[Student Information Service]
-        AuthSvc[Auth & User Management]
-        CampusSvc[Campus & Institution Service]
-        AcadSvc[Academic & Course Service]
-        FinSvc[Finance & Billing Service]
+    subgraph ServiceLayer ["Modular Monolith Domain Services"]
+        SIS["Student Information Service"]
+        AuthSvc["Auth & User Management"]
+        CampusSvc["Campus & Institution Service"]
+        AcadSvc["Academic & Course Service"]
+        FinSvc["Finance & Billing Service"]
     end
 
-    subgraph Persistence Layer [Persistence & Infrastructure (Port 5432)]
-        Flyway[Flyway Migrations V1-V5]
-        Postgres[(PostgreSQL 17/18 edupulse_erp)]
-        Redis[(Redis 7 Cache)]
-        MinIO[(MinIO Object Storage)]
+    subgraph PersistenceLayer ["Persistence & Infrastructure (Port 5432)"]
+        Flyway["Flyway Migrations V1-V5"]
+        Postgres[("PostgreSQL 17/18 edupulse_erp")]
+        Redis[("Redis 7 Cache")]
+        MinIO[("MinIO Object Storage")]
     end
 
     UI --> Client
-    Client -->|HTTP / REST + Bearer Token| Filter
+    Client -->|"HTTP / REST + Bearer Token"| Filter
     Filter --> MethodSec
     MethodSec --> SIS
     MethodSec --> AuthSvc
