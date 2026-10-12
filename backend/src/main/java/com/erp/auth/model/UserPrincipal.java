@@ -10,6 +10,7 @@ import java.util.Set;
 
 public class UserPrincipal implements UserDetails {
 
+    private final Long id;
     private final String username;
     private final String password;
     private final String email;
@@ -17,7 +18,8 @@ public class UserPrincipal implements UserDetails {
     private final Set<Permission> permissions;
     private final boolean enabled;
 
-    public UserPrincipal(String username, String password, String email, Role role, Set<Permission> permissions, boolean enabled) {
+    public UserPrincipal(Long id, String username, String password, String email, Role role, Set<Permission> permissions, boolean enabled) {
+        this.id = id;
         this.username = username;
         this.password = password;
         this.email = email;
@@ -26,8 +28,16 @@ public class UserPrincipal implements UserDetails {
         this.enabled = enabled;
     }
 
+    public UserPrincipal(String username, String password, String email, Role role, Set<Permission> permissions, boolean enabled) {
+        this(null, username, password, email, role, permissions, enabled);
+    }
+
     public static UserPrincipal of(String username, String encodedPassword, String email, Role role) {
-        return new UserPrincipal(username, encodedPassword, email, role, role.getPermissions(), true);
+        return new UserPrincipal(null, username, encodedPassword, email, role, role.getPermissions(), true);
+    }
+
+    public Long getId() {
+        return id;
     }
 
     public Role getRole() {

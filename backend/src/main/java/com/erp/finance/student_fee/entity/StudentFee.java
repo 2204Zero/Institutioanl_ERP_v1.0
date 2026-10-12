@@ -38,4 +38,6 @@ public class StudentFee {
     public BigDecimal getOutstandingAmount() { return outstandingAmount; } public void setOutstandingAmount(BigDecimal outstandingAmount) { this.outstandingAmount = outstandingAmount; }
     public StudentFeeStatus getStatus() { return status; } public void setStatus(StudentFeeStatus status) { this.status = status; }
     public List<StudentFeeComponent> getComponents() { return components; } public void setComponents(List<StudentFeeComponent> components) { this.components = components; }
+    public Instant getCreatedAt() { return createdAt; } public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+    public Instant getUpdatedAt() { return updatedAt; } public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
 }

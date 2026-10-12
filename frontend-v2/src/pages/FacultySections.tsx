@@ -31,8 +31,8 @@ interface TimetableSlot {
   facultyId: number;
   roomId: number;
   dayOfWeek: string;
-  startTime: string;
-  endTime: string;
+  startTime: string | number[];
+  endTime: string | number[];
   isActive: boolean;
 }
 
@@ -79,13 +79,21 @@ export default function FacultySections() {
     enabled: selectedSectionId !== null
   });
 
-  const formatTime = (timeString: string) => {
-    if (!timeString) return '';
-    const [hours, minutes] = timeString.split(':');
-    const h = parseInt(hours, 10);
+  const formatTime = (timeData: string | number[]) => {
+    if (!timeData) return '';
+    let h, m;
+    if (Array.isArray(timeData)) {
+      h = timeData[0];
+      m = timeData[1] || 0;
+    } else {
+      const parts = timeData.split(':');
+      h = parseInt(parts[0], 10);
+      m = parseInt(parts[1], 10);
+    }
     const ampm = h >= 12 ? 'PM' : 'AM';
     const formattedH = h % 12 || 12;
-    return `${formattedH}:${minutes} ${ampm}`;
+    const formattedM = m.toString().padStart(2, '0');
+    return `${formattedH}:${formattedM} ${ampm}`;
   };
 
   const daysOfWeek = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
@@ -214,7 +222,15 @@ export default function FacultySections() {
                   ) : timetable && timetable.length > 0 ? (
                     <div className="bg-white border border-slate-200 divide-y divide-slate-100">
                       {daysOfWeek.map(day => {
-                        const daySlots = timetable.filter(t => t.dayOfWeek === day).sort((a, b) => a.startTime.localeCompare(b.startTime));
+                        const daySlots = timetable.filter(t => t.dayOfWeek === day).sort((a, b) => {
+                          const getMinutes = (t: string | number[]) => {
+                            if (!t) return 0;
+                            if (Array.isArray(t)) return t[0] * 60 + (t[1] || 0);
+                            const parts = t.split(':');
+                            return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+                          };
+                          return getMinutes(a.startTime) - getMinutes(b.startTime);
+                        });
                         if (daySlots.length === 0) return null;
                         
                         return (

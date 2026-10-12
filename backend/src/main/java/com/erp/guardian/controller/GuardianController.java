@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,6 +25,7 @@ public class GuardianController {
     }
 
     @GetMapping({"/guardians", "/api/v1/guardians"})
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @Operation(summary = "Get All Guardians", description = "Retrieves all guardians in the system")
     public ResponseEntity<ApiResponse<List<GuardianResponseDto>>> getAllGuardians() {
         List<GuardianResponseDto> list = guardianService.getAllGuardians();
@@ -31,6 +33,7 @@ public class GuardianController {
     }
 
     @GetMapping({"/guardians/{id}", "/api/v1/guardians/{id}"})
+    @PreAuthorize("@securityOwnershipService.canAccessGuardianData(authentication, #id) or hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @Operation(summary = "Get Guardian by ID", description = "Retrieves a guardian by ID")
     public ResponseEntity<ApiResponse<GuardianResponseDto>> getGuardianById(@PathVariable Long id) {
         GuardianResponseDto guardian = guardianService.getGuardianById(id);
@@ -38,6 +41,7 @@ public class GuardianController {
     }
 
     @PostMapping({"/guardians", "/api/v1/guardians"})
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @Operation(summary = "Add Guardian", description = "Creates a new guardian record, optionally linking to a student")
     public ResponseEntity<ApiResponse<GuardianResponseDto>> createGuardian(@Valid @RequestBody GuardianRequestDto requestDto) {
         GuardianResponseDto created = guardianService.createGuardian(requestDto);
@@ -45,6 +49,7 @@ public class GuardianController {
     }
 
     @PutMapping({"/guardians/{id}", "/api/v1/guardians/{id}"})
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @Operation(summary = "Edit Guardian", description = "Updates an existing guardian record")
     public ResponseEntity<ApiResponse<GuardianResponseDto>> updateGuardian(
             @PathVariable Long id,
@@ -54,6 +59,7 @@ public class GuardianController {
     }
 
     @DeleteMapping({"/guardians/{id}", "/api/v1/guardians/{id}"})
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @Operation(summary = "Delete Guardian", description = "Deletes a guardian record")
     public ResponseEntity<ApiResponse<Void>> deleteGuardian(@PathVariable Long id) {
         guardianService.deleteGuardian(id);
@@ -61,6 +67,7 @@ public class GuardianController {
     }
 
     @GetMapping("/api/v1/students/{studentId}/guardians")
+    @PreAuthorize("@securityOwnershipService.canAccessStudentData(authentication, #studentId) or hasAnyRole('ADMIN', 'SUPER_ADMIN', 'FACULTY')")
     @Operation(summary = "Get Guardians for Student", description = "Retrieves all guardians linked to a specific student")
     public ResponseEntity<ApiResponse<List<GuardianResponseDto>>> getGuardiansByStudent(@PathVariable Long studentId) {
         List<GuardianResponseDto> list = guardianService.getGuardiansByStudentId(studentId);
@@ -68,6 +75,7 @@ public class GuardianController {
     }
 
     @PostMapping("/api/v1/students/{studentId}/guardians")
+    @PreAuthorize("@securityOwnershipService.canAccessStudentData(authentication, #studentId) or hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @Operation(summary = "Add and Link Guardian to Student", description = "Directly creates and links a guardian to a specific student")
     public ResponseEntity<ApiResponse<GuardianResponseDto>> addGuardianToStudent(
             @PathVariable Long studentId,
@@ -77,6 +85,7 @@ public class GuardianController {
     }
 
     @PostMapping("/api/v1/students/{studentId}/guardians/{guardianId}/link")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @Operation(summary = "Link Existing Guardian to Student", description = "Links an existing guardian to a student")
     public ResponseEntity<ApiResponse<GuardianResponseDto>> linkGuardianToStudent(
             @PathVariable Long studentId,

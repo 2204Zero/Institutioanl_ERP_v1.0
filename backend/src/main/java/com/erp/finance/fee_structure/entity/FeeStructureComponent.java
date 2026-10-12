@@ -1,10 +1,12 @@
 package com.erp.finance.fee_structure.entity;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 @Entity
 @Table(name = "fee_structure_component", uniqueConstraints = {@UniqueConstraint(columnNames = {"fee_structure_id", "fee_head_id"})})
 public class FeeStructureComponent {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY) private Long id;
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "fee_structure_id", nullable = false) private FeeStructure feeStructure;
     @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "fee_head_id", nullable = false) private FeeHead feeHead;
     @Column(nullable = false, precision = 12, scale = 2) private BigDecimal amount;

@@ -1,12 +1,20 @@
+# ==============================================================================
+# EduPulse Local Development Infrastructure Compose
+# ==============================================================================
+# NOTICE: This file is intended strictly for LOCAL DEVELOPMENT ONLY.
+# For production deployments, use docker-compose.prod.yml with externally
+# provisioned environment variables.
+# ==============================================================================
+
 services:
   postgres:
     image: postgres:18-alpine
     container_name: edupulse_postgres
     restart: always
     environment:
-      POSTGRES_DB: edupulse_erp
-      POSTGRES_USER: edupulse_admin
-      POSTGRES_PASSWORD: edupulse_secure_password_2026
+      POSTGRES_DB: ${POSTGRES_DB:-edupulse_erp}
+      POSTGRES_USER: ${POSTGRES_USER:-edupulse_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-edupulse_secure_password_2026}
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
       - "5432:5432"
@@ -25,7 +33,9 @@ services:
     image: redis:7-alpine
     container_name: edupulse_redis
     restart: always
-    command: ["redis-server", "--appendonly", "yes", "--requirepass", "edupulse_redis_secret_2026"]
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-edupulse_redis_secret_2026}
+    command: ["sh", "-c", "exec redis-server --appendonly yes --requirepass \"$$REDIS_PASSWORD\""]
     ports:
       - "6379:6379"
     volumes:
@@ -33,7 +43,7 @@ services:
     networks:
       - edupulse_net
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "edupulse_redis_secret_2026", "ping"]
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -44,8 +54,8 @@ services:
     container_name: edupulse_rabbitmq
     restart: always
     environment:
-      RABBITMQ_DEFAULT_USER: edupulse_mq
-      RABBITMQ_DEFAULT_PASS: edupulse_mq_secret_2026
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-edupulse_mq}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-edupulse_mq_secret_2026}
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -66,8 +76,8 @@ services:
     restart: always
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: edupulse_minio_admin
-      MINIO_ROOT_PASSWORD: edupulse_minio_secret_2026
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-edupulse_minio_admin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-edupulse_minio_secret_2026}
     ports:
       - "9000:9000"
       - "9001:9001"

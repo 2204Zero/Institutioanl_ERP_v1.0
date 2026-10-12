@@ -62,6 +62,7 @@ class StudentDocumentControllerTest {
 
     @Test
     @DisplayName("Day 04: Should upload, list, view, download, and delete student document")
+    @org.springframework.security.test.context.support.WithMockUser(roles = {"ADMIN"})
     void testDocumentLifecycle() throws Exception {
         // 1. Create a test student
         StudentRequestDto studentReq = new StudentRequestDto();

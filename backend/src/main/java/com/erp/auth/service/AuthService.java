@@ -4,8 +4,8 @@ import com.erp.auth.dto.AuthResponse;
 import com.erp.auth.dto.LoginRequest;
 import com.erp.auth.dto.RefreshTokenRequest;
 import com.erp.auth.dto.SessionResponse;
-import com.erp.auth.model.InMemoryUserRegistry;
 import com.erp.auth.model.Permission;
+import com.erp.auth.model.Role;
 import com.erp.auth.model.UserPrincipal;
 import com.erp.common.exception.InvalidTokenException;
 import com.erp.security.jwt.JwtProperties;
@@ -27,18 +27,18 @@ public class AuthService {
 
     private static final Logger log = LoggerFactory.getLogger(AuthService.class);
 
-    private final InMemoryUserRegistry userRegistry;
+    private final CustomUserDetailsService userDetailsService;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final JwtProperties jwtProperties;
     private final SessionService sessionService;
 
-    public AuthService(InMemoryUserRegistry userRegistry,
+    public AuthService(CustomUserDetailsService userDetailsService,
                        PasswordEncoder passwordEncoder,
                        JwtService jwtService,
                        JwtProperties jwtProperties,
                        SessionService sessionService) {
-        this.userRegistry = userRegistry;
+        this.userDetailsService = userDetailsService;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.jwtProperties = jwtProperties;
@@ -46,15 +46,30 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request, String clientIp) {
-        UserPrincipal user = userRegistry.findByUsername(request.username());
-        if (user == null || !passwordEncoder.matches(request.password(), user.getPassword())) {
+        UserPrincipal user;
+        try {
+            user = (UserPrincipal) userDetailsService.loadUserByUsername(request.username());
+        } catch (UsernameNotFoundException e) {
             log.warn("Login failed for username: {}", request.username());
             throw new BadCredentialsException("Invalid username or password");
         }
 
+        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
+            log.warn("Login failed for username: {}", request.username());
+            throw new BadCredentialsException("Invalid username or password");
+        }
+
+        if (!user.isEnabled()) {
+            log.warn("Login failed for username: {} - account is disabled", request.username());
+            throw new org.springframework.security.authentication.DisabledException("User account is disabled");
+        }
+
         if (request.role() != null && !request.role().equalsIgnoreCase(user.getRole().name())) {
-            log.warn("Login failed for username: {} - requested role {} does not match actual role {}", request.username(), request.role(), user.getRole().name());
-            throw new BadCredentialsException("Unauthorized role access");
+            boolean isSuperAdminLoggingAsAdmin = request.role().equalsIgnoreCase("ADMIN") && user.getRole() == Role.SUPER_ADMIN;
+            if (!isSuperAdminLoggingAsAdmin) {
+                log.warn("Login failed for username: {} - requested role {} does not match actual role {}", request.username(), request.role(), user.getRole().name());
+                throw new BadCredentialsException("Unauthorized role access");
+            }
         }
 
         String accessToken = jwtService.generateAccessToken(user);
@@ -99,8 +114,10 @@ public class AuthService {
         }
 
         String username = jwtService.extractUsername(refreshToken);
-        UserPrincipal user = userRegistry.findByUsername(username);
-        if (user == null) {
+        UserPrincipal user;
+        try {
+            user = (UserPrincipal) userDetailsService.loadUserByUsername(username);
+        } catch (UsernameNotFoundException e) {
             throw new UsernameNotFoundException("User associated with refresh token not found.");
         }
 
@@ -147,8 +164,10 @@ public class AuthService {
     }
 
     public SessionResponse validateSession(String username, String bearerToken) {
-        UserPrincipal user = userRegistry.findByUsername(username);
-        if (user == null) {
+        UserPrincipal user;
+        try {
+            user = (UserPrincipal) userDetailsService.loadUserByUsername(username);
+        } catch (UsernameNotFoundException e) {
             throw new UsernameNotFoundException("User not found: " + username);
         }
 

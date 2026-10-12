@@ -76,21 +76,33 @@ public class AttendanceControllerTest {
     private Section mySection;
     private TimetableSlot mySlot;
 
+    @Autowired
+    private org.springframework.core.env.Environment env;
+
     @BeforeEach
     void setup() {
+        String dbUrl = env.getProperty("spring.datasource.url");
+        if (dbUrl != null && (dbUrl.contains("edupulse_erp") || dbUrl.contains("one"))) {
+            throw new IllegalStateException("Test is connected to a protected database: " + dbUrl);
+        }
+
         when(facultyIdentityService.getCurrentFacultyId()).thenReturn(validFacultyId);
 
         // Delete existing data to prevent duplicate key errors since H2 DB_CLOSE_DELAY=-1
+        attendanceRepo.deleteAll();
         jdbcTemplate.execute("DELETE FROM section_faculty");
         jdbcTemplate.execute("DELETE FROM section_student");
         jdbcTemplate.execute("DELETE FROM section");
         jdbcTemplate.execute("DELETE FROM course_offering");
         jdbcTemplate.execute("DELETE FROM course");
+        jdbcTemplate.execute("DELETE FROM faculty");
 
         // Insert dummy course, semester and offering
         jdbcTemplate.execute("INSERT INTO course (id, code, name, department_id, credits, is_active) VALUES (1, 'CS101', 'Intro', 1, 3, true)");
         jdbcTemplate.execute("INSERT INTO semester (id, name, is_active) VALUES (1, 'Fall 2026', true)");
         jdbcTemplate.execute("INSERT INTO course_offering (id, course_id, semester_id, max_capacity, is_published) VALUES (10, 1, 1, 60, true)");
+        jdbcTemplate.execute("INSERT INTO faculty (faculty_id, first_name, last_name, official_email) VALUES (100, 'Test', 'Faculty', 'testfac100@erp.com')");
+        jdbcTemplate.execute("INSERT INTO faculty (faculty_id, first_name, last_name, official_email) VALUES (200, 'Other', 'Faculty', 'testfac200@erp.com')");
 
         // Insert section
         mySection = Section.builder()
@@ -160,6 +172,31 @@ public class AttendanceControllerTest {
         assertEquals(2, saved.size());
         assertEquals("PRESENT", saved.get(0).getStatus());
         assertNotNull(saved.get(0).getId());
+    }
+
+    @Test
+    @WithMockUser(username = "faculty@erp.com", roles = {"FACULTY"})
+    void recordBulkAttendance_duplicateSubmission_handled() throws Exception {
+        BulkAttendanceRequest request = new BulkAttendanceRequest(
+                mySection.getId(),
+                mySlot.getId(),
+                LocalDate.now(),
+                List.of(
+                        new AttendanceRecordEntry(1L, "PRESENT", null)
+                )
+        );
+
+        // First submission
+        mockMvc.perform(post("/api/v1/attendance/bulk")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated());
+
+        // Duplicate submission
+        mockMvc.perform(post("/api/v1/attendance/bulk")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isConflict());
     }
 
     @Test

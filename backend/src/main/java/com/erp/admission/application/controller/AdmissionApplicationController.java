@@ -6,6 +6,7 @@ import com.erp.admission.application.service.AdmissionApplicationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -16,6 +17,7 @@ public class AdmissionApplicationController {
     private final AdmissionApplicationService applicationService;
 
     @PostMapping("/draft")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN') or (hasRole('STUDENT') and @securityOwnershipService.canAccessApplicant(authentication, #applicantId))")
     public ResponseEntity<AdmissionApplicationDto> createDraft(
             @RequestParam Long applicantId,
             @RequestParam Long programId,
@@ -25,14 +27,17 @@ public class AdmissionApplicationController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'FACULTY')")
     public ResponseEntity<java.util.List<AdmissionApplicationDto>> getAllApplications() { return ResponseEntity.ok(applicationService.getAllApplications()); }
 
     @PostMapping("/{id}/submit")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN') or (hasRole('STUDENT') and @securityOwnershipService.canAccessAdmissionApplication(authentication, #id))")
     public ResponseEntity<AdmissionApplicationDto> submitApplication(@PathVariable Long id) {
         return ResponseEntity.ok(applicationService.submitApplication(id));
     }
 
     @PatchMapping("/{id}/status")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<AdmissionApplicationDto> updateStatus(
             @PathVariable Long id,
             @RequestParam ApplicationStatus status,

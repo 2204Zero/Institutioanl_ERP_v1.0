@@ -21,7 +21,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/attendance")
-@Tag(name = "Attendance Management", description = "Attendance endpoints protected by Faculty role and ATTENDANCE_TAKE permission")
+@Tag(name = "Attendance Management", description = "Attendance endpoints protected by role and ownership")
 @SecurityRequirement(name = "BearerAuth")
 public class AttendanceController {
 
@@ -32,8 +32,8 @@ public class AttendanceController {
     }
 
     @PostMapping("/bulk")
-    @Operation(summary = "Take bulk attendance for a section", description = "Restricted to Faculty teaching the section")
-    @PreAuthorize("hasRole('FACULTY')")
+    @Operation(summary = "Take bulk attendance for a section", description = "Restricted to Faculty teaching the section, and Admins")
+    @PreAuthorize("@securityOwnershipService.canAccessSectionData(authentication, #request.sectionId())")
     public ResponseEntity<SectionAttendanceResponse> recordBulkAttendance(
             @Valid @RequestBody BulkAttendanceRequest request,
             Authentication authentication) {
@@ -50,8 +50,8 @@ public class AttendanceController {
     }
 
     @GetMapping("/section/{sectionId}")
-    @Operation(summary = "Get attendance for a section by date", description = "Accessible by Faculty assigned to the section")
-    @PreAuthorize("hasRole('FACULTY')") // In real prod, could use @PreAuthorize("@securityOwnershipService.canAccessSection(authentication, #sectionId)")
+    @Operation(summary = "Get attendance for a section by date", description = "Accessible by Faculty assigned to the section, and Admins")
+    @PreAuthorize("@securityOwnershipService.canAccessSectionData(authentication, #sectionId)")
     public ResponseEntity<SectionAttendanceResponse> getSectionAttendance(
             @PathVariable Long sectionId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
@@ -62,29 +62,34 @@ public class AttendanceController {
     }
 
     @PostMapping
-    @Operation(summary = "Take attendance for a student", description = "Restricted to Faculty with ATTENDANCE_TAKE permission")
-    @PreAuthorize("hasAuthority('ATTENDANCE_TAKE') or hasRole('FACULTY')")
+    @Operation(summary = "Take attendance for a student", description = "Restricted to Faculty with ATTENDANCE_TAKE permission, and Admins")
+    @PreAuthorize("hasAuthority('ATTENDANCE_TAKE') or hasRole('FACULTY') or hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<AttendanceResponse> takeAttendance(
             @Valid @RequestBody AttendanceRecordRequest request,
             Authentication authentication) {
 
         String markedBy = authentication != null ? authentication.getName() : "faculty";
-        AttendanceResponse response = attendanceService.recordAttendance(request, markedBy);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        try {
+            AttendanceResponse response = attendanceService.recordAttendance(request, markedBy);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     @GetMapping("/student/{studentId}")
-    @Operation(summary = "Get attendance for a student", description = "Accessible by Student, Parent, Faculty, and Admin")
-    @PreAuthorize("@securityOwnershipService.canAccessStudentData(authentication, #studentId)")
+    @Operation(summary = "Get attendance for a student", description = "Accessible by Student (own), Parent (linked), Faculty (assigned section), and Admin")
+    @PreAuthorize("@securityOwnershipService.canAccessStudentAttendance(authentication, #studentId)")
     public ResponseEntity<List<AttendanceResponse>> getStudentAttendance(@PathVariable Long studentId) {
         return ResponseEntity.ok(attendanceService.getAttendanceByStudent(studentId));
     }
 
     @GetMapping
-    @Operation(summary = "Get all attendance records", description = "Accessible by Faculty, Admin, and Super Admin")
-    @PreAuthorize("hasAnyRole('FACULTY', 'ADMIN', 'SUPER_ADMIN')")
+    @Operation(summary = "Get all attendance records", description = "Accessible by Admin and Super Admin")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<List<AttendanceResponse>> getAllAttendance() {
         return ResponseEntity.ok(attendanceService.getAllAttendance());
     }
 }
-

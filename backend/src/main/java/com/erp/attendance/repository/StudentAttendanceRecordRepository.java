@@ -20,4 +20,6 @@ public interface StudentAttendanceRecordRepository extends JpaRepository<Student
     List<StudentAttendanceRecord> findByScheduleIdsAndAttendanceDate(@Param("scheduleIds") List<Long> scheduleIds, @Param("attendanceDate") LocalDate attendanceDate);
 
     boolean existsByStudentIdAndScheduleIdAndAttendanceDate(Long studentId, Long scheduleId, LocalDate attendanceDate);
+
+    boolean existsByScheduleIdAndAttendanceDate(Long scheduleId, LocalDate attendanceDate);
 }

@@ -66,3 +66,20 @@ dist/
 # Uploaded documents
 uploads/
 backend/uploads/
+
+# Local environment files and secrets
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Local scratch and utility scripts
+output.txt
+update-pass.sql
+test-api.py
+backend/disable.sql
+backend/run-psql.ps1
+backend/start-prod.ps1
+backend/test-superadmin.ps1
+scratch/
+backend/.env.example

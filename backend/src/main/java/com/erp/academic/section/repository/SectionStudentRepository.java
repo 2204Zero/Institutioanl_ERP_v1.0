@@ -20,5 +20,7 @@ public interface SectionStudentRepository extends JpaRepository<SectionStudent, 
 
     int countBySectionIdAndIsActiveTrue(Long sectionId);
 
+    List<SectionStudent> findByStudentIdAndIsActiveTrue(Long studentId);
+
     void deleteBySectionId(Long sectionId);
 }

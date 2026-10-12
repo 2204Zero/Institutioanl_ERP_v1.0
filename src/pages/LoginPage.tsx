@@ -22,8 +22,9 @@ export interface LoginPageProps {
 export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess }) => {
   const { login, isAuthenticating, loginError, clearLoginError } = useAuthentication();
 
-  const [username, setUsername] = useState('user');
-  const [password, setPassword] = useState('password');
+  const isProduction = API_CONFIG.IS_PROD;
+  const [username, setUsername] = useState(isProduction ? '' : 'superadmin');
+  const [password, setPassword] = useState(isProduction ? '' : 'Admin@123');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [formError, setFormError] = useState<string | null>(null);
@@ -83,7 +84,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess }) => {
           <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-slate-800/80 border border-slate-700 text-slate-300">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             <Server className="w-3 h-3 text-brand-400 ml-0.5" />
-            <span>Target: Spring Boot REST API (:8080)</span>
+            <span>Target: Spring Boot REST API (:8081)</span>
           </div>
         </div>
 
@@ -172,51 +173,53 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onSuccess }) => {
             </Button>
           </form>
 
-          {/* Quick-Fill Demo Credentials Selector */}
-          <div className="mt-6 pt-5 border-t border-slate-100">
-            <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2.5">
-              <Zap className="w-3.5 h-3.5 text-amber-500" />
-              <span>Quick-Fill Backend Test Accounts</span>
-            </div>
+          {/* Quick-Fill Demo Credentials Selector (Dev / Testing Only) */}
+          {!isProduction && (
+            <div className="mt-6 pt-5 border-t border-slate-100">
+              <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2.5">
+                <Zap className="w-3.5 h-3.5 text-amber-500" />
+                <span>Quick-Fill Backend Test Accounts</span>
+              </div>
 
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => handleQuickFill('user', 'password')}
-                className="p-2.5 rounded-lg border border-slate-200 hover:border-brand-500 hover:bg-brand-50/50 text-left transition-all group"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-800 group-hover:text-brand-600">
-                    Live Spring Boot
-                  </span>
-                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-1 rounded">
-                    Active
-                  </span>
-                </div>
-                <div className="text-[11px] text-slate-500 mt-0.5">
-                  <span className="font-mono">user</span> / <span className="font-mono">password</span>
-                </div>
-              </button>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleQuickFill('admin', 'Admin@123')}
+                  className="p-2.5 rounded-lg border border-slate-200 hover:border-brand-500 hover:bg-brand-50/50 text-left transition-all group"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-800 group-hover:text-brand-600">
+                      Admin
+                    </span>
+                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-1 rounded">
+                      Active
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-slate-500 mt-0.5">
+                    <span className="font-mono">admin</span> / <span className="font-mono">Admin@123</span>
+                  </div>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => handleQuickFill('admin.rajesh', 'admin123')}
-                className="p-2.5 rounded-lg border border-slate-200 hover:border-brand-500 hover:bg-brand-50/50 text-left transition-all group"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-800 group-hover:text-brand-600">
-                    Dean / Admin
-                  </span>
-                  <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-1 rounded">
-                    Demo
-                  </span>
-                </div>
-                <div className="text-[11px] text-slate-500 mt-0.5">
-                  <span className="font-mono">admin.rajesh</span>
-                </div>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => handleQuickFill('superadmin', 'Admin@123')}
+                  className="p-2.5 rounded-lg border border-slate-200 hover:border-brand-500 hover:bg-brand-50/50 text-left transition-all group"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-800 group-hover:text-brand-600">
+                      Super Admin
+                    </span>
+                    <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-1 rounded">
+                      Demo
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-slate-500 mt-0.5">
+                    <span className="font-mono">superadmin</span> / <span className="font-mono">Admin@123</span>
+                  </div>
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Footer */}

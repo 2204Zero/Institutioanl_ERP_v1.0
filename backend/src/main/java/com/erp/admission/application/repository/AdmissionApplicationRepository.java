@@ -12,4 +12,8 @@ public interface AdmissionApplicationRepository extends JpaRepository<AdmissionA
     Optional<AdmissionApplication> findByApplicationNumber(String applicationNumber);
     List<AdmissionApplication> findByApplicantId(Long applicantId);
     List<AdmissionApplication> findByProgramIdAndAcademicYearId(Long programId, Long academicYearId);
+
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @org.springframework.data.jpa.repository.Query("SELECT a FROM AdmissionApplication a WHERE a.id = :id")
+    Optional<AdmissionApplication> findByIdWithPessimisticLock(@org.springframework.data.repository.query.Param("id") Long id);
 }

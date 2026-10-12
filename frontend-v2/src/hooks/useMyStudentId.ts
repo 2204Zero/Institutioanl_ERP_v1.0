@@ -11,17 +11,23 @@ export function useMyStudentId() {
       if (!user?.username) return null;
       
       if (user.role === 'STUDENT') {
-        const res = await apiClient.get('/api/v1/students', { params: { size: 1000 } });
-        const students = res.data?.data?.content || [];
-        const match = students.find((s: any) => s.email === user.username);
-        return match?.id || null;
+        try {
+          const res = await apiClient.get('/api/v1/students/me');
+          return res.data?.data?.id || null;
+        } catch {
+          return null;
+        }
       }
       
       if (user.role === 'PARENT') {
-        const res = await apiClient.get('/api/v1/guardians');
-        const guardians = res.data?.data || [];
-        const match = guardians.find((g: any) => g.email === user.username);
-        return match?.studentId || null;
+        try {
+          const res = await apiClient.get('/api/v1/guardians');
+          const guardians = res.data?.data || [];
+          const match = guardians.find((g: any) => g.email === user.username);
+          return match?.studentId || null;
+        } catch {
+          return null;
+        }
       }
       
       return null;

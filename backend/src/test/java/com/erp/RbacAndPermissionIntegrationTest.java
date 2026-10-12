@@ -19,6 +19,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
+import org.springframework.transaction.annotation.Transactional;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Map;
@@ -29,6 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@Transactional
 class RbacAndPermissionIntegrationTest {
 
     @Autowired
@@ -36,6 +39,9 @@ class RbacAndPermissionIntegrationTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
     private String obtainAccessToken(String username, String password) throws Exception {
         LoginRequest loginRequest = new LoginRequest(username, password, null);
@@ -120,6 +126,49 @@ class RbacAndPermissionIntegrationTest {
     @Test
     @DisplayName("Day 04 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Faculty: Should allow taking attendance with ATTENDANCE_TAKE permission")
     void shouldAllowFacultyToTakeAttendance() throws Exception {
+        // Transactionally provision prerequisite section, faculty, timetable slot, and student for course CS-301
+        try {
+            Long facultyUserId = jdbcTemplate.queryForObject("SELECT id FROM users WHERE username = 'faculty'", Long.class);
+            jdbcTemplate.execute("INSERT INTO faculty (faculty_id, first_name, last_name, official_email, user_id, is_active) " +
+                    "VALUES (101, 'Faculty', 'Member', 'faculty@erp.com', " + (facultyUserId != null ? facultyUserId : "NULL") + ", true)");
+        } catch (Exception ignored) {}
+        try {
+            jdbcTemplate.execute("INSERT INTO students (id, roll_number, first_name, last_name, email, phone, date_of_birth, gender, department, batch, enrollment_date, status) " +
+                    "VALUES (101, 'ROLL101', 'Test', 'Student', 'student101@erp.com', '1234567890', DATE '2004-01-01', 'MALE', 'CSE', '2024-2028', DATE '2024-08-01', 'ACTIVE')");
+        } catch (Exception ignored) {}
+        try {
+            jdbcTemplate.execute("INSERT INTO course (id, code, name, department_id, credits, is_active) " +
+                    "VALUES (301, 'CS-301', 'Computer Systems', 1, 4, true)");
+        } catch (Exception ignored) {}
+        try {
+            jdbcTemplate.execute("INSERT INTO semester (id, name, is_active) " +
+                    "VALUES (301, 'Fall 2026 CS', true)");
+        } catch (Exception ignored) {}
+        try {
+            jdbcTemplate.execute("INSERT INTO course_offering (id, course_id, semester_id, max_capacity, is_published) " +
+                    "VALUES (301, 301, 301, 60, true)");
+        } catch (Exception ignored) {}
+        try {
+            jdbcTemplate.execute("INSERT INTO section (id, name, course_offering_id, capacity, current_enrollment, is_active) " +
+                    "VALUES (301, 'CS-301-A', 301, 60, 1, true)");
+        } catch (Exception ignored) {}
+        try {
+            jdbcTemplate.execute("INSERT INTO room (id, name, capacity, is_active) " +
+                    "VALUES (301, 'R301', 60, true)");
+        } catch (Exception ignored) {}
+        try {
+            jdbcTemplate.execute("INSERT INTO section_faculty (id, section_id, faculty_id, subject_id, role) " +
+                    "VALUES (301, 301, 101, 1, 'PRIMARY')");
+        } catch (Exception ignored) {}
+        try {
+            jdbcTemplate.execute("INSERT INTO section_student (id, section_id, student_id, is_active) " +
+                    "VALUES (301, 301, 101, true)");
+        } catch (Exception ignored) {}
+        try {
+            jdbcTemplate.execute("INSERT INTO timetable_slot (id, section_id, faculty_id, room_id, day_of_week, start_time, end_time, is_active) " +
+                    "VALUES (301, 301, 101, 301, 'MONDAY', '09:00:00', '10:00:00', true)");
+        } catch (Exception ignored) {}
+
         String token = obtainAccessToken("faculty", "Faculty@123");
         AttendanceRecordRequest request = new AttendanceRecordRequest(101L, "CS-301", "PRESENT", "Regular Lecture");
 

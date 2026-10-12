@@ -2,7 +2,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/edupulse_erp
     username: edupulse_admin
-    password: ${DB_PASSWORD:edupulse_secure_password_2026}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
@@ -16,3 +16,6 @@ spring:
 logging:
   level:
     org.flywaydb: INFO
+
+jwt:
+  secret: ${JWT_SECRET}

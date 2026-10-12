@@ -21,6 +21,10 @@ public class Payment {
     @Enumerated(EnumType.STRING) @Column(nullable = false) private PaymentStatus status = PaymentStatus.PENDING;
     private String remarks;
     private String createdBy;
+    @Column(name = "idempotency_key", unique = true)
+    private String idempotencyKey;
+    @Column(name = "request_hash")
+    private String requestHash;
     @OneToMany(mappedBy = "payment", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PaymentAllocation> allocations = new ArrayList<>();
     @Column(name="created_at", updatable=false) private Instant createdAt = Instant.now();
@@ -35,5 +39,7 @@ public class Payment {
     public PaymentStatus getStatus() { return status; } public void setStatus(PaymentStatus status) { this.status = status; }
     public String getRemarks() { return remarks; } public void setRemarks(String remarks) { this.remarks = remarks; }
     public String getCreatedBy() { return createdBy; } public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
+    public String getIdempotencyKey() { return idempotencyKey; } public void setIdempotencyKey(String idempotencyKey) { this.idempotencyKey = idempotencyKey; }
+    public String getRequestHash() { return requestHash; } public void setRequestHash(String requestHash) { this.requestHash = requestHash; }
     public List<PaymentAllocation> getAllocations() { return allocations; } public void setAllocations(List<PaymentAllocation> allocations) { this.allocations = allocations; }
 }
