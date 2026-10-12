@@ -1,7 +1,8 @@
 package com.erp.finance.controller;
 
+import com.erp.finance.dto.PaymentRequestDto;
+import com.erp.finance.dto.ReceiptResponseDto;
 import com.erp.finance.invoice.entity.Receipt;
-import com.erp.finance.payment.entity.Payment;
 import com.erp.finance.service.PaymentService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -19,8 +20,16 @@ public class PaymentController {
 
     @PostMapping("/student-fee/{studentFeeId}")
     @PreAuthorize("hasAuthority('PAYMENT_CREATE') or hasAnyRole('FINANCE', 'ADMIN', 'SUPER_ADMIN')")
-    public ResponseEntity<Receipt> recordPayment(@PathVariable Long studentFeeId, @RequestBody Payment payment) {
-        Receipt receipt = paymentService.recordPayment(payment, studentFeeId);
-        return ResponseEntity.ok(receipt);
+    public ResponseEntity<ReceiptResponseDto> recordPayment(
+            @PathVariable Long studentFeeId,
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKeyHeader,
+            @RequestBody PaymentRequestDto paymentRequest) {
+        if (paymentRequest != null && (paymentRequest.getIdempotencyKey() == null || paymentRequest.getIdempotencyKey().isBlank())) {
+            if (idempotencyKeyHeader != null && !idempotencyKeyHeader.isBlank()) {
+                paymentRequest.setIdempotencyKey(idempotencyKeyHeader.trim());
+            }
+        }
+        Receipt receipt = paymentService.recordPayment(paymentRequest, studentFeeId);
+        return ResponseEntity.ok(ReceiptResponseDto.fromEntity(receipt));
     }
 }

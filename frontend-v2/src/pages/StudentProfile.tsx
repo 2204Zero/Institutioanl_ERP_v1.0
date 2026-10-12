@@ -23,6 +23,7 @@ import {
   DropdownMenuTrigger,
 } from "../components/ui/dropdown-menu";
 import { StudentAcademicTab } from '../components/StudentAcademicTab';
+import { StudentFeesTab } from '../components/StudentFeesTab';
 import { formatLocalDate } from '../lib/utils';
 
 export default function StudentProfile() {
@@ -235,7 +236,11 @@ export default function StudentProfile() {
             <StudentAcademicTab studentId={Number(id)} />
           )}
 
-          {(activeTab === 'attendance' || activeTab === 'fees' || activeTab === 'history') && (
+          {activeTab === 'fees' && (
+            <StudentFeesTab studentId={Number(id)} />
+          )}
+
+          {(activeTab === 'attendance' || activeTab === 'history') && (
             <div className="flex flex-col items-center justify-center p-12 bg-slate-50 border border-slate-200">
                <div className="w-10 h-10 bg-slate-200 flex items-center justify-center mb-3">
                  <ShieldAlert className="w-5 h-5 text-slate-400" />

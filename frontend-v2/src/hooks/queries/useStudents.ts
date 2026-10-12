@@ -75,15 +75,5 @@ export const useStudentDocuments = (studentId?: number) => {
   });
 };
 
-export const useStudentFees = (studentId?: number) => {
-  return useQuery({
-    queryKey: ['student-fees', studentId],
-    queryFn: async () => {
-      // From Finance Module
-      const response = await apiClient.get<any[]>(`/finance/student-fees/student/${studentId}`);
-      return response.data;
-    },
-    enabled: !!studentId,
-  });
-};
+export { useStudentFees } from './useFinance';
 

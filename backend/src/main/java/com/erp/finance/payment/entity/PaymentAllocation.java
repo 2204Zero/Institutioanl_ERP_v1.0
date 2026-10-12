@@ -2,10 +2,12 @@ package com.erp.finance.payment.entity;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import com.erp.finance.student_fee.entity.StudentFeeComponent;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 @Entity
 @Table(name = "finance_payment_allocation")
 public class PaymentAllocation {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY) private Long id;
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "payment_id", nullable = false) private Payment payment;
     @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "student_fee_component_id", nullable = false) private StudentFeeComponent studentFeeComponent;
     @Column(nullable = false, precision = 12, scale = 2) private BigDecimal allocatedAmount;

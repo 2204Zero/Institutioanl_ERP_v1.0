@@ -99,6 +99,52 @@ public class SecurityOwnershipService {
         return false;
     }
 
+    /**
+     * Dedicated authorization check for sensitive student finance records.
+     * Restricts access strictly to ADMIN, SUPER_ADMIN, FINANCE, and the specific STUDENT themselves.
+     * FACULTY and unverified PARENTS are explicitly denied access to student financial debt/records.
+     */
+    public boolean canAccessStudentFinance(Authentication authentication, Long studentId) {
+        if (authentication == null || studentId == null) {
+            return false;
+        }
+
+        // 1. Privileged Roles: ADMIN, SUPER_ADMIN, FINANCE (FACULTY is excluded from financial records)
+        boolean isPrivileged = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(role -> role.equals("ROLE_ADMIN") || role.equals("ROLE_SUPER_ADMIN") || role.equals("ROLE_FINANCE"));
+
+        if (isPrivileged) {
+            return true;
+        }
+
+        // 2. Student Role: allowed strictly for their own record
+        boolean isStudent = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(role -> role.equals("ROLE_STUDENT"));
+
+        if (isStudent) {
+            if (authentication.getPrincipal() instanceof UserPrincipal principal && principal.getId() != null) {
+                java.util.Optional<Student> studentOpt = studentRepository.findByUserId(principal.getId());
+                if (studentOpt.isPresent()) {
+                    return studentOpt.get().getId().equals(studentId);
+                }
+            }
+            // Backward-compatible fallback for unlinked legacy student accounts
+            String email = authentication.getName();
+            if (authentication.getPrincipal() instanceof UserPrincipal principal && principal.getEmail() != null) {
+                email = principal.getEmail();
+            }
+            final String userEmail = email;
+            return studentRepository.findById(studentId)
+                    .map(student -> student.getEmail() != null && student.getEmail().equalsIgnoreCase(userEmail))
+                    .orElse(false);
+        }
+
+        // 3. Faculty, Parents, and other roles are denied
+        return false;
+    }
+
     public boolean canAccessStudentDataByRollNumber(Authentication authentication, String rollNumber) {
         if (authentication == null || rollNumber == null) {
             return false;
