@@ -24,15 +24,17 @@
 | **Lakshya Singhal** | Frontend Architect & Lead Hardening | [`lakshyasinghal08`](https://github.com/lakshyasinghal08)<br/>`lakshyasinghal92@gmail.com` | Enterprise frontend architecture across `src/` and `frontend-v2/` (React 19, Vite 8, TanStack Query v5, Zustand, Tailwind CSS); Centralized typed HTTP client (`apiClient`), Axios interceptors, correlation IDs, and token refresh queues (`DATA_LAYER_README.md`, `INTEGRATION_README.md`); Generic in-memory cache manager with TTL invalidation; Responsive administrative dashboard with KPI metrics and role-based route guards (`RoleGuard`); PostgreSQL integration test harness, concurrency hardening (`FinanceConcurrencyPostgresIT`), and fail-fast test security guards (`PostgresSafetyGuard`). |
 | **Prashant Jain** | Institutional & Campus Lead | `prashantjain.code@gmail.com`<br/>*(Profile link pending)* | Institution metadata, accreditation records, and multi-campus relational hierarchy (`CampusController`, `InstitutionController`); Campus registration, facility details, and directory endpoints; Academic scheduling security evaluators and timetable constraint validation (`AcademicSchedulingSecurity.java`); Co-authored Git branch registry conventions (`docs/Branch-Registry.md`). |
 
-### 12-Week Team Progress Reports
+### 12-Week Team Progress Reports, Research Paper & SRS
 
-- 📄 **Complete Team Progress Reports (Weeks 01–12)**: [Google Docs / Drive — Comprehensive Team Progress Report](https://docs.google.com/document/d/16XLXmBJv5ezufBNS3slIXX-0D6xfk2iW/edit?usp=sharing&ouid=107702636253744643600&rtpof=true&sd=true)
+- 📄 **Complete Team Progress Reports (Weeks 01–12)**: [Google Drive Folder — Comprehensive Team Weekly Reports](https://drive.google.com/drive/folders/1qEcbbcQ26jBKeXZZCySOKK-qaf-Bnw73?usp=sharing)
+- 📑 **Project Research Paper**: [Google Docs — EduPulse Academic Research Paper](https://docs.google.com/document/d/1RAmW976_6uEVzBNaWRyCj6-VceCNl2DV/edit?usp=sharing&ouid=107702636253744643600&rtpof=true&sd=true)
+- 📋 **Software Requirements Specification (SRS)**: [Google Docs — EduPulse Software Requirements Specification (SRS)](https://docs.google.com/document/d/1DItdPC9wVLq4hNJcIpa7_gOUHRfnTDBj/edit?usp=sharing&ouid=107702636253744643600&rtpof=true&sd=true)
 
 ## 📑 Table of Contents
 
 1. [Project Introduction & Identity](#1-project-introduction--identity)
    - [Core Team Members & Project Contributors](#core-team-members--project-contributors)
-   - [12-Week Team Progress Reports](#12-week-team-progress-reports)
+   - [12-Week Team Progress Reports, Research Paper & SRS](#12-week-team-progress-reports-research-paper--srs)
    - [Application Screenshots](#application-screenshots)
    - [Quick Start Guide](#quick-start-guide)
    - [Release Verification Summary](#release-verification-summary)
