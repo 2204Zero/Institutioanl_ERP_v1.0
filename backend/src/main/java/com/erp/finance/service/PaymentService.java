@@ -1,5 +1,6 @@
 package com.erp.finance.service;
 
+import com.erp.common.exception.BusinessException;
 import com.erp.finance.dto.PaymentRequestDto;
 import com.erp.finance.enums.PaymentMethod;
 import com.erp.finance.enums.PaymentStatus;
@@ -109,9 +110,9 @@ public class PaymentService {
                 Payment existing = existingOpt.get();
                 if (requestHash.equals(existing.getRequestHash())) {
                     return receiptRepository.findByPaymentId(existing.getId())
-                            .orElseThrow(() -> new IllegalStateException("Payment exists but receipt was not found for payment ID " + existing.getId()));
+                            .orElseThrow(() -> new BusinessException("Payment exists but receipt was not found for payment ID " + existing.getId()));
                 } else {
-                    throw new IllegalArgumentException("Idempotency key '" + idempotencyKey + "' has already been used with different request parameters");
+                    throw new BusinessException("Idempotency key '" + idempotencyKey + "' has already been used with different request parameters");
                 }
             }
         }
@@ -123,22 +124,19 @@ public class PaymentService {
                 return txTemplate.execute(status -> executePaymentTransaction(paymentDto, studentFeeId, idempotencyKey, requestHash));
             } catch (DataIntegrityViolationException ex) {
                 if (idempotencyKey != null && isIdempotencyKeyViolation(ex)) {
-                    // Transaction rolled back; safely reload the winning committed payment record
-                    Optional<Payment> committedOpt = reloadCommittedPaymentWithRetry(idempotencyKey);
-                    if (committedOpt.isPresent()) {
-                        Payment committed = committedOpt.get();
-                        if (requestHash.equals(committed.getRequestHash())) {
-                            return receiptRepository.findByPaymentId(committed.getId())
-                                    .orElseThrow(() -> new IllegalStateException("Payment exists but receipt was not found for payment ID " + committed.getId()));
-                        } else {
-                            throw new IllegalArgumentException("Idempotency key '" + idempotencyKey + "' has already been used with different request parameters");
-                        }
-                    }
+                    return resolveIdempotentWinner(idempotencyKey, requestHash);
                 }
                 throw ex;
             }
         } else {
-            return executePaymentTransaction(paymentDto, studentFeeId, idempotencyKey, requestHash);
+            try {
+                return executePaymentTransaction(paymentDto, studentFeeId, idempotencyKey, requestHash);
+            } catch (DataIntegrityViolationException ex) {
+                if (idempotencyKey != null && isIdempotencyKeyViolation(ex)) {
+                    return resolveIdempotentWinner(idempotencyKey, requestHash);
+                }
+                throw ex;
+            }
         }
     }
 
@@ -155,9 +153,9 @@ public class PaymentService {
                 Payment existing = existingOpt.get();
                 if (requestHash.equals(existing.getRequestHash())) {
                     return receiptRepository.findByPaymentId(existing.getId())
-                            .orElseThrow(() -> new IllegalStateException("Payment exists but receipt was not found for payment ID " + existing.getId()));
+                            .orElseThrow(() -> new BusinessException("Payment exists but receipt was not found for payment ID " + existing.getId()));
                 } else {
-                    throw new IllegalArgumentException("Idempotency key '" + idempotencyKey + "' has already been used with different request parameters");
+                    throw new BusinessException("Idempotency key '" + idempotencyKey + "' has already been used with different request parameters");
                 }
             }
         }
@@ -247,32 +245,70 @@ public class PaymentService {
         return receiptRepository.save(receipt);
     }
 
-    private boolean isIdempotencyKeyViolation(DataIntegrityViolationException ex) {
-        Throwable current = ex;
-        while (current != null) {
-            String msg = current.getMessage();
-            if (msg != null) {
-                String lower = msg.toLowerCase();
-                if (lower.contains("idempotency_key") || lower.contains("uq_finance_payment_idempotency_key")) {
-                    return true;
-                }
-            }
-            current = current.getCause();
+    private Receipt resolveIdempotentWinner(String idempotencyKey, String requestHash) {
+        if (transactionManager != null) {
+            TransactionTemplate readTx = new TransactionTemplate(transactionManager);
+            readTx.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+            readTx.setReadOnly(true);
+            return readTx.execute(status -> doResolveIdempotentWinner(idempotencyKey, requestHash));
+        } else {
+            return doResolveIdempotentWinner(idempotencyKey, requestHash);
         }
-        return false;
     }
 
-    private Optional<Payment> reloadCommittedPaymentWithRetry(String idempotencyKey) {
+    private Receipt doResolveIdempotentWinner(String idempotencyKey, String requestHash) {
         Optional<Payment> committedOpt = paymentRepository.findByIdempotencyKey(idempotencyKey);
-        for (int i = 0; i < 5 && committedOpt.isEmpty(); i++) {
+        for (int i = 0; i < 10 && committedOpt.isEmpty(); i++) {
             try {
-                Thread.sleep(20);
+                Thread.sleep(50);
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
                 break;
             }
             committedOpt = paymentRepository.findByIdempotencyKey(idempotencyKey);
         }
-        return committedOpt;
+
+        if (committedOpt.isPresent()) {
+            Payment committed = committedOpt.get();
+            if (requestHash.equals(committed.getRequestHash())) {
+                Optional<Receipt> receiptOpt = receiptRepository.findByPaymentId(committed.getId());
+                for (int i = 0; i < 5 && receiptOpt.isEmpty(); i++) {
+                    try {
+                        Thread.sleep(20);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                    receiptOpt = receiptRepository.findByPaymentId(committed.getId());
+                }
+                return receiptOpt.orElseThrow(() -> new BusinessException("Payment exists but receipt was not found for payment ID " + committed.getId()));
+            } else {
+                throw new BusinessException("Idempotency key '" + idempotencyKey + "' has already been used with different request parameters");
+            }
+        }
+
+        throw new BusinessException("Idempotency key collision detected for key '" + idempotencyKey + "'");
+    }
+
+    private boolean isIdempotencyKeyViolation(DataIntegrityViolationException ex) {
+        Throwable current = ex;
+        while (current != null) {
+            if (current instanceof org.hibernate.exception.ConstraintViolationException cve) {
+                String cName = cve.getConstraintName();
+                if (cName != null && (cName.equalsIgnoreCase("uq_finance_payment_idempotency_key")
+                        || cName.toLowerCase().contains("idempotency_key"))) {
+                    return true;
+                }
+            }
+            String msg = current.getMessage();
+            if (msg != null) {
+                String lower = msg.toLowerCase();
+                if (lower.contains("uq_finance_payment_idempotency_key") || lower.contains("idempotency_key")) {
+                    return true;
+                }
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 }

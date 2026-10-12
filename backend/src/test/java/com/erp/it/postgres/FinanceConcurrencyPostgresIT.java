@@ -2,6 +2,7 @@ package com.erp.it.postgres;
 
 import com.erp.academic.academic_year.entity.AcademicYear;
 import com.erp.academic.academic_year.repository.AcademicYearRepository;
+import com.erp.common.exception.BusinessException;
 import com.erp.finance.dto.PaymentRequestDto;
 import com.erp.finance.enums.PaymentMethod;
 import com.erp.finance.enums.StudentFeeStatus;
@@ -19,13 +20,19 @@ import com.erp.finance.student_fee.repository.StudentFeeRepository;
 import com.erp.student.entity.Student;
 import com.erp.student.repository.StudentRepository;
 import com.erp.finance.invoice.entity.Receipt;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -37,6 +44,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @AutoConfigureMockMvc
 public class FinanceConcurrencyPostgresIT extends AbstractPostgresIT {
@@ -67,6 +77,12 @@ public class FinanceConcurrencyPostgresIT extends AbstractPostgresIT {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     private Student testStudent;
     private Student testStudent2;
@@ -252,7 +268,7 @@ public class FinanceConcurrencyPostgresIT extends AbstractPostgresIT {
         req2.setPaymentMethod(PaymentMethod.BANK_TRANSFER);
         req2.setIdempotencyKey(idempotencyKey);
 
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        Assertions.assertThrows(BusinessException.class, () -> {
             paymentService.recordPayment(req2, fee.getId());
         });
 
@@ -361,7 +377,7 @@ public class FinanceConcurrencyPostgresIT extends AbstractPostgresIT {
         req2.setPaymentMethod(PaymentMethod.BANK_TRANSFER);
         req2.setIdempotencyKey(idempotencyKey);
 
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        Assertions.assertThrows(BusinessException.class, () -> {
             paymentService.recordPayment(req2, fee2.getId());
         });
 
@@ -396,7 +412,7 @@ public class FinanceConcurrencyPostgresIT extends AbstractPostgresIT {
                 req.setIdempotencyKey(idempotencyKey);
                 paymentService.recordPayment(req, fee1.getId());
                 successCount.incrementAndGet();
-            } catch (IllegalArgumentException iae) {
+            } catch (BusinessException be) {
                 rejectedCount.incrementAndGet();
             } catch (Exception e) {
                 unexpectedErrorCount.incrementAndGet();
@@ -414,7 +430,7 @@ public class FinanceConcurrencyPostgresIT extends AbstractPostgresIT {
                 req.setIdempotencyKey(idempotencyKey);
                 paymentService.recordPayment(req, fee2.getId());
                 successCount.incrementAndGet();
-            } catch (IllegalArgumentException iae) {
+            } catch (BusinessException be) {
                 rejectedCount.incrementAndGet();
             } catch (Exception e) {
                 unexpectedErrorCount.incrementAndGet();
@@ -435,6 +451,168 @@ public class FinanceConcurrencyPostgresIT extends AbstractPostgresIT {
 
         boolean fee1Paid = updatedFee1.getPaidAmount().compareTo(new BigDecimal("15000.00")) == 0;
         boolean fee2Paid = updatedFee2.getPaidAmount().compareTo(new BigDecimal("15000.00")) == 0;
+
+        assertThat(fee1Paid ^ fee2Paid).isTrue();
+
+        if (fee1Paid) {
+            assertThat(updatedFee2.getPaidAmount()).isEqualByComparingTo(BigDecimal.ZERO);
+            assertThat(updatedFee2.getOutstandingAmount()).isEqualByComparingTo(new BigDecimal("50000.00"));
+        } else {
+            assertThat(updatedFee1.getPaidAmount()).isEqualByComparingTo(BigDecimal.ZERO);
+            assertThat(updatedFee1.getOutstandingAmount()).isEqualByComparingTo(new BigDecimal("50000.00"));
+        }
+    }
+
+    @Test
+    @WithMockUser(username = "admin", roles = {"ADMIN"})
+    @DisplayName("PostgreSQL IT: Replaying request via HTTP returns 200 with original receipt; conflict returns HTTP 409")
+    void testIdempotencyHttpOutcomesReplayAndConflict() throws Exception {
+        StudentFee fee1 = studentFeeService.assignFeeStructure(testStudent.getId(), testStructure.getId(), testAcademicYear.getId());
+        StudentFee fee2 = studentFeeService.assignFeeStructure(testStudent2.getId(), testStructure.getId(), testAcademicYear.getId());
+        String idempotencyKey = "PG-HTTP-" + UUID.randomUUID();
+
+        PaymentRequestDto initialReq = new PaymentRequestDto();
+        initialReq.setAmount(new BigDecimal("12000.00"));
+        initialReq.setPaymentDate(LocalDate.now());
+        initialReq.setPaymentMethod(PaymentMethod.BANK_TRANSFER);
+        initialReq.setReferenceNumber("PG-HTTP-REF-1");
+
+        // 1. Initial request -> HTTP 200 OK
+        String res1 = mockMvc.perform(post("/api/v1/finance/payments/student-fee/" + fee1.getId())
+                        .header("Idempotency-Key", idempotencyKey)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(initialReq)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.receiptNumber").exists())
+                .andReturn().getResponse().getContentAsString();
+
+        Long receiptId1 = objectMapper.readTree(res1).get("id").asLong();
+
+        // 2. Exact replay on same fee -> HTTP 200 OK with identical receipt
+        String res2 = mockMvc.perform(post("/api/v1/finance/payments/student-fee/" + fee1.getId())
+                        .header("Idempotency-Key", idempotencyKey)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(initialReq)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        Long receiptId2 = objectMapper.readTree(res2).get("id").asLong();
+        assertThat(receiptId2).isEqualTo(receiptId1);
+
+        // 3. Same key with different amount on same fee -> HTTP 409 Conflict
+        PaymentRequestDto diffAmountReq = new PaymentRequestDto();
+        diffAmountReq.setAmount(new BigDecimal("24000.00"));
+        diffAmountReq.setPaymentDate(LocalDate.now());
+        diffAmountReq.setPaymentMethod(PaymentMethod.BANK_TRANSFER);
+        diffAmountReq.setReferenceNumber("PG-HTTP-REF-1");
+
+        mockMvc.perform(post("/api/v1/finance/payments/student-fee/" + fee1.getId())
+                        .header("Idempotency-Key", idempotencyKey)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(diffAmountReq)))
+                .andExpect(status().isConflict());
+
+        // 4. Same key on different fee -> HTTP 409 Conflict
+        mockMvc.perform(post("/api/v1/finance/payments/student-fee/" + fee2.getId())
+                        .header("Idempotency-Key", idempotencyKey)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(initialReq)))
+                .andExpect(status().isConflict());
+
+        // Assert fee balances & payment counts
+        StudentFee updatedFee1 = studentFeeRepository.findById(fee1.getId()).orElseThrow();
+        StudentFee updatedFee2 = studentFeeRepository.findById(fee2.getId()).orElseThrow();
+
+        assertThat(updatedFee1.getPaidAmount()).isEqualByComparingTo(new BigDecimal("12000.00"));
+        assertThat(updatedFee1.getOutstandingAmount()).isEqualByComparingTo(new BigDecimal("38000.00"));
+
+        assertThat(updatedFee2.getPaidAmount()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(updatedFee2.getOutstandingAmount()).isEqualByComparingTo(new BigDecimal("50000.00"));
+
+        List<Payment> fee1Payments = paymentRepository.findByStudentId(testStudent.getId());
+        List<Payment> fee2Payments = paymentRepository.findByStudentId(testStudent2.getId());
+
+        assertThat(fee1Payments).hasSize(1);
+        assertThat(fee2Payments).isEmpty();
+    }
+
+    @Test
+    @WithMockUser(username = "admin", roles = {"ADMIN"})
+    @DisplayName("PostgreSQL IT: Concurrent cross-fee race via HTTP yields one 200 and one 409 without 500")
+    void testCrossFeeConcurrentRaceHttpOutcomes() throws Exception {
+        StudentFee fee1 = studentFeeService.assignFeeStructure(testStudent.getId(), testStructure.getId(), testAcademicYear.getId());
+        StudentFee fee2 = studentFeeService.assignFeeStructure(testStudent2.getId(), testStructure.getId(), testAcademicYear.getId());
+        final String idempotencyKey = "PG-CONC-HTTP-" + UUID.randomUUID();
+
+        int threads = 2;
+        ExecutorService executor = Executors.newFixedThreadPool(threads);
+        CountDownLatch latch = new CountDownLatch(threads);
+        AtomicInteger okCount = new AtomicInteger(0);
+        AtomicInteger conflictCount = new AtomicInteger(0);
+        AtomicInteger errorCount = new AtomicInteger(0);
+
+        SecurityContext securityContext = SecurityContextHolder.getContext();
+
+        executor.submit(() -> {
+            SecurityContextHolder.setContext(securityContext);
+            try {
+                PaymentRequestDto req = new PaymentRequestDto();
+                req.setAmount(new BigDecimal("18000.00"));
+                req.setPaymentDate(LocalDate.now());
+                req.setPaymentMethod(PaymentMethod.BANK_TRANSFER);
+
+                int status = mockMvc.perform(post("/api/v1/finance/payments/student-fee/" + fee1.getId())
+                                .header("Idempotency-Key", idempotencyKey)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(req)))
+                        .andReturn().getResponse().getStatus();
+
+                if (status == 200) okCount.incrementAndGet();
+                else if (status == 409) conflictCount.incrementAndGet();
+                else errorCount.incrementAndGet();
+            } catch (Exception e) {
+                errorCount.incrementAndGet();
+            } finally {
+                latch.countDown();
+            }
+        });
+
+        executor.submit(() -> {
+            SecurityContextHolder.setContext(securityContext);
+            try {
+                PaymentRequestDto req = new PaymentRequestDto();
+                req.setAmount(new BigDecimal("18000.00"));
+                req.setPaymentDate(LocalDate.now());
+                req.setPaymentMethod(PaymentMethod.BANK_TRANSFER);
+
+                int status = mockMvc.perform(post("/api/v1/finance/payments/student-fee/" + fee2.getId())
+                                .header("Idempotency-Key", idempotencyKey)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(req)))
+                        .andReturn().getResponse().getStatus();
+
+                if (status == 200) okCount.incrementAndGet();
+                else if (status == 409) conflictCount.incrementAndGet();
+                else errorCount.incrementAndGet();
+            } catch (Exception e) {
+                errorCount.incrementAndGet();
+            } finally {
+                latch.countDown();
+            }
+        });
+
+        latch.await();
+        executor.shutdown();
+
+        assertThat(errorCount.get()).isEqualTo(0);
+        assertThat(okCount.get()).isEqualTo(1);
+        assertThat(conflictCount.get()).isEqualTo(1);
+
+        StudentFee updatedFee1 = studentFeeRepository.findById(fee1.getId()).orElseThrow();
+        StudentFee updatedFee2 = studentFeeRepository.findById(fee2.getId()).orElseThrow();
+
+        boolean fee1Paid = updatedFee1.getPaidAmount().compareTo(new BigDecimal("18000.00")) == 0;
+        boolean fee2Paid = updatedFee2.getPaidAmount().compareTo(new BigDecimal("18000.00")) == 0;
 
         assertThat(fee1Paid ^ fee2Paid).isTrue();
 

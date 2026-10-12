@@ -1,5 +1,6 @@
 package com.erp.finance;
 
+import com.erp.common.exception.BusinessException;
 import com.erp.academic.academic_year.entity.AcademicYear;
 import com.erp.academic.academic_year.repository.AcademicYearRepository;
 import com.erp.auth.entity.AppUser;
@@ -575,7 +576,7 @@ public class FinanceModuleIntegrityAuditTest {
     }
 
     @Test
-    @DisplayName("Idempotency: Reusing idempotency key with different payload is rejected with IllegalArgumentException")
+    @DisplayName("Idempotency: Reusing idempotency key with different payload is rejected with BusinessException (HTTP 409 Conflict)")
     void sameIdempotencyKeyWithDifferentPayload_rejectedWithException() {
         StudentFee fee = studentFeeService.assignFeeStructure(testStudent1.getId(), testStructure.getId(), testAcademicYear.getId());
         String idempotencyKey = "IDEMP-CONFLICT-" + UUID.randomUUID();
@@ -596,7 +597,7 @@ public class FinanceModuleIntegrityAuditTest {
         req2.setPaymentMethod(PaymentMethod.ONLINE);
         req2.setIdempotencyKey(idempotencyKey);
 
-        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        org.junit.jupiter.api.Assertions.assertThrows(BusinessException.class, () -> {
             paymentService.recordPayment(req2, fee.getId());
         });
 
@@ -751,7 +752,7 @@ public class FinanceModuleIntegrityAuditTest {
         req2.setPaymentMethod(PaymentMethod.ONLINE);
         req2.setIdempotencyKey(idempotencyKey);
 
-        assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(BusinessException.class, () -> {
             paymentService.recordPayment(req2, fee2.getId());
         });
 
@@ -788,7 +789,7 @@ public class FinanceModuleIntegrityAuditTest {
                 req.setIdempotencyKey(idempotencyKey);
                 paymentService.recordPayment(req, fee1.getId());
                 successCount.incrementAndGet();
-            } catch (IllegalArgumentException iae) {
+            } catch (BusinessException be) {
                 rejectedCount.incrementAndGet();
             } catch (Exception e) {
                 unexpectedErrorCount.incrementAndGet();
@@ -806,7 +807,7 @@ public class FinanceModuleIntegrityAuditTest {
                 req.setIdempotencyKey(idempotencyKey);
                 paymentService.recordPayment(req, fee2.getId());
                 successCount.incrementAndGet();
-            } catch (IllegalArgumentException iae) {
+            } catch (BusinessException be) {
                 rejectedCount.incrementAndGet();
             } catch (Exception e) {
                 unexpectedErrorCount.incrementAndGet();
