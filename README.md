@@ -1,4 +1,4 @@
-# Institutional ERP v1.0
+# EduPulse
 
 > **Canonical Enterprise Resource Planning Documentation for Higher Education Institutions**  
 > *Architected with Java 21 LTS, Spring Boot 3.3.4, PostgreSQL 17/18, Flyway Migrations, React 19, and Vite 8.*
@@ -13,6 +13,16 @@
 [![License Status](https://img.shields.io/badge/License-Owner_Decision_Pending-lightgrey)](#20-license-acknowledgements--owner-action-register)
 
 ---
+
+### Core Team Members & Project Contributors
+
+| Member Name | Project Role | Git Author / Profile | Key Responsibilities & Contributions |
+| :--- | :--- | :--- | :--- |
+| **Lakshya Goyal** | Project Lead & Full-Stack / System Integration Lead | [`2204Zero`](https://github.com/2204Zero)<br/>`lakshyagoyal701@gmail.com` | Overall EduPulse system integration; end-to-end coordination across backend, frontend, database, and deployment; system-wide audits and bug tracking; frontend hardening and integration fixes; cross-module regression testing; release preparation, deployment configuration, project documentation, and final acceptance/demo coordination. |
+| **Palak Agarwal** | Student Information System (SIS) Lead | `inagarwalpalak2005@gmail.com`<br/>*(Profile link pending)* | End-to-end design and implementation of the Student Information System (SIS); Student Profile CRUD, pagination, and multi-field search (`com.erp.student`); Guardian management and 1:N relational linking (`com.erp.guardian`); Student document repository (`StudentDocument`); Student status lifecycle state machine with immutable audit logging (`StudentStatusHistoryService`); 35 automated test cases in the master SIS test suite (100% pass rate); Automated demo harness `StudentModuleDemonstrationTest.java` and companion scripts (`run_student_demo.ps1`, `run_student_demo.bat`). |
+| **Manish Sharma** | Security & Access Control Lead | `sharmamanish48118@gmail.com`<br/>*(Profile link pending)* | Enterprise authentication, JWT bearer token lifecycle, and database-backed session management (`Session` entity, `SessionService`); Dynamic user-role assignment with JPA `@ElementCollection` and role normalization (`RoleAssignmentService`); Method-level security enforcement (`@EnableMethodSecurity`) and custom JSON error handling (`JwtAuthenticationEntryPoint`, `CustomAccessDeniedHandler`); Secure password recovery workflow with 15-minute single-use UUID tokens (`PasswordResetToken`); Security integration test suites (`AuthenticationIntegrationTest`, `RbacAndPermissionIntegrationTest`). |
+| **Lakshya Singhal** | Frontend Architect & Lead Hardening | [`lakshyasinghal08`](https://github.com/lakshyasinghal08)<br/>`lakshyasinghal92@gmail.com` | Enterprise frontend architecture across `src/` and `frontend-v2/` (React 19, Vite 8, TanStack Query v5, Zustand, Tailwind CSS); Centralized typed HTTP client (`apiClient`), Axios interceptors, correlation IDs, and token refresh queues (`DATA_LAYER_README.md`, `INTEGRATION_README.md`); Generic in-memory cache manager with TTL invalidation; Responsive administrative dashboard with KPI metrics and role-based route guards (`RoleGuard`); PostgreSQL integration test harness, concurrency hardening (`FinanceConcurrencyPostgresIT`), and fail-fast test security guards (`PostgresSafetyGuard`). |
+| **Prashant Jain** | Institutional & Campus Lead | `prashantjain.code@gmail.com`<br/>*(Profile link pending)* | Institution metadata, accreditation records, and multi-campus relational hierarchy (`CampusController`, `InstitutionController`); Campus registration, facility details, and directory endpoints; Academic scheduling security evaluators and timetable constraint validation (`AcademicSchedulingSecurity.java`); Co-authored Git branch registry conventions (`docs/Branch-Registry.md`). |
 
 ## 📑 Table of Contents
 
@@ -41,7 +51,7 @@
 
 ## 1. Project Introduction & Identity
 
-**Institutional ERP v1.0** is an enterprise-grade academic and administrative management platform engineered to unify university operations into a cohesive, secure, and performant modular monolith. Designed for universities, colleges, and polytechnic institutes, the system integrates student records, guardian directories, document archiving, academic lifecycle transitions, role-based access control, fee billing, and campus infrastructure.
+**EduPulse** is an enterprise-grade academic and administrative management platform engineered to unify university operations into a cohesive, secure, and performant modular monolith. Designed for universities, colleges, and polytechnic institutes, the system integrates student records, guardian directories, document archiving, academic lifecycle transitions, role-based access control, fee billing, and campus infrastructure.
 
 - **Primary Repository**: [`Institutioanl_ERP_v1.0`](https://github.com/2204Zero/Institutioanl_ERP_v1.0.git)
 - **Authoritative Frontend**: [`frontend-v2/`](frontend-v2) (React 19, Vite 8, TanStack Query v5, Tailwind CSS, Radix UI, port 5173)
@@ -49,11 +59,127 @@
 - **Primary Database**: PostgreSQL 17/18 with Flyway versioned migrations (`V1` to `V5`)
 - **Active Release Baseline**: `v1.0-RC1` (Branch: `develop` / Release Candidate)
 
+
+
+### Repository Directory Structure
+
+The following tree represents the verified, meaningful organization of the repository across backend services, frontend applications, deployment infrastructure, migrations, tests, and documentation:
+
+```text
+Institutional_ERP_v1.0/
+├── README.md                                  # Canonical project entry point & master architecture guide
+├── CONTRIBUTING.md                            # Contribution guidelines, branching rules & PR standards
+├── SECURITY.md                                # Vulnerability disclosure policy & security controls
+├── CHANGELOG.md                               # Version history & release candidate audit logs
+├── DATA_LAYER_README.md                       # Frontend data layer, caching & HTTP client architecture
+├── INTEGRATION_README.md                      # Frontend–backend integration flow & JWT queue guide
+├── package.json                               # Root package manifest (React 18 / legacy frontend tooling)
+├── tsconfig.json                              # TypeScript configuration for root client source
+├── vite.config.ts                             # Vite configuration for root client
+├── tailwind.config.js                         # Tailwind CSS configuration for root client
+├── .dockerignore                              # Root Docker build exclusion rules
+├── .gitignore                                 # Git version control exclusions
+├── run_student_demo.ps1                       # Automated PowerShell one-click SIS demo runner
+├── run_student_demo.bat                       # Automated Windows Batch one-click SIS demo runner
+│
+├── backend/                                   # Spring Boot 3.3.4 (Java 21 LTS) backend service
+│   ├── pom.xml                                # Maven build descriptor and dependency definitions
+│   ├── mvnw / mvnw.cmd                        # Maven wrapper executables
+│   ├── .dockerignore                          # Backend Docker build exclusion rules
+│   ├── java security/                         # Sprint security documentation
+│   │   └── Day_1_to_6_Documentation.md        # Session, auth, user, role & recovery sprint notes
+│   └── src/
+│       ├── main/
+│       │   ├── java/com/erp/                  # Core domain packages (modular monolith)
+│       │   │   ├── academic/                  # Programs, courses, academic calendar, offerings
+│       │   │   ├── admin/                     # System administrative management
+│       │   │   ├── admission/                 # Student admissions workflow
+│       │   │   ├── attendance/                # Class session & student attendance tracking
+│       │   │   ├── auth/                      # Authentication, sessions, user management
+│       │   │   ├── campus/                    # Campus facilities & directory controllers
+│       │   │   ├── common/                    # Shared DTOs, utilities, exceptions
+│       │   │   ├── config/                    # Spring configuration & OpenAPI 3 definitions
+│       │   │   ├── dashboard/                 # KPI metrics aggregation endpoints
+│       │   │   ├── department/                # Academic departments management
+│       │   │   ├── faculty/                   # Faculty profiles & workload allocations
+│       │   │   ├── finance/                   # Fee structures, billing, payment processing
+│       │   │   ├── guardian/                  # Student guardian directory & relationships
+│       │   │   ├── institution/               # Institution profile & governance
+│       │   │   ├── security/                  # JWT filters, entry points, access handlers
+│       │   │   └── student/                   # Student entity, profile CRUD, docs, status history
+│       │   └── resources/
+│       │       ├── application.properties     # Runtime configuration (port 8081, dev/h2 profile)
+│       │       └── db/migration/              # Flyway database migrations
+│       │           ├── V1__baseline_erp_schema.sql
+│       │           ├── V2__persistent_user_management.sql
+│       │           ├── V3__enforce_faculty_fk.sql
+│       │           ├── V4__link_users_to_domain_entities.sql
+│       │           └── V5__payment_idempotency.sql
+│       └── test/java/com/erp/                 # Automated test suites
+│           ├── AuthenticationIntegrationTest.java
+│           ├── RbacAndPermissionIntegrationTest.java
+│           ├── campus/ / institution/         # Controller & MockMvc unit tests
+│           ├── guardian/ / student/           # SIS unit tests & demo harness
+│           └── it/postgres/                   # PostgreSQL 17 integration tests & PostgresSafetyGuard
+│
+├── frontend-v2/                               # Authoritative modern React 19 frontend application
+│   ├── package.json                           # Dependencies: React 19, Vite 8, TanStack Query v5, Zustand
+│   ├── vite.config.ts                         # Vite configuration (port 5173, proxy rules)
+│   ├── tsconfig.json                          # TypeScript configuration
+│   ├── tailwind.config.js                     # Tailwind CSS design system tokens
+│   ├── README.md                              # Vite/React template documentation
+│   └── src/
+│       ├── components/                        # UI components (dialogs, tables, navigation, layouts)
+│       ├── config/                            # API endpoints & environment constants
+│       ├── hooks/                             # Custom React hooks (queries, mutations, auth)
+│       ├── pages/                             # Route views (Dashboard, Campuses, Students, Finance)
+│       ├── store/                             # Client-side state stores (Zustand)
+│       └── types/                             # TypeScript type definitions and interfaces
+│
+├── src/                                       # Secondary / initial sprint frontend source
+│   ├── components/ / config/ / hooks/         # Modular React 18 component structure
+│   ├── pages/ / services/ / store/ / types/   # Integration services, Axios client, token storage
+│   └── utils/                                 # Cache manager, pagination & filter utilities
+│
+├── edupulse/                                  # Infrastructure, database containerization & DBA scripts
+│   ├── docker-compose.yml                     # Local compose (Postgres 18, Redis 7, RabbitMQ 3, MinIO)
+│   ├── docker-compose.prod.yml                # Production multi-stage container deployment
+│   ├── .env.example                           # Safe environment variable configuration template
+│   ├── README.md                              # Database operations, HikariCP & backup documentation
+│   └── V1_create_core_database.sql ...        # 3NF database design scripts (V1 through V26)
+│
+├── database/                                  # Relational schema reference DDL and seed scripts
+│   ├── schema/                                # Day-wise table definitions (students, guardians, docs, status)
+│   └── seeds/                                 # Initial development seed records
+│
+├── docs/                                      # Comprehensive project documentation repository
+│   ├── Branch-Registry.md                     # Official Git branch naming rules & contributor registry
+│   ├── project-overview/
+│   │   └── abstract.md                        # Academic abstract, problem statement & criteria
+│   ├── architecture/
+│   │   └── system-architecture.md             # 4-Tier architecture, sequence & component diagrams
+│   ├── database/
+│   │   └── schema-design.md                   # Relational schema design & foreign key rules
+│   ├── reports/
+│   │   └── weekly-progress-reports.md         # Team contributor registry & sprint logs (Days 01–06)
+│   ├── testing/
+│   │   └── master-test-report.md              # Unified QA report, test matrix & browser audit ledger
+│   ├── test-cases/                            # Automated test specifications
+│   │   ├── ALL_MODULES_COMPLETE_TEST_SUITE.txt# 35-Test SIS acceptance & traceability matrix
+│   │   └── day01_... to day06_...             # Day-by-day test case definitions
+│   └── API/
+│       └── student-api-spec.md                # REST API specifications, DTOs & curl commands
+│
+└── .github/
+    └── workflows/
+        └── ci.yml                             # GitHub Actions CI matrix (Frontend, Backend H2, Postgres IT)
+```
+
 ---
 
 ## 2. Abstract
 
-Modern higher education institutions struggle with operational silos, fragmented student records, uncoordinated fee tracking, and insecure credential management. **Institutional ERP v1.0** addresses these challenges by delivering a centralized, multi-tenant capable, modular monolith built on **Spring Boot 3.3.4 (Java 21 LTS)** and a modern **React 19** frontend.
+Modern higher education institutions struggle with operational silos, fragmented student records, uncoordinated fee tracking, and insecure credential management. **EduPulse** addresses these challenges by delivering a centralized, multi-tenant capable, modular monolith built on **Spring Boot 3.3.4 (Java 21 LTS)** and a modern **React 19** frontend.
 
 The platform provides a comprehensive **Student Information System (SIS)** supporting multi-attribute search, guardian linking, multipart document archiving, and an immutable academic status transition state machine (Active, Inactive, Suspended, Graduated, Alumni). Security is enforced through stateless JWT authentication backed by database-tracked session revocation, method-level Role-Based Access Control (`@PreAuthorize`), and strict Insecure Direct Object Reference (IDOR) mitigations. Database integrity is preserved across 5 Flyway migrations (`V1` to `V5`), enforcing relational cascades, payment idempotency keys, and automated identity linking.
 
@@ -303,6 +429,7 @@ The project was developed collaboratively across dedicated functional modules:
 
 | Member Name | Official Project Role | Primary Owned Modules | Major Verified Deliverables | Evidence Sources |
 | :--- | :--- | :--- | :--- | :--- |
+| **Lakshya Goyal** | Project Lead & Full-Stack / System Integration Lead | System Integration, Release Hardening, Documentation | Overall EduPulse integration, release candidate hardening, documentation system | Git history, release audit reports |
 | **Palak Agarwal** | Student Information System (SIS) Lead | Student Profile, Guardians, Documents, Status History | SIS Controller & Services, 35-test master suite, `run_student_demo.ps1` | [`docs/test-cases/`](docs/test-cases/), `backend/src/main/java/com/erp/student/` |
 | **Manish Sharma** | Security & Access Control Lead | Authentication, Sessions, User Roles, Password Recovery | `SessionService`, `AuthenticationIntegrationTest`, RBAC method security | [`backend/java security/Day_1_to_6_Documentation.md`](<backend/java security/Day_1_to_6_Documentation.md>) |
 | **Lakshya Singhal** | Frontend Architect & Full-Stack Integrator | Data Management Layer, Dashboard, Integration Architecture | `frontend-v2/`, `DATA_LAYER_README.md`, `INTEGRATION_README.md`, Postgres IT safety | [`DATA_LAYER_README.md`](DATA_LAYER_README.md), [`INTEGRATION_README.md`](INTEGRATION_README.md), [`frontend-v2/`](frontend-v2) |
