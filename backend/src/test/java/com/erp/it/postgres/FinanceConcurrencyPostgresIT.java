@@ -76,15 +76,15 @@ public class FinanceConcurrencyPostgresIT extends AbstractPostgresIT {
 
     @BeforeEach
     void cleanAndSetup() {
-        jdbcTemplate.execute("DELETE FROM finance_receipt WHERE student_id >= 9500");
-        jdbcTemplate.execute("DELETE FROM finance_payment_allocation WHERE id >= 9500");
-        jdbcTemplate.execute("DELETE FROM finance_payment WHERE student_id >= 9500");
-        jdbcTemplate.execute("DELETE FROM student_fee_component WHERE id >= 9500");
-        jdbcTemplate.execute("DELETE FROM student_fee WHERE student_id >= 9500");
-        jdbcTemplate.execute("DELETE FROM fee_structure_component WHERE id >= 9500");
-        jdbcTemplate.execute("DELETE FROM fee_structure WHERE id >= 9500");
-        jdbcTemplate.execute("DELETE FROM fee_head WHERE id >= 9500");
-        jdbcTemplate.execute("DELETE FROM students WHERE id >= 9500");
+        jdbcTemplate.execute("DELETE FROM finance_receipt WHERE student_id IN (SELECT id FROM students WHERE roll_number LIKE 'PG-STU-95%')");
+        jdbcTemplate.execute("DELETE FROM finance_payment_allocation WHERE payment_id IN (SELECT id FROM finance_payment WHERE student_id IN (SELECT id FROM students WHERE roll_number LIKE 'PG-STU-95%'))");
+        jdbcTemplate.execute("DELETE FROM finance_payment WHERE student_id IN (SELECT id FROM students WHERE roll_number LIKE 'PG-STU-95%')");
+        jdbcTemplate.execute("DELETE FROM student_fee_component WHERE student_fee_id IN (SELECT id FROM student_fee WHERE student_id IN (SELECT id FROM students WHERE roll_number LIKE 'PG-STU-95%'))");
+        jdbcTemplate.execute("DELETE FROM student_fee WHERE student_id IN (SELECT id FROM students WHERE roll_number LIKE 'PG-STU-95%')");
+        jdbcTemplate.execute("DELETE FROM fee_structure_component WHERE fee_structure_id IN (SELECT id FROM fee_structure WHERE code LIKE 'PG-FS-95%')");
+        jdbcTemplate.execute("DELETE FROM fee_structure WHERE code LIKE 'PG-FS-95%'");
+        jdbcTemplate.execute("DELETE FROM fee_head WHERE code LIKE 'PG-HEAD-95%'");
+        jdbcTemplate.execute("DELETE FROM students WHERE roll_number LIKE 'PG-STU-95%'");
 
         testAcademicYear = academicYearRepository.findAll().stream().findFirst().orElseGet(() -> {
             AcademicYear ay = new AcademicYear();
@@ -124,6 +124,19 @@ public class FinanceConcurrencyPostgresIT extends AbstractPostgresIT {
         fsc.setAmount(new BigDecimal("50000.00"));
         testStructure.getComponents().add(fsc);
         testStructure = feeStructureRepository.save(testStructure);
+    }
+
+    @org.junit.jupiter.api.AfterEach
+    void cleanUp() {
+        jdbcTemplate.execute("DELETE FROM finance_receipt WHERE student_id IN (SELECT id FROM students WHERE roll_number LIKE 'PG-STU-95%')");
+        jdbcTemplate.execute("DELETE FROM finance_payment_allocation WHERE payment_id IN (SELECT id FROM finance_payment WHERE student_id IN (SELECT id FROM students WHERE roll_number LIKE 'PG-STU-95%'))");
+        jdbcTemplate.execute("DELETE FROM finance_payment WHERE student_id IN (SELECT id FROM students WHERE roll_number LIKE 'PG-STU-95%')");
+        jdbcTemplate.execute("DELETE FROM student_fee_component WHERE student_fee_id IN (SELECT id FROM student_fee WHERE student_id IN (SELECT id FROM students WHERE roll_number LIKE 'PG-STU-95%'))");
+        jdbcTemplate.execute("DELETE FROM student_fee WHERE student_id IN (SELECT id FROM students WHERE roll_number LIKE 'PG-STU-95%')");
+        jdbcTemplate.execute("DELETE FROM fee_structure_component WHERE fee_structure_id IN (SELECT id FROM fee_structure WHERE code LIKE 'PG-FS-95%')");
+        jdbcTemplate.execute("DELETE FROM fee_structure WHERE code LIKE 'PG-FS-95%'");
+        jdbcTemplate.execute("DELETE FROM fee_head WHERE code LIKE 'PG-HEAD-95%'");
+        jdbcTemplate.execute("DELETE FROM students WHERE roll_number LIKE 'PG-STU-95%'");
     }
 
     @Test
