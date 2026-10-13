@@ -233,24 +233,21 @@ class RbacAndPermissionIntegrationTest {
 
     @Test
     @DisplayName("Day 06 ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Admin: Should allow managing institution settings")
-    void shouldAllowAdminToManageInstitution() throws Exception {
+    void shouldForbidAdminFromManagingInstitution() throws Exception {
         String token = obtainAccessToken("admin", "Admin@123");
         com.erp.institution.dto.InstitutionCreateRequest createReq = new com.erp.institution.dto.InstitutionCreateRequest("Apex Institute", "APEX");
-        MvcResult res = mockMvc.perform(post("/api/v1/institutions")
+        mockMvc.perform(post("/api/v1/institutions")
             .header("Authorization", "Bearer " + token)
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(createReq)))
-            .andReturn();
-        Long id = objectMapper.readTree(res.getResponse().getContentAsString()).get("id").asLong();
+            .andExpect(status().isForbidden());
 
-        Map<String, String> payload = Map.of("name", "Apex Institute - Updated Campus", "code", "APEX");
-
-        mockMvc.perform(put("/api/v1/institutions/" + id)
-                        .header("Authorization", "Bearer " + token)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(payload)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Apex Institute - Updated Campus"));
+        com.erp.campus.dto.CampusCreateRequest campusReq = new com.erp.campus.dto.CampusCreateRequest("Main Campus", "123 Main St", 1L);
+        mockMvc.perform(post("/api/v1/campuses")
+            .header("Authorization", "Bearer " + token)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(campusReq)))
+            .andExpect(status().isForbidden());
     }
 
     @Test

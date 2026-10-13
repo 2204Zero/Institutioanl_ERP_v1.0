@@ -18,7 +18,6 @@ public enum Role {
             Permission.STUDENT_PROFILE_UPDATE,
             Permission.ATTENDANCE_READ,
             Permission.FEES_READ,
-            Permission.INSTITUTION_MANAGE,
             Permission.INSTITUTION_READ
     )),
     FACULTY("ROLE_FACULTY", EnumSet.of(
