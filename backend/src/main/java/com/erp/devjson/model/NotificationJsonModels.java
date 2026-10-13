@@ -20,6 +20,7 @@ public class NotificationJsonModels {
         private String message;
         private String type; // INFO, WARNING, SUCCESS, ERROR
         private Boolean read;
+        @com.fasterxml.jackson.annotation.JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
         private LocalDateTime createdAt;
     }
 }

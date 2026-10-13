@@ -1,5 +1,5 @@
 
-import { Search, Loader2, Building2, MoreHorizontal, Trash, Edit } from 'lucide-react';
+import { Search, Loader2, Building2, MoreHorizontal, Trash } from 'lucide-react';
 import { apiClient } from '../config/api';
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
@@ -128,9 +128,6 @@ export default function InstitutionsList() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem className="cursor-pointer" onClick={() => toast.info('Edit mode not fully implemented yet')}>
-                          <Edit className="w-4 h-4 mr-2" /> Edit
-                        </DropdownMenuItem>
                         <DropdownMenuItem className="text-destructive focus:text-destructive cursor-pointer" onClick={() => {
                           if(window.confirm('Are you sure you want to delete this institution?')) deleteMutation.mutate(inst.id);
                         }}>

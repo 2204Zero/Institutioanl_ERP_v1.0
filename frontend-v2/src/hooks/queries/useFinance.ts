@@ -212,3 +212,77 @@ export const useRecordPayment = () => {
     },
   });
 };
+
+export interface FeeHead {
+  id: number;
+  code: string;
+  name: string;
+  description?: string;
+  type?: string;
+  isActive?: boolean;
+}
+
+export const useFeeHeads = (options?: { enabled?: boolean }) => {
+  return useQuery({
+    queryKey: ['fee-heads'],
+    queryFn: async () => {
+      const response = await apiClient.get<FeeHead[]>('/api/v1/finance/fee-heads');
+      return response.data;
+    },
+    enabled: options?.enabled ?? true,
+  });
+};
+
+export const useCreateFeeHead = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (head: { name: string; code?: string; description?: string }) => {
+      const response = await apiClient.post<FeeHead>('/api/v1/finance/fee-heads', head);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fee-heads'] });
+    },
+  });
+};
+
+export const useCreateFeeStructure = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: { name: string; code: string; academicYearId?: number; programId?: number }) => {
+      const response = await apiClient.post<FeeStructure>('/api/v1/finance/fee-structures', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fee-structures'] });
+    },
+  });
+};
+
+export const useApproveFeeStructure = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const response = await apiClient.patch<FeeStructure>(`/api/v1/finance/fee-structures/${id}/approve`);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fee-structures'] });
+    },
+  });
+};
+
+export const useAddComponentToFeeStructure = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ structureId, headId, amount }: { structureId: number; headId: number; amount: number }) => {
+      const response = await apiClient.post<FeeStructure>(
+        `/api/v1/finance/fee-structures/${structureId}/components?headId=${headId}&amount=${amount}`
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fee-structures'] });
+    },
+  });
+};

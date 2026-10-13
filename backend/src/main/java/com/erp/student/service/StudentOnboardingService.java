@@ -96,6 +96,30 @@ public class StudentOnboardingService {
             }
         }
 
+        // Canonical enrollment number generation (ENR-YYYY-XXXXX)
+        int currentYear = LocalDate.now().getYear();
+        String prefix = String.format("ENR-%d-", currentYear);
+        long maxSeq = 0;
+        for (Student s : studentRepository.findAll()) {
+            String enr = s.getEnrollmentNumber();
+            if (enr != null && enr.startsWith(prefix)) {
+                try {
+                    String seqPart = enr.substring(prefix.length());
+                    long seq = Long.parseLong(seqPart);
+                    if (seq > maxSeq) {
+                        maxSeq = seq;
+                    }
+                } catch (NumberFormatException ignored) {}
+            }
+        }
+        long nextSeq = maxSeq + 1;
+        String canonicalEnrollmentNumber = String.format("%s%05d", prefix, nextSeq);
+        while (studentRepository.existsByEnrollmentNumber(canonicalEnrollmentNumber)) {
+            nextSeq++;
+            canonicalEnrollmentNumber = String.format("%s%05d", prefix, nextSeq);
+        }
+
+        student.setEnrollmentNumber(canonicalEnrollmentNumber);
         student.setAddress(applicant.getAddress());
         Student savedStudent = studentRepository.save(student);
 
@@ -108,7 +132,7 @@ public class StudentOnboardingService {
         }
 
         StudentEnrollment enrollment = new StudentEnrollment();
-        enrollment.setEnrollmentNumber("ENR-" + savedStudent.getRollNumber());
+        enrollment.setEnrollmentNumber(canonicalEnrollmentNumber);
         enrollment.setStudent(savedStudent);
         enrollment.setAcademicYearId(application.getAcademicYear().getId());
         enrollment.setProgramId(program.getId());

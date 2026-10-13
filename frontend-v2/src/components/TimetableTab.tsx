@@ -7,13 +7,21 @@ import {
   useCourseOfferings,
   useCourses,
   useSemesters,
-  useRooms
+  useRooms,
+  useCreateRoom
 } from '../hooks/queries/useAcademics';
 import { useAuthStore } from '../store/useAuthStore';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { toast } from 'sonner';
-import { Loader2, Plus, Calendar as CalendarIcon, FileText } from 'lucide-react';
+import { Loader2, Plus, Calendar as CalendarIcon, FileText, Building2 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter
+} from './ui/dialog';
 import {
   Table,
   TableBody,
@@ -28,6 +36,9 @@ const DAYS_OF_WEEK = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "S
 export function TimetableTab() {
   const [selectedSectionId, setSelectedSectionId] = useState<number | ''>('');
   const [isCreating, setIsCreating] = useState(false);
+  const [isRoomModalOpen, setIsRoomModalOpen] = useState(false);
+  const [newRoomName, setNewRoomName] = useState('');
+  const [newRoomCapacity, setNewRoomCapacity] = useState('60');
 
   // Form State
   const [ttFacultyId, setTtFacultyId] = useState<string>('');
@@ -48,6 +59,26 @@ export function TimetableTab() {
 
   const { data: timetable, isLoading: isLoadingTimetable } = useTimetable(selectedSectionId as number);
   const allocateSlot = useAllocateSlot();
+  const createRoomMutation = useCreateRoom();
+
+  const handleCreateRoom = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newRoomName.trim()) return;
+    try {
+      const created = await createRoomMutation.mutateAsync({
+        name: newRoomName.trim(),
+        capacity: parseInt(newRoomCapacity) || 40,
+        isActive: true,
+      });
+      toast.success(`Room '${created.name}' created successfully`);
+      setTtRoomId(String(created.id));
+      setIsRoomModalOpen(false);
+      setNewRoomName('');
+      setNewRoomCapacity('60');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to create room');
+    }
+  };
 
   const handleAllocate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -133,7 +164,18 @@ export function TimetableTab() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Room</label>
+              <div className="flex justify-between items-center mb-1">
+                <label className="block text-xs font-bold text-slate-700">Room</label>
+                {isAdmin && (
+                  <button
+                    type="button"
+                    onClick={() => setIsRoomModalOpen(true)}
+                    className="text-xs text-blue-600 hover:underline font-medium"
+                  >
+                    + New Room
+                  </button>
+                )}
+              </div>
               <select required className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm" value={ttRoomId} onChange={e => setTtRoomId(e.target.value)}>
                 <option value="">Select Room...</option>
                 {rooms?.map(r => <option key={r.id} value={r.id}>{r.name} (Cap: {r.capacity})</option>)}
@@ -223,6 +265,49 @@ export function TimetableTab() {
           </Table>
         </div>
       )}
+
+      {/* Create Room Modal */}
+      <Dialog open={isRoomModalOpen} onOpenChange={setIsRoomModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center text-base font-bold">
+              <Building2 className="w-5 h-5 mr-2 text-slate-700" />
+              Create Classroom / Lecture Room
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleCreateRoom} className="space-y-4 py-2">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Room Name / Code*</label>
+              <Input
+                required
+                placeholder="e.g. Room 301, Lab B, Seminar Hall"
+                value={newRoomName}
+                onChange={e => setNewRoomName(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Capacity (Seats)*</label>
+              <Input
+                required
+                type="number"
+                min="1"
+                placeholder="e.g. 60"
+                value={newRoomCapacity}
+                onChange={e => setNewRoomCapacity(e.target.value)}
+              />
+            </div>
+            <DialogFooter className="pt-2">
+              <Button type="button" variant="outline" onClick={() => setIsRoomModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={createRoomMutation.isPending}>
+                {createRoomMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Save Room
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

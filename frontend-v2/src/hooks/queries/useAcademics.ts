@@ -23,6 +23,8 @@ export interface Course {
 export interface Batch {
   id: number;
   code: string;
+  name?: string;
+  programId?: number;
   admissionYear: number;
   graduationYear: number;
   isActive: boolean;
@@ -31,6 +33,7 @@ export interface Batch {
 export interface AcademicYear {
   id: number;
   name: string;
+  code?: string;
   startDate: string;
   endDate: string;
   isActive: boolean;
@@ -258,6 +261,19 @@ export const useRooms = () => {
     queryFn: async () => {
       const response = await apiClient.get<Room[]>('/api/v1/rooms');
       return response.data;
+    },
+  });
+};
+
+export const useCreateRoom = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: { name: string; capacity: number; isActive?: boolean }) => {
+      const response = await apiClient.post<Room>('/api/v1/rooms', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
     },
   });
 };

@@ -13,6 +13,7 @@ public class StudentResponseDto {
 
     private Long id;
     private String rollNumber;
+    private String enrollmentNumber;
     private String firstName;
     private String lastName;
     private String fullName;
@@ -57,6 +58,14 @@ public class StudentResponseDto {
 
     public void setRollNumber(String rollNumber) {
         this.rollNumber = rollNumber;
+    }
+
+    public String getEnrollmentNumber() {
+        return enrollmentNumber;
+    }
+
+    public void setEnrollmentNumber(String enrollmentNumber) {
+        this.enrollmentNumber = enrollmentNumber;
     }
 
     public String getFirstName() {

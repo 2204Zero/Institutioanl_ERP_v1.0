@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '../store/useAuthStore';
 import { apiClient } from '../config/api';
@@ -7,8 +7,9 @@ import type { Student, StudentStatus } from '../types/student';
 import type { GuardianResponseDto } from '../types/guardian';
 import { 
   User, Mail, Phone, MapPin, Building2, Calendar, 
-  BookOpen, MoreVertical, Edit, ShieldAlert, HeartHandshake, Loader2,
-  AlertCircle, Download, FileText, CalendarCheck, Wallet, Clock
+  BookOpen, MoreVertical, Edit, Loader2,
+  AlertCircle, Download, FileText, CalendarCheck, Wallet, Clock,
+  CreditCard, Copy, Check, Eye, ArrowUpRight
 } from 'lucide-react';
 import { PageFrame } from '../components/ui/PageFrame';
 import { Button } from '../components/ui/button';
@@ -26,6 +27,9 @@ import { StudentAcademicTab } from '../components/StudentAcademicTab';
 import { StudentFeesTab } from '../components/StudentFeesTab';
 import { StudentStatusHistoryTab } from '../components/StudentStatusHistoryTab';
 import { ChangeStudentStatusDialog } from '../components/ChangeStudentStatusDialog';
+import { StudentIdCardModal } from '../components/StudentIdCardModal';
+import { StudentTranscriptModal } from '../components/StudentTranscriptModal';
+import { EditStudentDialog } from '../components/EditStudentDialog';
 
 const VALID_TRANSITIONS: Record<StudentStatus, { status: StudentStatus; label: string; className?: string }[]> = {
   ACTIVE: [
@@ -53,6 +57,16 @@ const VALID_TRANSITIONS: Record<StudentStatus, { status: StudentStatus; label: s
   TRANSFERRED: [],
 };
 
+function formatDateDisplay(val: any): string {
+  if (!val) return 'N/A';
+  if (Array.isArray(val) && val.length >= 3) {
+    const [y, m, d] = val;
+    return `${String(y).padStart(4, '0')}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  }
+  const d = new Date(val);
+  return isNaN(d.getTime()) ? String(val) : d.toLocaleDateString();
+}
+
 export default function StudentProfile() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -62,6 +76,10 @@ export default function StudentProfile() {
   const [activeTab, setActiveTab] = useState<'overview' | 'academic' | 'attendance' | 'fees' | 'documents' | 'history'>('overview');
   const [selectedTargetStatus, setSelectedTargetStatus] = useState<StudentStatus | null>(null);
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isIdCardModalOpen, setIsIdCardModalOpen] = useState(false);
+  const [isTranscriptModalOpen, setIsTranscriptModalOpen] = useState(false);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   const { data: student, isLoading, isError } = useQuery<Student>({
     queryKey: ['student', id],
@@ -80,7 +98,33 @@ export default function StudentProfile() {
     enabled: !!id
   });
 
+  const { data: documentsResponse, isLoading: isLoadingDocs } = useQuery({
+    queryKey: ['student-documents', id],
+    queryFn: async () => {
+      const res = await apiClient.get(`/api/v1/students/${id}/documents`);
+      return res.data?.data || [];
+    },
+    enabled: !!id && activeTab === 'documents'
+  });
+
+  const { data: attendanceRecords = [], isLoading: isLoadingAttendance } = useQuery({
+    queryKey: ['student-attendance', id],
+    queryFn: async () => {
+      const res = await apiClient.get(`/api/v1/attendance/student/${id}`);
+      return res.data || [];
+    },
+    enabled: !!id && activeTab === 'attendance'
+  });
+
   const guardians: GuardianResponseDto[] = guardiansResponse?.data || [];
+  const documents: any[] = documentsResponse || [];
+
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedKey(label);
+    toast.success(`Copied ${label} to clipboard!`);
+    setTimeout(() => setCopiedKey(null), 2000);
+  };
 
   if (isLoading) {
     return (
@@ -92,12 +136,16 @@ export default function StudentProfile() {
 
   if (isError || !student) {
     return (
-      <PageFrame title="Student Not Found" breadcrumbs={[{ label: 'Students', href: '/dashboard/students' }, { label: 'Error' }]}>
+      <PageFrame title="Student Not Found" breadcrumbs={[{ label: 'Students', href: '/dashboard/students' }, { label: 'Not Found' }]}>
         <div className="flex flex-col items-center justify-center p-12 bg-white border border-slate-200">
-          <AlertCircle className="h-10 w-10 text-red-500 mb-3" />
-          <h2 className="text-sm font-bold text-slate-900 uppercase">Failed to load student</h2>
-          <p className="text-xs text-slate-500 mt-1">The student record may have been deleted or you don't have permission to view it.</p>
-          <Button onClick={() => navigate('/dashboard/students')} variant="outline" size="sm" className="mt-4">Return to Directory</Button>
+          <AlertCircle className="h-10 w-10 text-amber-500 mb-3" />
+          <h2 className="text-sm font-bold text-slate-900 uppercase">Student Record Not Found</h2>
+          <p className="text-xs text-slate-500 mt-1 max-w-md text-center">
+            The requested student record (#{id}) could not be found or you do not have permission to view it.
+          </p>
+          <Button onClick={() => navigate('/dashboard/students')} variant="outline" size="sm" className="mt-4">
+            Return to Directory
+          </Button>
         </div>
       </PageFrame>
     );
@@ -117,48 +165,100 @@ export default function StudentProfile() {
   return (
     <PageFrame
       title={`${student.firstName} ${student.lastName}`}
-      description={student.rollNumber ? `ID: ${student.rollNumber}` : 'Pending Enrollment ID'}
+      description={
+        <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600 mt-1">
+          <div className="flex items-center space-x-1 font-mono bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+            <span className="text-slate-500 text-[10px] uppercase font-sans font-bold">Internal ID:</span>
+            <span className="font-bold text-slate-900">#{student.id}</span>
+            <button
+              onClick={() => copyToClipboard(String(student.id), 'Student ID')}
+              className="text-slate-400 hover:text-slate-800 ml-1"
+              title="Copy Student ID"
+            >
+              {copiedKey === 'Student ID' ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+            </button>
+          </div>
+
+          <div className="flex items-center space-x-1 font-mono bg-blue-50 text-blue-900 px-2 py-0.5 rounded border border-blue-200">
+            <span className="text-blue-700 text-[10px] uppercase font-sans font-bold">Canonical ENR:</span>
+            <span className="font-bold">{student.enrollmentNumber || 'Pending'}</span>
+            {student.enrollmentNumber && (
+              <button
+                onClick={() => copyToClipboard(student.enrollmentNumber!, 'Enrollment Number')}
+                className="text-blue-500 hover:text-blue-900 ml-1"
+                title="Copy Enrollment Number"
+              >
+                {copiedKey === 'Enrollment Number' ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center space-x-1 font-mono bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+            <span className="text-slate-500 text-[10px] uppercase font-sans font-bold">Roll No:</span>
+            <span className="font-semibold text-slate-800">{student.rollNumber || 'None'}</span>
+            {student.rollNumber && (
+              <button
+                onClick={() => copyToClipboard(student.rollNumber, 'Roll Number')}
+                className="text-slate-400 hover:text-slate-800 ml-1"
+                title="Copy Roll Number"
+              >
+                {copiedKey === 'Roll Number' ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+              </button>
+            )}
+          </div>
+        </div>
+      }
       breadcrumbs={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Students', href: '/dashboard/students' }, { label: student.firstName }]}
       actions={
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-2">
           <StatusBadge status={student.status} />
           
           {canManage && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-8 text-xs font-semibold">
-                  <MoreVertical className="w-3.5 h-3.5 mr-1" /> Options
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52 text-xs bg-white border border-slate-200 shadow-md">
-                <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-slate-500">
-                  Manage Lifecycle Status
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {validOptions.length > 0 ? (
-                  validOptions.map((opt) => (
-                    <DropdownMenuItem
-                      key={opt.status}
-                      className={`cursor-pointer ${opt.className || ''}`}
-                      onClick={() => {
-                        setSelectedTargetStatus(opt.status);
-                        setIsStatusDialogOpen(true);
-                      }}
-                    >
-                      {opt.label}
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs font-semibold bg-white hover:bg-slate-50 border-slate-300"
+                onClick={() => setIsEditDialogOpen(true)}
+              >
+                <Edit className="w-3.5 h-3.5 mr-1 text-slate-600" /> Edit Profile
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-8 text-xs font-semibold">
+                    <MoreVertical className="w-3.5 h-3.5 mr-1" /> Options
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-52 text-xs bg-white border border-slate-200 shadow-md">
+                  <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-slate-500">
+                    Manage Lifecycle Status
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {validOptions.length > 0 ? (
+                    validOptions.map((opt) => (
+                      <DropdownMenuItem
+                        key={opt.status}
+                        className={`cursor-pointer ${opt.className || ''}`}
+                        onClick={() => {
+                          setSelectedTargetStatus(opt.status);
+                          setIsStatusDialogOpen(true);
+                        }}
+                      >
+                        {opt.label}
+                      </DropdownMenuItem>
+                    ))
+                  ) : (
+                    <DropdownMenuItem disabled className="text-slate-400 italic">
+                      Terminal Status (No Transitions)
                     </DropdownMenuItem>
-                  ))
-                ) : (
-                  <DropdownMenuItem disabled className="text-slate-400 italic">
-                    Terminal Status (No Transitions)
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="cursor-pointer" onClick={() => setIsEditDialogOpen(true)}>
+                    <Edit className="w-3.5 h-3.5 mr-2" /> Edit Profile
                   </DropdownMenuItem>
-                )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => toast.info('Edit profile functionality coming soon')}>
-                  <Edit className="w-3.5 h-3.5 mr-2" /> Edit Profile
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
           )}
         </div>
       }
@@ -195,7 +295,7 @@ export default function StudentProfile() {
                 <div className="grid grid-cols-1 sm:grid-cols-2">
                   <div className="p-4 border-b sm:border-b-0 sm:border-r border-slate-200/50">
                     <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Date of Birth</p>
-                    <p className="font-semibold text-slate-900 mt-0.5">{student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString() : 'N/A'}</p>
+                    <p className="font-semibold text-slate-900 mt-0.5">{formatDateDisplay(student.dateOfBirth)}</p>
                   </div>
                   <div className="p-4 border-b sm:border-b-0 border-slate-200/50">
                     <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Gender</p>
@@ -218,42 +318,42 @@ export default function StudentProfile() {
                   <div className="sm:col-span-2 p-4 border-t border-slate-200/50">
                     <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Address</p>
                     <div className="flex items-start space-x-1.5 text-slate-900 font-semibold mt-0.5">
-                      <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
-                      <span>{student.address || 'Address not provided'}</span>
+                      <MapPin className="w-3.5 h-3.5 text-slate-400 mt-0.5" />
+                      <span>{student.address ? `${student.address}, ${student.city || ''}, ${student.state || ''} ${student.pincode || ''}` : 'Not provided'}</span>
                     </div>
                   </div>
                 </div>
               </div>
 
               <div className="border border-slate-200 bg-white">
-                <div className="px-4 py-3 border-b border-slate-200 bg-slate-50">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">Guardian Information</h3>
+                <div className="px-4 py-3 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">Associated Guardians</h3>
+                  <span className="text-[10px] font-semibold text-slate-500">{guardians.length} Registered</span>
                 </div>
-                <div>
-                  {guardians.length > 0 ? (
-                    <div className="divide-y divide-slate-100">
-                      {guardians.map(g => (
-                        <div key={g.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 hover:bg-slate-50">
-                          <div className="space-y-1">
-                            <div className="flex items-center space-x-2">
-                              <HeartHandshake className="w-4 h-4 text-slate-400" />
-                              <span className="font-bold text-slate-900">{g.firstName} {g.lastName}</span>
-                              <span className="text-[10px] font-bold uppercase tracking-widest bg-slate-900 text-white px-2 py-0.5">{g.relation}</span>
-                            </div>
-                            <div className="flex space-x-4 pl-6">
-                              <p className="text-xs font-medium text-slate-600 flex items-center"><Phone className="w-3 h-3 mr-1"/>{g.phone}</p>
-                              {g.email && <p className="text-xs font-medium text-slate-600 flex items-center"><Mail className="w-3 h-3 mr-1"/>{g.email}</p>}
-                            </div>
+                {guardians.length > 0 ? (
+                  <div className="divide-y divide-slate-100">
+                    {guardians.map((g) => (
+                      <div key={g.id} className="p-4 flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-600 font-bold text-xs uppercase">
+                            {(g.firstName?.[0] || '') + (g.lastName?.[0] || '') || 'G'}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-slate-900 text-xs">{g.firstName} {g.lastName}</p>
+                            <p className="text-[10px] text-slate-500 font-medium">{g.relation} • {g.email}</p>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-6 text-slate-500 text-xs italic">
-                      No guardians registered for this student.
-                    </div>
-                  )}
-                </div>
+                        <div className="text-right">
+                          <p className="text-xs font-semibold text-slate-700">{g.phone || 'No phone'}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-8 text-center text-slate-500 text-xs">
+                    No guardian records linked to this student profile yet.
+                  </div>
+                )}
               </div>
             </>
           )}
@@ -271,26 +371,161 @@ export default function StudentProfile() {
           )}
 
           {activeTab === 'attendance' && (
-            <div className="flex flex-col items-center justify-center p-12 bg-slate-50 border border-slate-200">
-               <div className="w-10 h-10 bg-slate-200 flex items-center justify-center mb-3">
-                 <ShieldAlert className="w-5 h-5 text-slate-400" />
-               </div>
-               <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900">Attendance Module</h3>
-               <p className="text-slate-500 text-xs text-center max-w-sm mt-1">
-                 Attendance roster and history are accessible via the main Attendance workspace.
-               </p>
+            <div className="border border-slate-200 bg-white">
+              <div className="px-4 py-3 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                <div>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">Classroom Attendance Roster</h3>
+                  <p className="text-[11px] text-slate-500 mt-0.5">Verified session attendance records for this student</p>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Link 
+                    to="/dashboard/attendance"
+                    className="inline-flex items-center text-xs font-semibold text-slate-700 bg-white border border-slate-200 px-2.5 py-1 rounded hover:bg-slate-50 transition-colors shadow-xs"
+                  >
+                    Attendance Workspace <ArrowUpRight className="w-3.5 h-3.5 ml-1 text-slate-500" />
+                  </Link>
+                  <span className="text-[10px] font-semibold text-slate-500 bg-slate-200/60 px-2 py-0.5 rounded">
+                    {attendanceRecords.length} Sessions
+                  </span>
+                </div>
+              </div>
+
+              {/* Attendance Quick Metrics */}
+              {attendanceRecords.length > 0 && (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 bg-slate-50/50 border-b border-slate-100">
+                  <div className="p-2.5 bg-white border border-slate-200 rounded">
+                    <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Attendance Rate</p>
+                    <p className="text-lg font-black text-slate-900 mt-0.5">
+                      {Math.round((attendanceRecords.filter((r: any) => r.status === 'PRESENT').length / attendanceRecords.length) * 100)}%
+                    </p>
+                  </div>
+                  <div className="p-2.5 bg-white border border-slate-200 rounded">
+                    <p className="text-[10px] uppercase font-bold text-emerald-600 tracking-wider">Present</p>
+                    <p className="text-lg font-black text-emerald-700 mt-0.5">
+                      {attendanceRecords.filter((r: any) => r.status === 'PRESENT').length}
+                    </p>
+                  </div>
+                  <div className="p-2.5 bg-white border border-slate-200 rounded">
+                    <p className="text-[10px] uppercase font-bold text-rose-600 tracking-wider">Absent</p>
+                    <p className="text-lg font-black text-rose-700 mt-0.5">
+                      {attendanceRecords.filter((r: any) => r.status === 'ABSENT').length}
+                    </p>
+                  </div>
+                  <div className="p-2.5 bg-white border border-slate-200 rounded">
+                    <p className="text-[10px] uppercase font-bold text-amber-600 tracking-wider">Late / Excused</p>
+                    <p className="text-lg font-black text-amber-700 mt-0.5">
+                      {attendanceRecords.filter((r: any) => r.status === 'LATE' || r.status === 'EXCUSED').length}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <div className="p-4">
+                {isLoadingAttendance ? (
+                  <div className="py-10 flex justify-center items-center">
+                    <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
+                  </div>
+                ) : attendanceRecords.length === 0 ? (
+                  <div className="py-10 text-center bg-slate-50 border border-dashed border-slate-200 rounded">
+                    <CalendarCheck className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                    <p className="text-xs font-semibold text-slate-700">No attendance records found</p>
+                    <p className="text-[11px] text-slate-400 mt-0.5">Sessions marked by faculty will appear here automatically.</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto border border-slate-200 rounded">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase text-[10px] font-semibold">
+                        <tr>
+                          <th className="px-3 py-2.5">Date</th>
+                          <th className="px-3 py-2.5">Subject / Course</th>
+                          <th className="px-3 py-2.5">Status</th>
+                          <th className="px-3 py-2.5">Marked By</th>
+                          <th className="px-3 py-2.5">Remarks</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {attendanceRecords.map((rec: any) => {
+                          const statusColor = 
+                            rec.status === 'PRESENT' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                            rec.status === 'ABSENT' ? 'bg-rose-50 text-rose-700 border-rose-200' :
+                            rec.status === 'LATE' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                            'bg-slate-100 text-slate-700 border-slate-200';
+                          return (
+                            <tr key={rec.id} className="hover:bg-slate-50/70 transition-colors">
+                              <td className="px-3 py-2.5 font-mono text-slate-900 font-medium">
+                                {rec.attendanceDate}
+                              </td>
+                              <td className="px-3 py-2.5 font-medium text-slate-800">
+                                {rec.courseCode || 'General Lecture'}
+                              </td>
+                              <td className="px-3 py-2.5">
+                                <span className={`inline-block px-2 py-0.5 text-[10px] font-bold uppercase rounded border ${statusColor}`}>
+                                  {rec.status}
+                                </span>
+                              </td>
+                              <td className="px-3 py-2.5 text-slate-600">
+                                {rec.markedBy || 'Faculty'}
+                              </td>
+                              <td className="px-3 py-2.5 text-slate-400 italic">
+                                {rec.remarks || '—'}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
           {activeTab === 'documents' && (
             <div className="border border-slate-200 bg-white">
-              <div className="px-4 py-3 border-b border-slate-200 bg-slate-50">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">Uploaded Documents</h3>
+              <div className="px-4 py-3 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">Persisted Student Documents</h3>
+                <span className="text-[10px] font-semibold text-slate-500">{documents.length} Records</span>
               </div>
               <div className="p-4">
-                 <div className="text-center py-8 text-slate-500 text-xs border border-dashed border-slate-300 bg-slate-50">
-                    Document integration coming soon.
-                 </div>
+                {isLoadingDocs ? (
+                  <div className="py-8 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>
+                ) : documents.length > 0 ? (
+                  <div className="divide-y divide-slate-100 border border-slate-200 rounded">
+                    {documents.map((doc: any) => (
+                      <div key={doc.id} className="p-3 flex items-center justify-between hover:bg-slate-50 transition-colors">
+                        <div className="flex items-center space-x-3">
+                          <FileText className="w-5 h-5 text-slate-500 shrink-0" />
+                          <div>
+                            <p className="text-xs font-bold text-slate-900">{doc.originalFileName}</p>
+                            <p className="text-[10px] text-slate-500 font-medium">
+                              Type: <span className="font-semibold text-slate-700">{doc.documentType}</span> • Uploaded: {new Date(doc.uploadDate).toLocaleDateString()} • {Math.round(doc.fileSize / 1024)} KB
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <a
+                            href={`/api/v1/documents/${doc.id}/view`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-[11px] font-semibold text-slate-600 hover:text-slate-900 px-2 py-1 border border-slate-200 rounded hover:bg-white inline-flex items-center"
+                          >
+                            <Eye className="w-3 h-3 mr-1" /> View
+                          </a>
+                          <a
+                            href={`/api/v1/documents/${doc.id}/download`}
+                            className="text-[11px] font-semibold text-slate-600 hover:text-slate-900 px-2 py-1 border border-slate-200 rounded hover:bg-white inline-flex items-center"
+                          >
+                            <Download className="w-3 h-3 mr-1" /> Download
+                          </a>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-slate-500 text-xs border border-dashed border-slate-300 bg-slate-50">
+                    No documents currently uploaded for this student record. Documents uploaded via verification or onboarding will appear here.
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -299,21 +534,35 @@ export default function StudentProfile() {
         <div className="space-y-6">
           <div className="border border-slate-200 bg-white">
             <div className="px-4 py-3 border-b border-slate-200 bg-slate-50">
-              <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Current Program</h3>
+              <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Academic Placement</h3>
             </div>
             <div className="p-4 space-y-4">
               <div className="flex items-start space-x-3">
                 <Building2 className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Department</p>
-                  <p className="font-bold text-slate-900 text-sm mt-0.5">{student.department ? `Dept ID: ${student.department}` : 'Not assigned'}</p>
+                  <p className="font-bold text-slate-900 text-sm mt-0.5">{student.department || 'Not assigned'}</p>
+                </div>
+              </div>
+              <div className="flex items-start space-x-3">
+                <BookOpen className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Program / Degree</p>
+                  <p className="font-bold text-slate-900 text-sm mt-0.5">{student.program || 'General Academic'}</p>
+                </div>
+              </div>
+              <div className="flex items-start space-x-3">
+                <Calendar className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Batch Cohort</p>
+                  <p className="font-bold text-slate-900 text-sm mt-0.5">{student.batch || 'Current'}</p>
                 </div>
               </div>
               <div className="flex items-start space-x-3">
                 <Calendar className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Enrolled On</p>
-                  <p className="font-bold text-slate-900 text-sm mt-0.5">{student.enrollmentDate ? new Date(student.enrollmentDate).toLocaleDateString() : 'N/A'}</p>
+                  <p className="font-bold text-slate-900 text-sm mt-0.5">{formatDateDisplay(student.enrollmentDate)}</p>
                 </div>
               </div>
             </div>
@@ -321,20 +570,20 @@ export default function StudentProfile() {
           
           <div className="border border-slate-200 bg-white">
              <div className="px-4 py-3 border-b border-slate-200 bg-slate-50">
-               <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Quick Actions</h3>
+               <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Quick Document Actions</h3>
              </div>
              <div className="p-2 space-y-1">
                 <button 
                   className="w-full flex items-center px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors"
-                  onClick={() => toast.info('Generate ID Card coming soon')}
+                  onClick={() => setIsIdCardModalOpen(true)}
                 >
-                  <User className="w-3.5 h-3.5 mr-2 text-slate-400" /> Generate ID Card
+                  <CreditCard className="w-3.5 h-3.5 mr-2 text-slate-500" /> Generate Official ID Card
                 </button>
                 <button 
                   className="w-full flex items-center px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors"
-                  onClick={() => toast.info('Export transcript coming soon')}
+                  onClick={() => setIsTranscriptModalOpen(true)}
                 >
-                  <Download className="w-3.5 h-3.5 mr-2 text-slate-400" /> Export Transcript
+                  <Download className="w-3.5 h-3.5 mr-2 text-slate-500" /> Export Academic Transcript
                 </button>
              </div>
           </div>
@@ -348,6 +597,24 @@ export default function StudentProfile() {
         studentName={`${student.firstName} ${student.lastName}`}
         currentStatus={student.status}
         targetStatus={selectedTargetStatus}
+      />
+
+      <StudentIdCardModal
+        studentId={student.id}
+        open={isIdCardModalOpen}
+        onOpenChange={setIsIdCardModalOpen}
+      />
+
+      <StudentTranscriptModal
+        studentId={student.id}
+        open={isTranscriptModalOpen}
+        onOpenChange={setIsTranscriptModalOpen}
+      />
+
+      <EditStudentDialog
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        student={student}
       />
     </PageFrame>
   );

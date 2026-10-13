@@ -24,6 +24,7 @@ public class SecurityOwnershipService {
     private final com.erp.academic.section.repository.SectionStudentRepository sectionStudentRepository;
     private final com.erp.academic.timetable.repository.TimetableSlotRepository timetableSlotRepository;
     private final com.erp.admission.application.repository.AdmissionApplicationRepository admissionApplicationRepository;
+    private final com.erp.finance.student_fee.repository.StudentFeeRepository studentFeeRepository;
 
     public SecurityOwnershipService(StudentRepository studentRepository, 
                                     GuardianRepository guardianRepository,
@@ -32,7 +33,8 @@ public class SecurityOwnershipService {
                                     com.erp.academic.section.repository.SectionFacultyRepository sectionFacultyRepository,
                                     com.erp.academic.section.repository.SectionStudentRepository sectionStudentRepository,
                                     com.erp.academic.timetable.repository.TimetableSlotRepository timetableSlotRepository,
-                                    com.erp.admission.application.repository.AdmissionApplicationRepository admissionApplicationRepository) {
+                                    com.erp.admission.application.repository.AdmissionApplicationRepository admissionApplicationRepository,
+                                    com.erp.finance.student_fee.repository.StudentFeeRepository studentFeeRepository) {
         this.studentRepository = studentRepository;
         this.guardianRepository = guardianRepository;
         this.studentDocumentRepository = studentDocumentRepository;
@@ -41,6 +43,7 @@ public class SecurityOwnershipService {
         this.sectionStudentRepository = sectionStudentRepository;
         this.timetableSlotRepository = timetableSlotRepository;
         this.admissionApplicationRepository = admissionApplicationRepository;
+        this.studentFeeRepository = studentFeeRepository;
     }
 
     public boolean canAccessStudentData(Authentication authentication, Long studentId) {
@@ -113,6 +116,20 @@ public class SecurityOwnershipService {
         return false;
     }
 
+    public boolean canAccessStudentDataByRollNumber(Authentication authentication, String rollNumber) {
+        if (rollNumber == null || rollNumber.isBlank()) return false;
+        return studentRepository.findByRollNumber(rollNumber)
+                .map(s -> canAccessStudentData(authentication, s.getId()))
+                .orElse(false);
+    }
+
+    public boolean canAccessStudentDataByEnrollmentNumber(Authentication authentication, String enrollmentNumber) {
+        if (enrollmentNumber == null || enrollmentNumber.isBlank()) return false;
+        return studentRepository.findByEnrollmentNumber(enrollmentNumber)
+                .map(s -> canAccessStudentData(authentication, s.getId()))
+                .orElse(false);
+    }
+
     /**
      * Dedicated authorization check for sensitive student finance records.
      * Restricts access strictly to ADMIN, SUPER_ADMIN, FINANCE, and the specific STUDENT themselves.
@@ -181,21 +198,18 @@ public class SecurityOwnershipService {
         return false;
     }
 
-    public boolean canAccessStudentDataByRollNumber(Authentication authentication, String rollNumber) {
-        if (authentication == null || rollNumber == null) {
+    public boolean canAccessStudentFeeFinance(Authentication authentication, Long studentFeeId) {
+        if (authentication == null || studentFeeId == null) {
             return false;
         }
-
         boolean isPrivileged = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
-                .anyMatch(role -> role.equals("ROLE_ADMIN") || role.equals("ROLE_SUPER_ADMIN") || role.equals("ROLE_FACULTY") || role.equals("ROLE_FINANCE"));
-
+                .anyMatch(role -> role.equals("ROLE_ADMIN") || role.equals("ROLE_SUPER_ADMIN") || role.equals("ROLE_FINANCE"));
         if (isPrivileged) {
             return true;
         }
-
-        return studentRepository.findByRollNumber(rollNumber)
-                .map(student -> canAccessStudentData(authentication, student.getId()))
+        return studentFeeRepository.findById(studentFeeId)
+                .map(fee -> canAccessStudentFinance(authentication, fee.getStudentId()))
                 .orElse(false);
     }
 

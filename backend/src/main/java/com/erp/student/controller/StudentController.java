@@ -84,6 +84,14 @@ public class StudentController {
         return ResponseEntity.ok(ApiResponse.success(student));
     }
 
+    @GetMapping("/enrollment/{enrollmentNumber}")
+    @PreAuthorize("@securityOwnershipService.canAccessStudentDataByEnrollmentNumber(authentication, #enrollmentNumber) or hasAnyRole('ADMIN', 'FACULTY', 'FINANCE', 'SUPER_ADMIN')")
+    @Operation(summary = "View Student by Enrollment Number", description = "Fetches student profile by their canonical enrollment number")
+    public ResponseEntity<ApiResponse<StudentResponseDto>> getStudentByEnrollmentNumber(@PathVariable String enrollmentNumber) {
+        StudentResponseDto student = studentService.getStudentByEnrollmentNumber(enrollmentNumber);
+        return ResponseEntity.ok(ApiResponse.success(student));
+    }
+
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @Operation(summary = "Edit Student", description = "Updates an existing student profile")

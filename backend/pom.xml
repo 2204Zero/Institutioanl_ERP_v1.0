@@ -19,7 +19,7 @@
 		<springdoc.version>2.6.0</springdoc.version>
 		<mockito.version>5.14.2</mockito.version>
 		<byte-buddy.version>1.17.5</byte-buddy.version>
-		<lombok.version>1.18.48</lombok.version>
+		<lombok.version>1.18.34</lombok.version>
 	</properties>
 
 	<dependencies>

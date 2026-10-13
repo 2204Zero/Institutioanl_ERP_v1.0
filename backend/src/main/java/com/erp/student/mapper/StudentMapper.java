@@ -35,6 +35,9 @@ public class StudentMapper {
         student.setProgram(dto.getProgram());
         student.setBatch(dto.getBatch().trim());
         student.setEnrollmentDate(dto.getEnrollmentDate());
+        if (dto.getEnrollmentNumber() != null && !dto.getEnrollmentNumber().isBlank()) {
+            student.setEnrollmentNumber(dto.getEnrollmentNumber().trim());
+        }
         if (dto.getStatus() != null) {
             student.setStatus(dto.getStatus());
         }
@@ -43,21 +46,21 @@ public class StudentMapper {
 
     public void updateEntityFromDto(StudentRequestDto dto, Student student) {
         if (dto == null || student == null) return;
-        student.setFirstName(dto.getFirstName().trim());
-        student.setLastName(dto.getLastName().trim());
-        student.setEmail(dto.getEmail().trim().toLowerCase());
-        student.setPhone(dto.getPhone().trim());
-        student.setDateOfBirth(dto.getDateOfBirth());
-        student.setGender(dto.getGender());
-        student.setBloodGroup(dto.getBloodGroup());
-        student.setAddress(dto.getAddress());
-        student.setCity(dto.getCity());
-        student.setState(dto.getState());
-        student.setPincode(dto.getPincode());
-        student.setDepartment(dto.getDepartment().trim());
-        student.setProgram(dto.getProgram());
-        student.setBatch(dto.getBatch().trim());
-        student.setEnrollmentDate(dto.getEnrollmentDate());
+        if (dto.getFirstName() != null) student.setFirstName(dto.getFirstName().trim());
+        if (dto.getLastName() != null) student.setLastName(dto.getLastName().trim());
+        if (dto.getEmail() != null) student.setEmail(dto.getEmail().trim().toLowerCase());
+        if (dto.getPhone() != null) student.setPhone(dto.getPhone().trim());
+        if (dto.getDateOfBirth() != null) student.setDateOfBirth(dto.getDateOfBirth());
+        if (dto.getGender() != null) student.setGender(dto.getGender());
+        if (dto.getBloodGroup() != null) student.setBloodGroup(dto.getBloodGroup());
+        if (dto.getAddress() != null) student.setAddress(dto.getAddress());
+        if (dto.getCity() != null) student.setCity(dto.getCity());
+        if (dto.getState() != null) student.setState(dto.getState());
+        if (dto.getPincode() != null) student.setPincode(dto.getPincode());
+        if (dto.getDepartment() != null && !dto.getDepartment().isBlank()) student.setDepartment(dto.getDepartment().trim());
+        if (dto.getProgram() != null && !dto.getProgram().isBlank()) student.setProgram(dto.getProgram());
+        if (dto.getBatch() != null && !dto.getBatch().isBlank()) student.setBatch(dto.getBatch().trim());
+        if (dto.getEnrollmentDate() != null) student.setEnrollmentDate(dto.getEnrollmentDate());
         if (dto.getStatus() != null) {
             student.setStatus(dto.getStatus());
         }
@@ -68,6 +71,7 @@ public class StudentMapper {
         StudentResponseDto dto = new StudentResponseDto();
         dto.setId(entity.getId());
         dto.setRollNumber(entity.getRollNumber());
+        dto.setEnrollmentNumber(entity.getEnrollmentNumber());
         dto.setFirstName(entity.getFirstName());
         dto.setLastName(entity.getLastName());
         dto.setFullName(entity.getFirstName() + " " + entity.getLastName());

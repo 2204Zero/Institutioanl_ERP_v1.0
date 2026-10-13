@@ -16,11 +16,15 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
 
     Optional<Student> findByRollNumber(String rollNumber);
 
+    Optional<Student> findByEnrollmentNumber(String enrollmentNumber);
+
     Optional<Student> findByEmail(String email);
 
     Optional<Student> findByUserId(Long userId);
 
     boolean existsByRollNumber(String rollNumber);
+
+    boolean existsByEnrollmentNumber(String enrollmentNumber);
 
     boolean existsByEmail(String email);
 
@@ -32,14 +36,17 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
 
     @Query("SELECT s FROM Student s WHERE " +
            "(:query IS NULL OR :query = '' OR " +
+           " (:numericId IS NOT NULL AND s.id = :numericId) OR " +
            " LOWER(s.firstName) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
            " LOWER(s.lastName) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
            " LOWER(s.rollNumber) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
-           " LOWER(s.email) LIKE LOWER(CONCAT('%', :query, '%'))) AND " +
+           " (s.enrollmentNumber IS NOT NULL AND LOWER(s.enrollmentNumber) LIKE LOWER(CONCAT('%', :query, '%'))) OR " +
+           " (:numericId IS NULL AND LOWER(s.email) LIKE LOWER(CONCAT('%', :query, '%')))) AND " +
            "(:status IS NULL OR s.status = :status) AND " +
            "(:department IS NULL OR :department = '' OR LOWER(s.department) = LOWER(:department))")
     Page<Student> searchStudents(@Param("query") String query,
-                                @Param("status") StudentStatus status,
-                                @Param("department") String department,
-                                Pageable pageable);
+                                 @Param("numericId") Long numericId,
+                                 @Param("status") StudentStatus status,
+                                 @Param("department") String department,
+                                 Pageable pageable);
 }

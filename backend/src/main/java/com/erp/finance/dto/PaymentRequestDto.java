@@ -5,6 +5,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public class PaymentRequestDto {
+    private Long studentId;
+    private Long studentFeeId;
     private BigDecimal amount;
     private LocalDate paymentDate;
     private PaymentMethod paymentMethod;
@@ -13,6 +15,12 @@ public class PaymentRequestDto {
     private String idempotencyKey;
 
     public PaymentRequestDto() {}
+
+    public Long getStudentId() { return studentId; }
+    public void setStudentId(Long studentId) { this.studentId = studentId; }
+
+    public Long getStudentFeeId() { return studentFeeId; }
+    public void setStudentFeeId(Long studentFeeId) { this.studentFeeId = studentFeeId; }
 
     public BigDecimal getAmount() { return amount; }
     public void setAmount(BigDecimal amount) { this.amount = amount; }

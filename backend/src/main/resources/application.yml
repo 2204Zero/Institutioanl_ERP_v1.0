@@ -13,6 +13,9 @@ spring:
       enabled: true
       max-file-size: 10MB
       max-request-size: 15MB
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
 
 # Storage configuration
 app:

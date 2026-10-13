@@ -21,6 +21,7 @@ public final class StudentJsonModels {
     public static class StudentRecord {
         private Long id;
         private String rollNumber;
+        private String enrollmentNumber;
         private String firstName;
         private String lastName;
         private String email;
@@ -28,6 +29,10 @@ public final class StudentJsonModels {
         private LocalDate dateOfBirth;
         private String gender;
         private String bloodGroup;
+        private String address;
+        private String city;
+        private String state;
+        private String pincode;
         private String department;
         private String program;
         private String batch;

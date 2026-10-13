@@ -3,6 +3,7 @@ export type StudentStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'GRADUATED' | 
 export interface Student {
   id: number;
   rollNumber: string;
+  enrollmentNumber?: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -15,8 +16,13 @@ export interface Student {
   state?: string;
   pincode?: string;
   department: string;
+  departmentId?: number;
   program?: string;
+  programId?: number;
   batch: string;
+  batchId?: number;
+  academicYearId?: number;
+  semesterId?: number;
   enrollmentDate: string; // ISO format date string (YYYY-MM-DD)
   status: StudentStatus;
   createdAt?: string;

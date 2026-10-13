@@ -24,9 +24,12 @@ import java.util.List;
 public class StudentDocumentController {
 
     private final StudentDocumentService documentService;
+    private final com.erp.student.service.StudentDocumentGenerationService documentGenerationService;
 
-    public StudentDocumentController(StudentDocumentService documentService) {
+    public StudentDocumentController(StudentDocumentService documentService,
+                                     com.erp.student.service.StudentDocumentGenerationService documentGenerationService) {
         this.documentService = documentService;
+        this.documentGenerationService = documentGenerationService;
     }
 
     @PostMapping(value = "/api/v1/students/{studentId}/documents", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -92,5 +95,21 @@ public class StudentDocumentController {
     public ResponseEntity<ApiResponse<Void>> deleteDocument(@PathVariable Long id) {
         documentService.deleteDocument(id);
         return ResponseEntity.ok(ApiResponse.success("Document deleted successfully", null));
+    }
+
+    @GetMapping("/api/v1/students/{studentId}/id-card")
+    @PreAuthorize("@securityOwnershipService.canAccessStudentData(authentication, #studentId) or hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @Operation(summary = "Generate Student ID Card", description = "Generates official student ID card from persisted student and academic data")
+    public ResponseEntity<ApiResponse<com.erp.student.dto.StudentIdCardDto>> getIdCard(@PathVariable Long studentId) {
+        com.erp.student.dto.StudentIdCardDto idCard = documentGenerationService.generateIdCard(studentId);
+        return ResponseEntity.ok(ApiResponse.success(idCard));
+    }
+
+    @GetMapping("/api/v1/students/{studentId}/transcript")
+    @PreAuthorize("@securityOwnershipService.canAccessStudentData(authentication, #studentId) or hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @Operation(summary = "Generate Academic Transcript", description = "Generates official academic transcript from persisted student course registration data")
+    public ResponseEntity<ApiResponse<com.erp.student.dto.StudentTranscriptDto>> getTranscript(@PathVariable Long studentId) {
+        com.erp.student.dto.StudentTranscriptDto transcript = documentGenerationService.generateTranscript(studentId);
+        return ResponseEntity.ok(ApiResponse.success(transcript));
     }
 }

@@ -319,20 +319,29 @@ export default function Academics() {
     }
 
     if (activeTab === 'batches') {
-      if (isLoadingBatches) return <SkeletonTable columns={4} />;
+      if (isLoadingBatches) return <SkeletonTable columns={6} />;
       if (!batches || batches.length === 0) return <EmptyState tab="Batches" />;
-      return batches.map(b => (
-        <TableRow key={b.id}>
-          <TableCell className="font-semibold px-6 py-4">{b.code}</TableCell>
-          <TableCell className="px-6 py-4">{b.admissionYear} - {b.graduationYear}</TableCell>
-          <TableCell className="px-6 py-4">
-            <span className={`px-2 py-1 rounded text-xs font-bold ${b.isActive ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-700'}`}>
-              {b.isActive ? 'ACTIVE' : 'INACTIVE'}
-            </span>
-          </TableCell>
-          <TableCell className="text-right px-6 py-4"><Button variant="ghost" size="icon"><MoreHorizontal className="w-4 h-4" /></Button></TableCell>
-        </TableRow>
-      ));
+      return batches.map(b => {
+        const prog = programs?.find(p => p.id === b.programId);
+        return (
+          <TableRow key={b.id}>
+            <TableCell className="font-semibold px-6 py-4 text-slate-900 font-mono">
+              {b.code || b.name || `BATCH-${b.id}`}
+            </TableCell>
+            <TableCell className="px-6 py-4 font-medium text-slate-800">{b.name}</TableCell>
+            <TableCell className="px-6 py-4 text-slate-600">
+              {prog ? `${prog.code} - ${prog.name}` : b.programId ? `Program #${b.programId}` : 'None'}
+            </TableCell>
+            <TableCell className="px-6 py-4 text-slate-600">{b.admissionYear} – {b.graduationYear}</TableCell>
+            <TableCell className="px-6 py-4">
+              <span className={`px-2 py-1 rounded text-xs font-bold ${b.isActive ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-700'}`}>
+                {b.isActive ? 'ACTIVE' : 'INACTIVE'}
+              </span>
+            </TableCell>
+            <TableCell className="text-right px-6 py-4"><Button variant="ghost" size="icon"><MoreHorizontal className="w-4 h-4" /></Button></TableCell>
+          </TableRow>
+        );
+      });
     }
 
     if (activeTab === 'semesters') {
@@ -895,6 +904,8 @@ export default function Academics() {
                 ) : activeTab === 'batches' ? (
                   <>
                     <TableHead className="font-semibold px-6 py-4">Batch Code</TableHead>
+                    <TableHead className="font-semibold px-6 py-4">Batch Name</TableHead>
+                    <TableHead className="font-semibold px-6 py-4">Program</TableHead>
                     <TableHead className="font-semibold px-6 py-4">Timeline</TableHead>
                   </>
                 ) : activeTab === 'semesters' ? (

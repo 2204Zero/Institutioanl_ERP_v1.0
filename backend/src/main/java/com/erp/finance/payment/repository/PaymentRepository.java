@@ -14,6 +14,8 @@ import java.util.Optional;
 @Repository
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
     List<Payment> findByStudentId(Long studentId);
+    @Query("SELECT p FROM Payment p WHERE p.studentFee.id = :studentFeeId")
+    List<Payment> findByStudentFeeId(@Param("studentFeeId") Long studentFeeId);
     Optional<Payment> findByReferenceNumber(String referenceNumber);
     Optional<Payment> findByIdempotencyKey(String idempotencyKey);
 

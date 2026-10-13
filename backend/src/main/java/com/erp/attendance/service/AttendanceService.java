@@ -34,6 +34,28 @@ public class AttendanceService {
     private final TimetableSlotRepository timetableSlotRepository;
     private final FacultyIdentityService facultyIdentityService;
     private final StudentRepository studentRepository;
+    private final com.erp.faculty.repository.FacultyRepository facultyRepository;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public AttendanceService(
+            StudentAttendanceRecordRepository attendanceRepository,
+            SectionStudentRepository sectionStudentRepository,
+            SectionFacultyRepository sectionFacultyRepository,
+            SectionRepository sectionRepository,
+            TimetableSlotRepository timetableSlotRepository,
+            FacultyIdentityService facultyIdentityService,
+            StudentRepository studentRepository,
+            @org.springframework.beans.factory.annotation.Autowired(required = false)
+            com.erp.faculty.repository.FacultyRepository facultyRepository) {
+        this.attendanceRepository = attendanceRepository;
+        this.sectionStudentRepository = sectionStudentRepository;
+        this.sectionFacultyRepository = sectionFacultyRepository;
+        this.sectionRepository = sectionRepository;
+        this.timetableSlotRepository = timetableSlotRepository;
+        this.facultyIdentityService = facultyIdentityService;
+        this.studentRepository = studentRepository;
+        this.facultyRepository = facultyRepository;
+    }
 
     public AttendanceService(
             StudentAttendanceRecordRepository attendanceRepository,
@@ -43,13 +65,7 @@ public class AttendanceService {
             TimetableSlotRepository timetableSlotRepository,
             FacultyIdentityService facultyIdentityService,
             StudentRepository studentRepository) {
-        this.attendanceRepository = attendanceRepository;
-        this.sectionStudentRepository = sectionStudentRepository;
-        this.sectionFacultyRepository = sectionFacultyRepository;
-        this.sectionRepository = sectionRepository;
-        this.timetableSlotRepository = timetableSlotRepository;
-        this.facultyIdentityService = facultyIdentityService;
-        this.studentRepository = studentRepository;
+        this(attendanceRepository, sectionStudentRepository, sectionFacultyRepository, sectionRepository, timetableSlotRepository, facultyIdentityService, studentRepository, null);
     }
 
     private boolean isValidStatus(String status) {
@@ -58,7 +74,7 @@ public class AttendanceService {
         return s.equals("PRESENT") || s.equals("ABSENT") || s.equals("LATE") || s.equals("EXCUSED");
     }
 
-    private AttendanceResponse mapToAttendanceResponse(StudentAttendanceRecord r, String courseCode, String markedBy) {
+    private AttendanceResponse mapToAttendanceResponse(StudentAttendanceRecord r, String fallbackCourseCode, String fallbackMarkedBy) {
         String studentName = null;
         String rollNumber = null;
         if (studentRepository != null && r.getStudentId() != null) {
@@ -69,6 +85,62 @@ public class AttendanceService {
                 rollNumber = s.getRollNumber();
             }
         }
+
+        String courseCode = fallbackCourseCode;
+        String markedBy = fallbackMarkedBy;
+
+        if (timetableSlotRepository != null && r.getScheduleId() != null) {
+            try {
+                Optional<TimetableSlot> slotOpt = timetableSlotRepository.findById(r.getScheduleId());
+                if (slotOpt.isPresent()) {
+                    TimetableSlot slot = slotOpt.get();
+                    if (sectionRepository != null && slot.getSectionId() != null) {
+                        try {
+                            Optional<com.erp.academic.section.entity.Section> secOpt = sectionRepository.findById(slot.getSectionId());
+                            if (secOpt.isPresent()) {
+                                com.erp.academic.section.entity.Section sec = secOpt.get();
+                                if (sec.getCourseOffering() != null && sec.getCourseOffering().getCourse() != null) {
+                                    String code = sec.getCourseOffering().getCourse().getCode();
+                                    String name = sec.getCourseOffering().getCourse().getName();
+                                    if (code != null && name != null) {
+                                        courseCode = code + " (" + name + ")";
+                                    } else if (code != null) {
+                                        courseCode = code;
+                                    }
+                                } else if (sec.getName() != null) {
+                                    courseCode = sec.getName();
+                                }
+                            }
+                        } catch (Exception ignored) {}
+                    }
+                    if (facultyRepository != null && (markedBy == null || markedBy.equalsIgnoreCase("faculty") || markedBy.isBlank())) {
+                        Long fid = r.getMarkedByFacultyId() != null ? r.getMarkedByFacultyId() : slot.getFacultyId();
+                        if (fid != null) {
+                            try {
+                                Optional<com.erp.faculty.entity.Faculty> fOpt = facultyRepository.findById(fid);
+                                if (fOpt.isPresent()) {
+                                    com.erp.faculty.entity.Faculty f = fOpt.get();
+                                    String fname = ((f.getFirstName() != null ? f.getFirstName() : "") + " " + (f.getLastName() != null ? f.getLastName() : "")).trim();
+                                    if (!fname.isBlank()) {
+                                        markedBy = fname;
+                                    } else if (f.getOfficialEmail() != null) {
+                                        markedBy = f.getOfficialEmail();
+                                    }
+                                }
+                            } catch (Exception ignored) {}
+                        }
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+
+        if (courseCode == null || courseCode.isBlank()) {
+            courseCode = "GENERAL";
+        }
+        if (markedBy == null || markedBy.isBlank()) {
+            markedBy = "faculty";
+        }
+
         return new AttendanceResponse(
                 r.getId(),
                 r.getStudentId(),

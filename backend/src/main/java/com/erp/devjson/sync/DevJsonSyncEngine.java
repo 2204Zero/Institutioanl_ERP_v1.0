@@ -87,6 +87,7 @@ public class DevJsonSyncEngine implements PostInsertEventListener, PostUpdateEve
     private final JsonEntityStore<ReceiptRecord> receiptStore;
     private final JsonEntityStore<ApplicantRecord> applicantStore;
     private final JsonEntityStore<AdmissionApplicationRecord> applicationStore;
+    private final JsonEntityStore<RoomRecord> roomStore;
 
     @Autowired
     public DevJsonSyncEngine(DevJsonProperties properties) {
@@ -118,6 +119,7 @@ public class DevJsonSyncEngine implements PostInsertEventListener, PostUpdateEve
         this.receiptStore = new JsonEntityStore<>(storageDir.resolve("receipts.json"), ReceiptRecord.class, storageEngine, ReceiptRecord::getId, ReceiptRecord::setId);
         this.applicantStore = new JsonEntityStore<>(storageDir.resolve("applicants.json"), ApplicantRecord.class, storageEngine, ApplicantRecord::getId, ApplicantRecord::setId);
         this.applicationStore = new JsonEntityStore<>(storageDir.resolve("admission_applications.json"), AdmissionApplicationRecord.class, storageEngine, AdmissionApplicationRecord::getId, AdmissionApplicationRecord::setId);
+        this.roomStore = new JsonEntityStore<>(storageDir.resolve("rooms.json"), RoomRecord.class, storageEngine, RoomRecord::getId, RoomRecord::setId);
     }
 
     @Override
@@ -146,12 +148,18 @@ public class DevJsonSyncEngine implements PostInsertEventListener, PostUpdateEve
                 studentStore.save(StudentRecord.builder()
                         .id(s.getId())
                         .rollNumber(s.getRollNumber())
+                        .enrollmentNumber(s.getEnrollmentNumber())
                         .firstName(s.getFirstName())
                         .lastName(s.getLastName())
                         .email(s.getEmail())
                         .phone(s.getPhone())
                         .dateOfBirth(s.getDateOfBirth())
                         .gender(s.getGender())
+                        .bloodGroup(s.getBloodGroup())
+                        .address(s.getAddress())
+                        .city(s.getCity())
+                        .state(s.getState())
+                        .pincode(s.getPincode())
                         .department(s.getDepartment())
                         .program(s.getProgram())
                         .batch(s.getBatch())
@@ -251,10 +259,13 @@ public class DevJsonSyncEngine implements PostInsertEventListener, PostUpdateEve
                 batchStore.save(BatchRecord.builder()
                         .id(b.getId())
                         .name(b.getName())
+                        .code(b.getCode())
                         .programId(b.getProgramId())
                         .academicYearId(b.getAcademicYearId())
                         .admissionYear(b.getAdmissionYear())
                         .graduationYear(b.getGraduationYear())
+                        .isActive(b.getIsActive() != null ? b.getIsActive() : true)
+                        .createdAt(b.getCreatedAt() != null ? b.getCreatedAt() : java.time.Instant.now())
                         .build());
             } else if (entity instanceof Semester s) {
                 semesterStore.save(SemesterRecord.builder()
@@ -344,13 +355,35 @@ public class DevJsonSyncEngine implements PostInsertEventListener, PostUpdateEve
                         .description(fh.getDescription())
                         .build());
             } else if (entity instanceof FeeStructure fs) {
+                List<FeeStructureComponentItem> compItems = new java.util.ArrayList<>();
+                if (fs.getComponents() != null) {
+                    for (var c : fs.getComponents()) {
+                        compItems.add(FeeStructureComponentItem.builder()
+                                .feeHeadId(c.getFeeHead() != null ? c.getFeeHead().getId() : null)
+                                .feeHeadName(c.getFeeHead() != null ? c.getFeeHead().getName() : null)
+                                .amount(c.getAmount())
+                                .build());
+                    }
+                }
                 feeStructureStore.save(FeeStructureRecord.builder()
                         .id(fs.getId())
                         .name(fs.getName())
                         .academicYearId(fs.getAcademicYearId())
                         .active(fs.getActive())
+                        .components(compItems)
                         .build());
             } else if (entity instanceof StudentFee sf) {
+                List<StudentFeeComponentItem> compItems = new java.util.ArrayList<>();
+                if (sf.getComponents() != null) {
+                    for (var c : sf.getComponents()) {
+                        compItems.add(StudentFeeComponentItem.builder()
+                                .feeHeadId(c.getFeeHead() != null ? c.getFeeHead().getId() : null)
+                                .feeHeadName(c.getFeeHead() != null ? c.getFeeHead().getName() : null)
+                                .grossAmount(c.getGrossAmount())
+                                .outstandingAmount(c.getOutstandingAmount())
+                                .build());
+                    }
+                }
                 studentFeeStore.save(StudentFeeRecord.builder()
                         .id(sf.getId())
                         .studentId(sf.getStudentId())
@@ -360,6 +393,7 @@ public class DevJsonSyncEngine implements PostInsertEventListener, PostUpdateEve
                         .netPayable(sf.getNetPayable())
                         .outstandingAmount(sf.getOutstandingAmount())
                         .status(sf.getStatus() != null ? sf.getStatus().name() : null)
+                        .components(compItems)
                         .build());
             } else if (entity instanceof Payment p) {
                 paymentStore.save(PaymentRecord.builder()
@@ -408,7 +442,13 @@ public class DevJsonSyncEngine implements PostInsertEventListener, PostUpdateEve
                         .status(aa.getStatus() != null ? aa.getStatus().name() : null)
                         .meritScore(aa.getMeritScore())
                         .reviewerRemarks(aa.getReviewerRemarks())
-                        .submittedAt(aa.getSubmittedAt())
+                        .build());
+            } else if (entity instanceof com.erp.academic.room.entity.Room rm) {
+                roomStore.save(RoomRecord.builder()
+                        .id(rm.getId())
+                        .name(rm.getName())
+                        .capacity(rm.getCapacity())
+                        .isActive(rm.getIsActive() != null ? rm.getIsActive() : true)
                         .build());
             }
         } catch (Exception e) {
@@ -443,6 +483,7 @@ public class DevJsonSyncEngine implements PostInsertEventListener, PostUpdateEve
         else if (entity instanceof Receipt) receiptStore.deleteById(id);
         else if (entity instanceof Applicant) applicantStore.deleteById(id);
         else if (entity instanceof AdmissionApplication) applicationStore.deleteById(id);
+        else if (entity instanceof com.erp.academic.room.entity.Room) roomStore.deleteById(id);
     }
 
     public Path getStorageDir() { return storageDir; }

@@ -28,6 +28,9 @@ public class Student {
     @Column(nullable = false, unique = true, length = 50)
     private String rollNumber;
 
+    @Column(name = "enrollment_number", length = 50)
+    private String enrollmentNumber;
+
     @Column(nullable = false, length = 100)
     private String firstName;
 
@@ -137,6 +140,14 @@ public class Student {
 
     public void setRollNumber(String rollNumber) {
         this.rollNumber = rollNumber;
+    }
+
+    public String getEnrollmentNumber() {
+        return enrollmentNumber;
+    }
+
+    public void setEnrollmentNumber(String enrollmentNumber) {
+        this.enrollmentNumber = enrollmentNumber;
     }
 
     public String getFirstName() {

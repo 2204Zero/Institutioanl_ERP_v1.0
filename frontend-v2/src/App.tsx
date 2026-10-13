@@ -16,6 +16,7 @@ import AdminUsersList from './pages/AdminUsersList';
 import Admissions from './pages/Admissions';
 import Academics from './pages/Academics';
 import FacultySections from './pages/FacultySections';
+import PublicAdmissions from './pages/PublicAdmissions';
 import Layout from './components/Layout';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from './components/ui/sonner';
@@ -102,6 +103,7 @@ function App() {
                 <Login />
               </PublicOnlyRoute>
             } />
+            <Route path="/admissions" element={<PublicAdmissions />} />
             <Route path="/403" element={<Forbidden />} />
             <Route
               path="/dashboard"

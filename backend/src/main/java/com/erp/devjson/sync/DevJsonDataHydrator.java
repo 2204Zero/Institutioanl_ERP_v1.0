@@ -80,6 +80,13 @@ public class DevJsonDataHydrator {
     private final SectionFacultyRepository sectionFacultyRepository;
     private final SectionStudentRepository sectionStudentRepository;
     private final TimetableSlotRepository timetableSlotRepository;
+    private final com.erp.academic.room.repository.RoomRepository roomRepository;
+    private final com.erp.finance.fee_structure.repository.FeeHeadRepository feeHeadRepository;
+    private final com.erp.finance.fee_structure.repository.FeeStructureRepository feeStructureRepository;
+    private final com.erp.finance.student_fee.repository.StudentFeeRepository studentFeeRepository;
+    private final com.erp.finance.payment.repository.PaymentRepository paymentRepository;
+    private final com.erp.finance.invoice.repository.ReceiptRepository receiptRepository;
+    private final com.erp.attendance.repository.StudentAttendanceRecordRepository attendanceRecordRepository;
 
     @Autowired
     public DevJsonDataHydrator(
@@ -99,7 +106,14 @@ public class DevJsonDataHydrator {
             SectionRepository sectionRepository,
             SectionFacultyRepository sectionFacultyRepository,
             SectionStudentRepository sectionStudentRepository,
-            TimetableSlotRepository timetableSlotRepository) {
+            TimetableSlotRepository timetableSlotRepository,
+            @Autowired(required = false) com.erp.academic.room.repository.RoomRepository roomRepository,
+            com.erp.finance.fee_structure.repository.FeeHeadRepository feeHeadRepository,
+            com.erp.finance.fee_structure.repository.FeeStructureRepository feeStructureRepository,
+            com.erp.finance.student_fee.repository.StudentFeeRepository studentFeeRepository,
+            com.erp.finance.payment.repository.PaymentRepository paymentRepository,
+            com.erp.finance.invoice.repository.ReceiptRepository receiptRepository,
+            @Autowired(required = false) com.erp.attendance.repository.StudentAttendanceRecordRepository attendanceRecordRepository) {
         this.storageDir = properties.getStoragePath();
         this.userRepository = userRepository;
         this.studentRepository = studentRepository;
@@ -117,6 +131,13 @@ public class DevJsonDataHydrator {
         this.sectionFacultyRepository = sectionFacultyRepository;
         this.sectionStudentRepository = sectionStudentRepository;
         this.timetableSlotRepository = timetableSlotRepository;
+        this.roomRepository = roomRepository;
+        this.feeHeadRepository = feeHeadRepository;
+        this.feeStructureRepository = feeStructureRepository;
+        this.studentFeeRepository = studentFeeRepository;
+        this.paymentRepository = paymentRepository;
+        this.receiptRepository = receiptRepository;
+        this.attendanceRecordRepository = attendanceRecordRepository;
     }
 
     @EventListener(ApplicationReadyEvent.class)
@@ -245,7 +266,16 @@ public class DevJsonDataHydrator {
             Path studentFile = storageDir.resolve("students.json");
             if (Files.exists(studentFile)) {
                 List<StudentRecord> studentRecords = storageEngine.readList(studentFile, StudentRecord.class);
+                boolean needsFileRewrite = false;
                 for (StudentRecord s : studentRecords) {
+                    int year = s.getEnrollmentDate() != null ? s.getEnrollmentDate().getYear() : 2026;
+                    String enrNum = s.getEnrollmentNumber();
+                    if (enrNum == null || enrNum.isBlank()) {
+                        enrNum = String.format("ENR-%d-%05d", year, s.getId() != null ? s.getId() : 1);
+                        s.setEnrollmentNumber(enrNum);
+                        needsFileRewrite = true;
+                    }
+
                     if (!studentRepository.existsByRollNumber(s.getRollNumber())) {
                         Student student = new Student(
                                 s.getRollNumber(),
@@ -259,6 +289,13 @@ public class DevJsonDataHydrator {
                                 s.getBatch(),
                                 s.getEnrollmentDate()
                         );
+                        student.setEnrollmentNumber(enrNum);
+                        if (s.getBloodGroup() != null) student.setBloodGroup(s.getBloodGroup());
+                        if (s.getAddress() != null) student.setAddress(s.getAddress());
+                        if (s.getCity() != null) student.setCity(s.getCity());
+                        if (s.getState() != null) student.setState(s.getState());
+                        if (s.getPincode() != null) student.setPincode(s.getPincode());
+                        if (s.getProgram() != null) student.setProgram(s.getProgram());
                         if (s.getStatus() != null) {
                             try {
                                 student.setStatus(StudentStatus.valueOf(s.getStatus()));
@@ -275,7 +312,58 @@ public class DevJsonDataHydrator {
                         }
                         student.setUserId(resolvedUserId);
                         studentRepository.save(student);
+                    } else {
+                        final String finalEnr = enrNum;
+                        studentRepository.findByRollNumber(s.getRollNumber()).ifPresent(existing -> {
+                            boolean changed = false;
+                            if (existing.getEnrollmentNumber() == null || existing.getEnrollmentNumber().isBlank()) {
+                                existing.setEnrollmentNumber(finalEnr);
+                                changed = true;
+                            }
+                            if (s.getBloodGroup() != null && !s.getBloodGroup().equals(existing.getBloodGroup())) {
+                                existing.setBloodGroup(s.getBloodGroup());
+                                changed = true;
+                            }
+                            if (s.getAddress() != null && !s.getAddress().equals(existing.getAddress())) {
+                                existing.setAddress(s.getAddress());
+                                changed = true;
+                            }
+                            if (s.getCity() != null && !s.getCity().equals(existing.getCity())) {
+                                existing.setCity(s.getCity());
+                                changed = true;
+                            }
+                            if (s.getState() != null && !s.getState().equals(existing.getState())) {
+                                existing.setState(s.getState());
+                                changed = true;
+                            }
+                            if (s.getPincode() != null && !s.getPincode().equals(existing.getPincode())) {
+                                existing.setPincode(s.getPincode());
+                                changed = true;
+                            }
+                            if (s.getProgram() != null && !s.getProgram().equals(existing.getProgram())) {
+                                existing.setProgram(s.getProgram());
+                                changed = true;
+                            }
+                            if (s.getFirstName() != null && !s.getFirstName().equals(existing.getFirstName())) {
+                                existing.setFirstName(s.getFirstName());
+                                changed = true;
+                            }
+                            if (s.getLastName() != null && !s.getLastName().equals(existing.getLastName())) {
+                                existing.setLastName(s.getLastName());
+                                changed = true;
+                            }
+                            if (s.getPhone() != null && !s.getPhone().equals(existing.getPhone())) {
+                                existing.setPhone(s.getPhone());
+                                changed = true;
+                            }
+                            if (changed) {
+                                studentRepository.save(existing);
+                            }
+                        });
                     }
+                }
+                if (needsFileRewrite) {
+                    storageEngine.writeListAtomically(studentFile, studentRecords);
                 }
             }
 
@@ -339,12 +427,16 @@ public class DevJsonDataHydrator {
                     if (b.getId() != null && batchRepository.findById(b.getId()).isEmpty()) {
                         Batch batch = new Batch();
                         batch.setName(b.getName());
-                        batch.setCode(b.getCode());
+                        String batchCode = b.getCode();
+                        if (batchCode == null || batchCode.isBlank()) {
+                            batchCode = "BATCH-" + (b.getAdmissionYear() != null ? b.getAdmissionYear() : 2026) + "-" + String.format("%02d", b.getId());
+                        }
+                        batch.setCode(batchCode);
                         batch.setProgramId(b.getProgramId());
                         batch.setAdmissionYear(b.getAdmissionYear());
                         batch.setGraduationYear(b.getGraduationYear());
                         batch.setAcademicYearId(b.getAcademicYearId());
-                        batch.setIsActive(true);
+                        batch.setIsActive(b.getIsActive() != null ? b.getIsActive() : true);
                         batchRepository.save(batch);
                     }
                 }
@@ -438,6 +530,30 @@ public class DevJsonDataHydrator {
                 }
             }
 
+            // 12.5 Hydrate Rooms
+            if (roomRepository != null) {
+                Path roomsFile = storageDir.resolve("rooms.json");
+                if (Files.exists(roomsFile)) {
+                    List<RoomRecord> roomRecords = storageEngine.readList(roomsFile, RoomRecord.class);
+                    for (RoomRecord rr : roomRecords) {
+                        if (rr.getId() != null && roomRepository.findById(rr.getId()).isEmpty()) {
+                            com.erp.academic.room.entity.Room rm = com.erp.academic.room.entity.Room.builder()
+                                    .id(rr.getId())
+                                    .name(rr.getName())
+                                    .capacity(rr.getCapacity())
+                                    .isActive(rr.getIsActive() != null ? rr.getIsActive() : true)
+                                    .build();
+                            roomRepository.save(rm);
+                        }
+                    }
+                }
+                if (roomRepository.count() == 0) {
+                    roomRepository.save(com.erp.academic.room.entity.Room.builder().name("Room 101").capacity(60).isActive(true).build());
+                    roomRepository.save(com.erp.academic.room.entity.Room.builder().name("Room 102").capacity(40).isActive(true).build());
+                    roomRepository.save(com.erp.academic.room.entity.Room.builder().name("Room 201").capacity(100).isActive(true).build());
+                }
+            }
+
             // 13. Hydrate Timetable Slots
             Path tsFile = storageDir.resolve("timetable_slots.json");
             if (Files.exists(tsFile)) {
@@ -445,11 +561,15 @@ public class DevJsonDataHydrator {
                 for (TimetableSlotRecord ts : tsRecords) {
                     if (ts.getId() != null && timetableSlotRepository.findById(ts.getId()).isEmpty()) {
                         DayOfWeek dow = ts.getDayOfWeek() != null ? DayOfWeek.of(ts.getDayOfWeek()) : DayOfWeek.MONDAY;
-                        Long roomId = 101L;
-                        if (ts.getRoom() != null && ts.getRoom().startsWith("Room-")) {
-                            try {
-                                roomId = Long.parseLong(ts.getRoom().substring(5));
-                            } catch (Exception ignored) {}
+                        Long roomId = 1L;
+                        if (ts.getRoom() != null) {
+                            String rName = ts.getRoom().replace("Room-", "Room ");
+                            var foundRm = roomRepository.findByNameIgnoreCase(rName);
+                            if (foundRm.isPresent()) {
+                                roomId = foundRm.get().getId();
+                            } else if (roomRepository.count() > 0) {
+                                roomId = roomRepository.findAll().get(0).getId();
+                            }
                         }
                         TimetableSlot slot = TimetableSlot.builder()
                                 .sectionId(ts.getSectionId())
@@ -461,6 +581,27 @@ public class DevJsonDataHydrator {
                                 .isActive(Boolean.TRUE.equals(ts.getIsActive()))
                                 .build();
                         timetableSlotRepository.save(slot);
+                    }
+                }
+            }
+
+            // Hydrate Attendance Records
+            Path attFile = storageDir.resolve("attendance_records.json");
+            if (Files.exists(attFile) && attendanceRecordRepository != null) {
+                List<com.erp.devjson.model.AttendanceJsonModels.AttendanceRecord> attRecords = 
+                        storageEngine.readList(attFile, com.erp.devjson.model.AttendanceJsonModels.AttendanceRecord.class);
+                for (com.erp.devjson.model.AttendanceJsonModels.AttendanceRecord ar : attRecords) {
+                    if (ar.getId() != null && attendanceRecordRepository.findById(ar.getId()).isEmpty()) {
+                        com.erp.attendance.entity.StudentAttendanceRecord entity = com.erp.attendance.entity.StudentAttendanceRecord.builder()
+                                .id(ar.getId())
+                                .studentId(ar.getStudentId())
+                                .scheduleId(ar.getScheduleId())
+                                .attendanceDate(ar.getAttendanceDate())
+                                .status(ar.getStatus())
+                                .remarks(ar.getRemarks())
+                                .markedByFacultyId(ar.getMarkedByFacultyId())
+                                .build();
+                        attendanceRecordRepository.save(entity);
                     }
                 }
             }
@@ -499,6 +640,155 @@ public class DevJsonDataHydrator {
                     }
                 });
             });
+
+            // 15. Hydrate Finance: Fee Heads, Structures, Fees, Payments, Receipts
+            Path feeHeadFile = storageDir.resolve("fee_heads.json");
+            if (Files.exists(feeHeadFile)) {
+                List<com.erp.devjson.model.FinanceJsonModels.FeeHeadRecord> feeHeadRecords = 
+                        storageEngine.readList(feeHeadFile, com.erp.devjson.model.FinanceJsonModels.FeeHeadRecord.class);
+                for (com.erp.devjson.model.FinanceJsonModels.FeeHeadRecord fh : feeHeadRecords) {
+                    if (fh.getCode() != null && feeHeadRepository.findByCode(fh.getCode()).isEmpty()) {
+                        com.erp.finance.fee_structure.entity.FeeHead head = new com.erp.finance.fee_structure.entity.FeeHead();
+                        head.setName(fh.getName());
+                        head.setCode(fh.getCode());
+                        head.setDescription(fh.getDescription());
+                        head.setActive(true);
+                        feeHeadRepository.save(head);
+                    }
+                }
+            }
+            if (feeHeadRepository.count() == 0) {
+                com.erp.finance.fee_structure.entity.FeeHead fh1 = new com.erp.finance.fee_structure.entity.FeeHead();
+                fh1.setCode("LAB_FEE");
+                fh1.setName("Laboratory Fee");
+                fh1.setDescription("Laboratory Fee");
+                feeHeadRepository.save(fh1);
+
+                com.erp.finance.fee_structure.entity.FeeHead fh2 = new com.erp.finance.fee_structure.entity.FeeHead();
+                fh2.setCode("TUITION_FEE");
+                fh2.setName("Tuition Fee");
+                fh2.setDescription("Tuition Fee");
+                feeHeadRepository.save(fh2);
+            }
+
+            Path feeStructFile = storageDir.resolve("fee_structures.json");
+            if (Files.exists(feeStructFile)) {
+                List<com.erp.devjson.model.FinanceJsonModels.FeeStructureRecord> structRecords = 
+                        storageEngine.readList(feeStructFile, com.erp.devjson.model.FinanceJsonModels.FeeStructureRecord.class);
+                for (com.erp.devjson.model.FinanceJsonModels.FeeStructureRecord fsr : structRecords) {
+                    if (fsr.getId() != null && feeStructureRepository.findById(fsr.getId()).isEmpty()) {
+                        com.erp.finance.fee_structure.entity.FeeStructure fs = new com.erp.finance.fee_structure.entity.FeeStructure();
+                        fs.setName(fsr.getName());
+                        fs.setCode("FS-" + fsr.getId());
+                        fs.setAcademicYearId(fsr.getAcademicYearId());
+                        fs.setActive(Boolean.TRUE.equals(fsr.getActive()));
+                        if (fsr.getComponents() != null) {
+                            for (com.erp.devjson.model.FinanceJsonModels.FeeStructureComponentItem item : fsr.getComponents()) {
+                                if (item.getFeeHeadId() != null) {
+                                    feeHeadRepository.findById(item.getFeeHeadId()).ifPresent(head -> {
+                                        com.erp.finance.fee_structure.entity.FeeStructureComponent comp = new com.erp.finance.fee_structure.entity.FeeStructureComponent();
+                                        comp.setFeeStructure(fs);
+                                        comp.setFeeHead(head);
+                                        comp.setAmount(item.getAmount() != null ? item.getAmount() : java.math.BigDecimal.ZERO);
+                                        fs.getComponents().add(comp);
+                                    });
+                                }
+                            }
+                        }
+                        feeStructureRepository.save(fs);
+                    }
+                }
+            }
+
+            Path studentFeeFile = storageDir.resolve("student_fees.json");
+            if (Files.exists(studentFeeFile)) {
+                List<com.erp.devjson.model.FinanceJsonModels.StudentFeeRecord> sfRecords = 
+                        storageEngine.readList(studentFeeFile, com.erp.devjson.model.FinanceJsonModels.StudentFeeRecord.class);
+                for (com.erp.devjson.model.FinanceJsonModels.StudentFeeRecord sfr : sfRecords) {
+                    if (sfr.getId() != null && studentFeeRepository.findById(sfr.getId()).isEmpty()) {
+                        com.erp.finance.student_fee.entity.StudentFee sf = new com.erp.finance.student_fee.entity.StudentFee();
+                        sf.setStudentId(sfr.getStudentId());
+                        sf.setAcademicYearId(sfr.getAcademicYearId());
+                        sf.setFeeStructureId(sfr.getFeeStructureId());
+                        sf.setGrossAmount(sfr.getGrossAmount() != null ? sfr.getGrossAmount() : java.math.BigDecimal.ZERO);
+                        sf.setNetPayable(sfr.getNetPayable() != null ? sfr.getNetPayable() : java.math.BigDecimal.ZERO);
+                        sf.setOutstandingAmount(sfr.getOutstandingAmount() != null ? sfr.getOutstandingAmount() : java.math.BigDecimal.ZERO);
+                        java.math.BigDecimal paid = sf.getNetPayable().subtract(sf.getOutstandingAmount());
+                        sf.setPaidAmount(paid.compareTo(java.math.BigDecimal.ZERO) >= 0 ? paid : java.math.BigDecimal.ZERO);
+                        if (sfr.getStatus() != null) {
+                            try {
+                                sf.setStatus(com.erp.finance.enums.StudentFeeStatus.valueOf(sfr.getStatus()));
+                            } catch (Exception ignored) {
+                                sf.setStatus(com.erp.finance.enums.StudentFeeStatus.PENDING);
+                            }
+                        }
+                        studentFeeRepository.save(sf);
+                    }
+                }
+            }
+
+            Path paymentFile = storageDir.resolve("payments.json");
+            if (Files.exists(paymentFile)) {
+                List<com.erp.devjson.model.FinanceJsonModels.PaymentRecord> payRecords = 
+                        storageEngine.readList(paymentFile, com.erp.devjson.model.FinanceJsonModels.PaymentRecord.class);
+                for (com.erp.devjson.model.FinanceJsonModels.PaymentRecord pr : payRecords) {
+                    if (pr.getReferenceNumber() != null && paymentRepository.findByReferenceNumber(pr.getReferenceNumber()).isEmpty()) {
+                        com.erp.finance.student_fee.entity.StudentFee sf = pr.getStudentFeeId() != null 
+                                ? studentFeeRepository.findById(pr.getStudentFeeId()).orElse(null) : null;
+                        if (sf != null) {
+                            com.erp.finance.payment.entity.Payment pay = new com.erp.finance.payment.entity.Payment();
+                            pay.setReferenceNumber(pr.getReferenceNumber());
+                            pay.setStudentId(sf.getStudentId());
+                            pay.setStudentFee(sf);
+                            pay.setAmount(pr.getAmount() != null ? pr.getAmount() : java.math.BigDecimal.ZERO);
+                            pay.setPaymentDate(pr.getPaymentDate() != null ? pr.getPaymentDate() : java.time.LocalDate.now());
+                            if (pr.getPaymentMethod() != null) {
+                                try {
+                                    pay.setPaymentMethod(com.erp.finance.enums.PaymentMethod.valueOf(pr.getPaymentMethod()));
+                                } catch (Exception ignored) {
+                                    pay.setPaymentMethod(com.erp.finance.enums.PaymentMethod.CASH);
+                                }
+                            } else {
+                                pay.setPaymentMethod(com.erp.finance.enums.PaymentMethod.CASH);
+                            }
+                            if (pr.getStatus() != null) {
+                                try {
+                                    pay.setStatus(com.erp.finance.enums.PaymentStatus.valueOf(pr.getStatus()));
+                                } catch (Exception ignored) {
+                                    pay.setStatus(com.erp.finance.enums.PaymentStatus.SUCCESS);
+                                }
+                            } else {
+                                pay.setStatus(com.erp.finance.enums.PaymentStatus.SUCCESS);
+                            }
+                            pay.setIdempotencyKey(pr.getIdempotencyKey());
+                            pay.setRequestHash(pr.getRequestHash());
+                            pay.setRemarks(pr.getRemarks());
+                            pay.setCreatedBy(pr.getCreatedBy() != null ? pr.getCreatedBy() : "superadmin");
+                            paymentRepository.save(pay);
+                        }
+                    }
+                }
+            }
+
+            Path receiptFile = storageDir.resolve("receipts.json");
+            if (Files.exists(receiptFile)) {
+                List<com.erp.devjson.model.FinanceJsonModels.ReceiptRecord> rcRecords = 
+                        storageEngine.readList(receiptFile, com.erp.devjson.model.FinanceJsonModels.ReceiptRecord.class);
+                for (com.erp.devjson.model.FinanceJsonModels.ReceiptRecord rr : rcRecords) {
+                    if (rr.getReceiptNumber() != null && receiptRepository.findByReceiptNumber(rr.getReceiptNumber()).isEmpty()) {
+                        com.erp.finance.payment.entity.Payment pay = rr.getPaymentId() != null 
+                                ? paymentRepository.findById(rr.getPaymentId()).orElse(null) : null;
+                        if (pay != null) {
+                            com.erp.finance.invoice.entity.Receipt receipt = new com.erp.finance.invoice.entity.Receipt();
+                            receipt.setReceiptNumber(rr.getReceiptNumber());
+                            receipt.setPayment(pay);
+                            receipt.setStudentId(pay.getStudentId());
+                            receipt.setStatus(pay.getStatus());
+                            receiptRepository.save(receipt);
+                        }
+                    }
+                }
+            }
 
             log.info("DevJsonDataHydrator successfully hydrated records from {}", storageDir);
         } catch (Exception e) {

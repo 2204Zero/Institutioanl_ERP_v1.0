@@ -1,8 +1,12 @@
 package com.erp.finance.fee_structure.entity;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.time.Instant;
 import java.util.List;
 import java.util.ArrayList;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
 @Entity
 @Table(name = "fee_structure")
 public class FeeStructure {

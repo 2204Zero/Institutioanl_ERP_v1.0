@@ -1,11 +1,13 @@
 package com.erp.guardian.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 @Schema(description = "Request payload for creating or updating a guardian")
 public class GuardianRequestDto {
 
@@ -77,6 +79,12 @@ public class GuardianRequestDto {
 
     public void setRelation(String relation) {
         this.relation = relation;
+    }
+
+    public void setRelationship(String relationship) {
+        if (this.relation == null || this.relation.isBlank()) {
+            this.relation = relationship;
+        }
     }
 
     public String getPhone() {

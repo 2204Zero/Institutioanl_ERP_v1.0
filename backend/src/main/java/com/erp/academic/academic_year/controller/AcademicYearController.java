@@ -26,13 +26,13 @@ public class AcademicYearController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'FACULTY', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'FACULTY', 'STUDENT', 'FINANCE')")
     public ResponseEntity<List<AcademicYearResponse>> getAll() {
         return ResponseEntity.ok(service.getAll());
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'FACULTY', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'FACULTY', 'STUDENT', 'FINANCE')")
     public ResponseEntity<AcademicYearResponse> getById(@PathVariable Long id) {
         return ResponseEntity.ok(service.getById(id));
     }

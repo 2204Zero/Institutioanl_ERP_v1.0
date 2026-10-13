@@ -32,4 +32,33 @@ public class FeeStructureController {
                 .map(FeeStructureResponseDto::fromEntity)
                 .toList());
     }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('FEE_STRUCTURE_VIEW') or hasAnyRole('FINANCE', 'ADMIN', 'SUPER_ADMIN')")
+    public ResponseEntity<FeeStructureResponseDto> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(FeeStructureResponseDto.fromEntity(feeStructureService.getById(id)));
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('FEE_STRUCTURE_CREATE') or hasAnyRole('FINANCE', 'ADMIN', 'SUPER_ADMIN')")
+    public ResponseEntity<FeeStructureResponseDto> updateFeeStructure(
+            @PathVariable Long id,
+            @RequestBody FeeStructure feeStructure) {
+        return ResponseEntity.ok(FeeStructureResponseDto.fromEntity(feeStructureService.updateFeeStructure(id, feeStructure)));
+    }
+
+    @PatchMapping("/{id}/approve")
+    @PreAuthorize("hasAuthority('FEE_STRUCTURE_CREATE') or hasAnyRole('FINANCE', 'ADMIN', 'SUPER_ADMIN')")
+    public ResponseEntity<FeeStructureResponseDto> approveFeeStructure(@PathVariable Long id) {
+        return ResponseEntity.ok(FeeStructureResponseDto.fromEntity(feeStructureService.approveFeeStructure(id)));
+    }
+
+    @PostMapping("/{id}/components")
+    @PreAuthorize("hasAuthority('FEE_STRUCTURE_CREATE') or hasAnyRole('FINANCE', 'ADMIN', 'SUPER_ADMIN')")
+    public ResponseEntity<FeeStructureResponseDto> addComponent(
+            @PathVariable Long id,
+            @RequestParam Long headId,
+            @RequestParam java.math.BigDecimal amount) {
+        return ResponseEntity.ok(FeeStructureResponseDto.fromEntity(feeStructureService.addComponent(id, headId, amount)));
+    }
 }

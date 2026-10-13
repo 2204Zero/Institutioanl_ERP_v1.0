@@ -165,4 +165,16 @@ public final class AcademicJsonModels {
         @Builder.Default
         private Instant assignedAt = Instant.now();
     }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class RoomRecord {
+        private Long id;
+        private String name;
+        private Integer capacity;
+        @Builder.Default
+        private Boolean isActive = true;
+    }
 }

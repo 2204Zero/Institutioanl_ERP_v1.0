@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { apiClient } from '../config/api';
 import { useAuthStore } from '../store/useAuthStore';
 import { Loader2, Eye, EyeOff, Shield, Users, GraduationCap, User } from 'lucide-react';
@@ -50,7 +50,7 @@ export default function Login() {
         break;
       case 'FACULTY':
         setUsername('faculty');
-        setPassword('Admin@123');
+        setPassword('Faculty@123');
         break;
       case 'FINANCE':
         setUsername('finance');
@@ -165,6 +165,13 @@ export default function Login() {
                 {loading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
                 {loading ? 'Authenticating...' : `Sign In as ${activeTab.charAt(0) + activeTab.slice(1).toLowerCase()}`}
               </Button>
+            </div>
+
+            <div className="mt-4 pt-3 border-t border-slate-100 text-center text-xs text-slate-500">
+              Prospective student?{' '}
+              <Link to="/admissions" className="font-bold text-blue-600 hover:text-blue-800 underline">
+                Explore Programs &amp; Apply Online &rarr;
+              </Link>
             </div>
           </form>
         </CardContent>
