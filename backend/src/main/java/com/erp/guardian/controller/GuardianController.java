@@ -4,12 +4,14 @@ import com.erp.common.response.ApiResponse;
 import com.erp.guardian.dto.GuardianRequestDto;
 import com.erp.guardian.dto.GuardianResponseDto;
 import com.erp.guardian.service.GuardianService;
+import com.erp.auth.model.UserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,6 +24,22 @@ public class GuardianController {
 
     public GuardianController(GuardianService guardianService) {
         this.guardianService = guardianService;
+    }
+
+    @GetMapping({"/guardians/me", "/api/v1/guardians/me"})
+    @PreAuthorize("hasRole('PARENT') or hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @Operation(summary = "Get My Guardian Profiles", description = "Retrieves guardian profiles linked to authenticated user")
+    public ResponseEntity<ApiResponse<List<GuardianResponseDto>>> getMyGuardians(Authentication authentication) {
+        if (authentication != null && authentication.getPrincipal() instanceof UserPrincipal principal && principal.getId() != null) {
+            List<GuardianResponseDto> list = guardianService.getGuardiansByUserId(principal.getId());
+            return ResponseEntity.ok(ApiResponse.success(list));
+        }
+        String email = authentication != null ? authentication.getName() : null;
+        if (authentication != null && authentication.getPrincipal() instanceof UserPrincipal principal && principal.getEmail() != null) {
+            email = principal.getEmail();
+        }
+        List<GuardianResponseDto> list = guardianService.getGuardiansByEmail(email);
+        return ResponseEntity.ok(ApiResponse.success(list));
     }
 
     @GetMapping({"/guardians", "/api/v1/guardians"})

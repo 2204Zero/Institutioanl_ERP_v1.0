@@ -5,6 +5,7 @@ import {
   ArrowUpRight, 
   ArrowDownRight, 
   Wallet, 
+  Loader2, 
   TrendingDown, 
   ShieldAlert, 
   ExternalLink 
@@ -19,6 +20,8 @@ import {
   type StudentFee 
 } from '../hooks/queries/useFinance';
 import { useAuthStore } from '../store/useAuthStore';
+import { useMyStudentId } from '../hooks/useMyStudentId';
+import { StudentFeesTab } from '../components/StudentFeesTab';
 import { Skeleton } from '../components/ui/skeleton';
 import { Button } from '../components/ui/button';
 import { CreateInvoiceDialog } from '../components/CreateInvoiceDialog';
@@ -38,6 +41,8 @@ export default function FinanceDashboard() {
 
   const isStaff = user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'FINANCE';
 
+  const { data: myStudentId, isLoading: isLoadingMyStudent } = useMyStudentId();
+
   const { data: summary, isLoading: isLoadingSummary, isError: isErrorSummary } = useFinanceSummary({
     enabled: isStaff,
   });
@@ -46,25 +51,58 @@ export default function FinanceDashboard() {
   });
 
   if (!isStaff) {
-    return (
-      <div className="p-4 md:p-8 space-y-6">
-        <div className="bg-white border border-slate-200 rounded-2xl p-8 max-w-xl mx-auto text-center space-y-4 shadow-sm">
-          <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-700">
-            <ShieldAlert className="w-6 h-6 text-slate-600" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-slate-900">Student & Parent Finance Portal</h1>
-            <p className="text-slate-500 text-sm mt-2">
-              Institutional summary and management tools are restricted to authorized finance administration.
-              Your personal fee records, invoice breakdowns, and payments are available in your student profile.
-            </p>
-          </div>
-          <div className="pt-2">
-            <Button asChild className="bg-slate-900 text-white hover:bg-slate-800">
-              <Link to="/dashboard">Return to Dashboard</Link>
-            </Button>
+    if (isLoadingMyStudent) {
+      return (
+        <div className="p-4 md:p-8 flex items-center justify-center min-h-[400px]">
+          <div className="flex flex-col items-center justify-center space-y-3">
+            <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+            <p className="text-xs text-slate-500 font-medium">Loading personal fee records...</p>
           </div>
         </div>
+      );
+    }
+
+    if (!myStudentId) {
+      return (
+        <div className="p-4 md:p-8 space-y-6">
+          <div className="bg-white border border-slate-200 rounded-2xl p-8 max-w-xl mx-auto text-center space-y-4 shadow-sm">
+            <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-700">
+              <ShieldAlert className="w-6 h-6 text-slate-600" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-slate-900">
+                {user?.role === 'PARENT' ? 'No Ward Profile Linked' : 'No Student Profile Linked'}
+              </h1>
+              <p className="text-slate-500 text-sm mt-2">
+                We could not find an enrolled student record linked to your user account. Please contact the admissions or administration office.
+              </p>
+            </div>
+            <div className="pt-2">
+              <Button asChild className="bg-slate-900 text-white hover:bg-slate-800">
+                <Link to="/dashboard">Return to Dashboard</Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="p-4 md:p-8 space-y-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-1">
+              {user?.role === 'PARENT' ? 'Ward Fee Statement' : 'My Invoices & Fee Account'}
+            </h1>
+            <p className="text-slate-500 text-sm">
+              {user?.role === 'PARENT'
+                ? 'Review assigned academic fees, payment history, and pending balances for your ward.'
+                : 'Review your tuition invoices, component breakdowns, and payment history.'}
+            </p>
+          </div>
+        </div>
+
+        <StudentFeesTab studentId={myStudentId} />
       </div>
     );
   }

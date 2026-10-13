@@ -27,6 +27,11 @@ public class CourseOfferingService {
 
     @Transactional
     public CourseOffering createCourseOffering(Long courseId, Long semesterId, Integer maxCapacity) {
+        return createCourseOffering(courseId, semesterId, maxCapacity, false);
+    }
+
+    @Transactional
+    public CourseOffering createCourseOffering(Long courseId, Long semesterId, Integer maxCapacity, Boolean isPublished) {
         if (courseOfferingRepository.existsByCourseIdAndSemesterId(courseId, semesterId)) {
             throw new BusinessException("This course is already offered in the specified semester.");
         }
@@ -45,11 +50,20 @@ public class CourseOfferingService {
                 .course(course)
                 .semester(semester)
                 .maxCapacity(maxCapacity)
-                .isPublished(false)
+                .isPublished(isPublished != null ? isPublished : false)
                 .build();
 
         return courseOfferingRepository.save(offering);
     }
+
+    @Transactional
+    public CourseOffering publishCourseOffering(Long id) {
+        CourseOffering offering = courseOfferingRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Course offering not found with id: " + id));
+        offering.setIsPublished(true);
+        return courseOfferingRepository.save(offering);
+    }
+
 
     @Transactional(readOnly = true)
     public List<CourseOfferingResponse> getAllCourseOfferings() {

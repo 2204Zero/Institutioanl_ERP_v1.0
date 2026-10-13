@@ -9,6 +9,7 @@ import java.util.List;
 @Repository
 public interface GuardianRepository extends JpaRepository<Guardian, Long> {
     List<Guardian> findByStudentId(Long studentId);
+    List<Guardian> findByUserId(Long userId);
     List<Guardian> findByPhone(String phone);
     List<Guardian> findByEmail(String email);
     List<Guardian> findByStudentIdAndIsEmergencyContactTrue(Long studentId);

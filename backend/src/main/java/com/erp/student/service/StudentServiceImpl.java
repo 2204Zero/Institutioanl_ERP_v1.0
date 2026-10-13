@@ -12,6 +12,10 @@ import com.erp.student.entity.StudentStatusHistory;
 import com.erp.student.mapper.StudentMapper;
 import com.erp.student.repository.StudentRepository;
 import com.erp.student.repository.StudentStatusHistoryRepository;
+import com.erp.auth.service.UserAccountProvisioningService;
+import com.erp.guardian.dto.GuardianRequestDto;
+import com.erp.guardian.entity.Guardian;
+import com.erp.guardian.repository.GuardianRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -29,13 +33,19 @@ public class StudentServiceImpl implements StudentService {
     private final StudentRepository studentRepository;
     private final StudentStatusHistoryRepository statusHistoryRepository;
     private final StudentMapper studentMapper;
+    private final UserAccountProvisioningService userAccountProvisioningService;
+    private final GuardianRepository guardianRepository;
 
     public StudentServiceImpl(StudentRepository studentRepository,
                               StudentStatusHistoryRepository statusHistoryRepository,
-                              StudentMapper studentMapper) {
+                              StudentMapper studentMapper,
+                              UserAccountProvisioningService userAccountProvisioningService,
+                              GuardianRepository guardianRepository) {
         this.studentRepository = studentRepository;
         this.statusHistoryRepository = statusHistoryRepository;
         this.studentMapper = studentMapper;
+        this.userAccountProvisioningService = userAccountProvisioningService;
+        this.guardianRepository = guardianRepository;
     }
 
     @Override
@@ -53,7 +63,16 @@ public class StudentServiceImpl implements StudentService {
         String genderCode = getGenderCode(requestDto.getGender());
         int year = requestDto.getEnrollmentDate().getYear() % 100;
 
+        // Provision or link user login account safely before persisting student entity
+        UserAccountProvisioningService.ProvisionedAccount studentAccount =
+                userAccountProvisioningService.provisionOrLinkStudentAccount(
+                        requestDto.getEmail(),
+                        requestDto.getPassword(),
+                        null
+                );
+
         Student student = studentMapper.toEntity(requestDto);
+        student.setUserId(studentAccount.user().getId());
         // Temporary roll number to satisfy non-null constraint during initial insert
         student.setRollNumber("ENR-TEMP-" + java.util.UUID.randomUUID().toString());
 
@@ -67,6 +86,32 @@ public class StudentServiceImpl implements StudentService {
         }
 
         savedStudent.setRollNumber(finalRollNumber);
+
+        // Provision and link guardian if provided in enrollment request
+        UserAccountProvisioningService.ProvisionedAccount guardianAccount = null;
+        if (requestDto.getGuardian() != null) {
+            GuardianRequestDto gDto = requestDto.getGuardian();
+            Guardian guardian = studentMapper.toGuardianEntity(gDto);
+            guardian.setStudent(savedStudent);
+
+            if (gDto.getEmail() != null && !gDto.getEmail().isBlank()) {
+                guardianAccount = userAccountProvisioningService.provisionOrLinkGuardianAccount(
+                        gDto.getEmail(),
+                        null,
+                        null
+                );
+                if (guardianAccount != null) {
+                    guardian.setUserId(guardianAccount.user().getId());
+                }
+            }
+
+            Guardian savedGuardian = guardianRepository.save(guardian);
+            if (savedStudent.getGuardians() == null) {
+                savedStudent.setGuardians(new java.util.ArrayList<>());
+            }
+            savedStudent.getGuardians().add(savedGuardian);
+        }
+
         savedStudent = studentRepository.save(savedStudent);
 
         // Record initial status in history
@@ -80,7 +125,20 @@ public class StudentServiceImpl implements StudentService {
         );
         statusHistoryRepository.save(history);
 
-        return studentMapper.toDto(savedStudent);
+        StudentResponseDto responseDto = studentMapper.toDto(savedStudent);
+        responseDto.setTemporaryPassword(studentAccount.rawPassword());
+        responseDto.setUsername(studentAccount.user().getUsername());
+
+        if (responseDto.getGuardians() != null && !responseDto.getGuardians().isEmpty() && guardianAccount != null) {
+            for (com.erp.guardian.dto.GuardianResponseDto gRes : responseDto.getGuardians()) {
+                if (gRes.getUserId() != null && gRes.getUserId().equals(guardianAccount.user().getId())) {
+                    gRes.setTemporaryPassword(guardianAccount.rawPassword());
+                    gRes.setUsername(guardianAccount.user().getUsername());
+                }
+            }
+        }
+
+        return responseDto;
     }
 
     private String getBranchCode(String department) {

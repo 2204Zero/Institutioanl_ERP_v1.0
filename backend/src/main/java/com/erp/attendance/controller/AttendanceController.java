@@ -33,7 +33,7 @@ public class AttendanceController {
 
     @PostMapping("/bulk")
     @Operation(summary = "Take bulk attendance for a section", description = "Restricted to Faculty teaching the section, and Admins")
-    @PreAuthorize("@securityOwnershipService.canAccessSectionData(authentication, #request.sectionId())")
+    @PreAuthorize("(hasRole('FACULTY') or hasAnyRole('ADMIN', 'SUPER_ADMIN')) and @securityOwnershipService.canAccessSectionData(authentication, #request.sectionId())")
     public ResponseEntity<SectionAttendanceResponse> recordBulkAttendance(
             @Valid @RequestBody BulkAttendanceRequest request,
             Authentication authentication) {

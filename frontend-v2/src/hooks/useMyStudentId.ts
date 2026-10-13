@@ -21,10 +21,9 @@ export function useMyStudentId() {
       
       if (user.role === 'PARENT') {
         try {
-          const res = await apiClient.get('/api/v1/guardians');
+          const res = await apiClient.get('/api/v1/guardians/me');
           const guardians = res.data?.data || [];
-          const match = guardians.find((g: any) => g.email === user.username);
-          return match?.studentId || null;
+          return guardians[0]?.studentId || null;
         } catch {
           return null;
         }

@@ -85,6 +85,7 @@ public class StudentMapper {
         dto.setBatch(entity.getBatch());
         dto.setEnrollmentDate(entity.getEnrollmentDate());
         dto.setStatus(entity.getStatus());
+        dto.setUserId(entity.getUserId());
         dto.setCreatedAt(entity.getCreatedAt());
         dto.setUpdatedAt(entity.getUpdatedAt());
 
@@ -152,6 +153,7 @@ public class StudentMapper {
         dto.setOccupation(entity.getOccupation());
         dto.setAddress(entity.getAddress());
         dto.setIsEmergencyContact(entity.getIsEmergencyContact());
+        dto.setUserId(entity.getUserId());
         dto.setCreatedAt(entity.getCreatedAt());
         dto.setUpdatedAt(entity.getUpdatedAt());
         return dto;

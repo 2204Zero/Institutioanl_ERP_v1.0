@@ -285,3 +285,133 @@ export const useAllocateSlot = () => {
     },
   });
 };
+
+export interface Department {
+  id: number;
+  name: string;
+  code: string;
+  campusId?: number;
+}
+
+export const useDepartments = () => {
+  return useQuery({
+    queryKey: ['departments'],
+    queryFn: async () => {
+      const response = await apiClient.get<Department[]>('/api/v1/departments');
+      return response.data;
+    },
+  });
+};
+
+export const useCreateDepartment = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: { name: string; code: string; campusId?: number }) => {
+      const response = await apiClient.post<Department>('/api/v1/departments', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['departments'] });
+    },
+  });
+};
+
+export const useCreateAcademicYear = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: { name: string; startDate: string; endDate: string; isActive?: boolean }) => {
+      const response = await apiClient.post<AcademicYear>('/api/v1/academic-years', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['academic-years'] });
+    },
+  });
+};
+
+export const useCreateProgram = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: { code: string; name: string; degree: string; departmentId: number; duration: number; isActive?: boolean }) => {
+      const response = await apiClient.post<Program>('/api/v1/programs', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['programs'] });
+    },
+  });
+};
+
+export const useCreateCourse = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: { code: string; name: string; courseType: string; credits: number; departmentId: number; programId?: number; isActive?: boolean }) => {
+      const response = await apiClient.post<Course>('/api/v1/courses', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['courses'] });
+    },
+  });
+};
+
+export const useCreateBatch = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: { name: string; code: string; programId: number; admissionYear: number; graduationYear: number; academicYearId?: number; isActive?: boolean }) => {
+      const response = await apiClient.post<Batch>('/api/v1/batches', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['batches'] });
+    },
+  });
+};
+
+export interface CoursePrerequisiteItem {
+  id: number;
+  courseId: number;
+  courseCode: string;
+  courseName: string;
+  prerequisiteCourseId: number;
+  prerequisiteCourseCode: string;
+  prerequisiteCourseName: string;
+}
+
+export const useCoursePrerequisites = (courseId: number | null) => {
+  return useQuery({
+    queryKey: ['courses', courseId, 'prerequisites'],
+    queryFn: async () => {
+      if (!courseId) return [];
+      const response = await apiClient.get<CoursePrerequisiteItem[]>(`/api/v1/courses/${courseId}/prerequisites`);
+      return response.data;
+    },
+    enabled: !!courseId,
+  });
+};
+
+export const useAddCoursePrerequisite = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ courseId, prerequisiteCourseId }: { courseId: number; prerequisiteCourseId: number }) => {
+      const response = await apiClient.post<CoursePrerequisiteItem>(`/api/v1/courses/${courseId}/prerequisites/${prerequisiteCourseId}`);
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['courses', variables.courseId, 'prerequisites'] });
+    },
+  });
+};
+
+export const useRemoveCoursePrerequisite = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ courseId, prerequisiteCourseId }: { courseId: number; prerequisiteCourseId: number }) => {
+      await apiClient.delete(`/api/v1/courses/${courseId}/prerequisites/${prerequisiteCourseId}`);
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['courses', variables.courseId, 'prerequisites'] });
+    },
+  });
+};
+

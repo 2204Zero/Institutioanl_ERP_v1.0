@@ -11,6 +11,8 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.Lock;
 import jakarta.persistence.LockModeType;
 
+import com.erp.academic.timetable.entity.TimetableSlot;
+
 @Repository
 public interface SectionRepository extends JpaRepository<Section, Long> {
 
@@ -28,6 +30,9 @@ public interface SectionRepository extends JpaRepository<Section, Long> {
     @Query("SELECT s FROM Section s WHERE s.id = :id")
     Optional<Section> findByIdWithPessimisticWriteLock(@Param("id") Long id);
 
-    @Query("SELECT s FROM Section s JOIN SectionFaculty sf ON s.id = sf.sectionId WHERE sf.facultyId = :facultyId AND s.isActive = true")
+    @Query("SELECT DISTINCT s FROM Section s " +
+           "LEFT JOIN SectionFaculty sf ON s.id = sf.sectionId " +
+           "LEFT JOIN TimetableSlot ts ON s.id = ts.sectionId AND ts.isActive = true " +
+           "WHERE (sf.facultyId = :facultyId OR ts.facultyId = :facultyId) AND s.isActive = true")
     List<Section> findActiveSectionsByFacultyId(@Param("facultyId") Long facultyId);
 }

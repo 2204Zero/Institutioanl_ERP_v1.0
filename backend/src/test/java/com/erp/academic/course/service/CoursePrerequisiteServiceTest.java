@@ -82,4 +82,31 @@ public class CoursePrerequisiteServiceTest {
         assertEquals(100L, result.getId());
         verify(prerequisiteRepository, times(1)).save(any(CoursePrerequisite.class));
     }
+
+    @Test
+    void testGetPrerequisites() {
+        when(courseRepository.existsById(1L)).thenReturn(true);
+        CoursePrerequisite mapping = CoursePrerequisite.builder()
+                .id(100L).course(courseA).prerequisiteCourse(courseB).build();
+        when(prerequisiteRepository.findByCourseId(1L)).thenReturn(List.of(mapping));
+
+        var results = prerequisiteService.getPrerequisites(1L);
+
+        assertEquals(1, results.size());
+        assertEquals("Course A", results.get(0).getCourseName());
+        assertEquals("Course B", results.get(0).getPrerequisiteCourseName());
+    }
+
+    @Test
+    void testRemovePrerequisite() {
+        CoursePrerequisite mapping = CoursePrerequisite.builder()
+                .id(100L).course(courseA).prerequisiteCourse(courseB).build();
+        when(prerequisiteRepository.findByCourseIdAndPrerequisiteCourseId(1L, 2L))
+                .thenReturn(Optional.of(mapping));
+
+        prerequisiteService.removePrerequisite(1L, 2L);
+
+        verify(prerequisiteRepository, times(1)).delete(mapping);
+    }
 }
+

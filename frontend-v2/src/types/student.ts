@@ -1,3 +1,5 @@
+export type StudentStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'GRADUATED' | 'ALUMNI' | 'DROPPED' | 'TRANSFERRED';
+
 export interface Student {
   id: number;
   rollNumber: string;
@@ -16,9 +18,19 @@ export interface Student {
   program?: string;
   batch: string;
   enrollmentDate: string; // ISO format date string (YYYY-MM-DD)
-  status: 'ACTIVE' | 'INACTIVE' | 'GRADUATED' | 'DROPOUT' | 'SUSPENDED';
+  status: StudentStatus;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface StudentStatusHistory {
+  id: number;
+  previousStatus: StudentStatus | null;
+  newStatus: StudentStatus;
+  reason: string;
+  changedBy: string;
+  effectiveDate: string;
+  changedAt: string;
 }
 
 export interface PaginatedResponse<T> {

@@ -16,6 +16,7 @@ import com.erp.student.entity.StudentEnrollment;
 import com.erp.student.entity.StudentStatus;
 import com.erp.student.repository.StudentEnrollmentRepository;
 import com.erp.student.repository.StudentRepository;
+import com.erp.auth.service.UserAccountProvisioningService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +33,7 @@ public class StudentOnboardingService {
     private final StudentEnrollmentRepository studentEnrollmentRepository;
     private final BatchRepository batchRepository;
     private final SemesterRepository semesterRepository;
+    private final UserAccountProvisioningService userAccountProvisioningService;
 
     @Transactional
     public Student onboardStudent(Long applicationId) {
@@ -45,10 +47,28 @@ public class StudentOnboardingService {
         Applicant applicant = application.getApplicant();
         Program program = application.getProgram();
 
+        // Resolve Batch
+        Batch matchingBatch = batchRepository.findByProgramId(program.getId()).stream()
+                .filter(b -> b.getAcademicYearId().equals(application.getAcademicYear().getId()))
+                .findFirst()
+                .orElseThrow(() -> new BusinessException("No valid Batch found for the selected Program and Academic Year. Please configure a Batch first."));
+
+        // Resolve Starting Semester (Semester 1 of the Academic Year)
+        Semester startingSemester = semesterRepository.findByAcademicYearId(application.getAcademicYear().getId()).stream()
+                .filter(s -> s.getSemesterNumber() == 1)
+                .findFirst()
+                .orElseThrow(() -> new BusinessException("No valid Semester 1 found for the selected Academic Year. Please configure Semester 1 first."));
+
         String rollNumber = "STU-" + LocalDate.now().getYear() + "-" + UUID.randomUUID().toString().substring(0, 5).toUpperCase();
         
-        // Generate Institutional Email
-        String institutionalEmail = applicant.getFirstName().toLowerCase() + "." + applicant.getLastName().toLowerCase() + "@institution.edu";
+        // Generate Institutional Email with collision protection
+        String baseEmail = (applicant.getFirstName() + "." + applicant.getLastName()).toLowerCase().replaceAll("[^a-z0-9.]", "");
+        String institutionalEmail = baseEmail + "@institution.edu";
+        int counter = 1;
+        while (studentRepository.existsByEmail(institutionalEmail)) {
+            institutionalEmail = baseEmail + counter + "@institution.edu";
+            counter++;
+        }
 
         Student student = new Student(
                 rollNumber,
@@ -62,20 +82,30 @@ public class StudentOnboardingService {
                 program.getName() + " Batch",
                 LocalDate.now()
         );
-        // Resolve Batch
-        Batch matchingBatch = batchRepository.findByProgramId(program.getId()).stream()
-                .filter(b -> b.getAcademicYearId().equals(application.getAcademicYear().getId()))
-                .findFirst()
-                .orElseThrow(() -> new BusinessException("No valid Batch found for the selected Program and Academic Year. Please configure a Batch first."));
 
-        // Resolve Starting Semester (Semester 1 of the Academic Year)
-        Semester startingSemester = semesterRepository.findByAcademicYearId(application.getAcademicYear().getId()).stream()
-                .filter(s -> s.getSemesterNumber() == 1)
-                .findFirst()
-                .orElseThrow(() -> new BusinessException("No valid Semester 1 found for the selected Academic Year. Please configure Semester 1 first."));
+        // Provision student login account
+        UserAccountProvisioningService.ProvisionedAccount studentAccount = null;
+        if (userAccountProvisioningService != null) {
+            studentAccount = userAccountProvisioningService.provisionOrLinkStudentAccount(
+                    institutionalEmail,
+                    null,
+                    rollNumber.toLowerCase()
+            );
+            if (studentAccount != null && studentAccount.user() != null) {
+                student.setUserId(studentAccount.user().getId());
+            }
+        }
 
         student.setAddress(applicant.getAddress());
         Student savedStudent = studentRepository.save(student);
+
+        // Populate transient initial credentials on student for caller
+        if (studentAccount != null) {
+            savedStudent.setTemporaryPassword(studentAccount.rawPassword());
+            if (studentAccount.user() != null) {
+                savedStudent.setUsername(studentAccount.user().getUsername());
+            }
+        }
 
         StudentEnrollment enrollment = new StudentEnrollment();
         enrollment.setEnrollmentNumber("ENR-" + savedStudent.getRollNumber());

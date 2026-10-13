@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '../store/useAuthStore';
 import { apiClient } from '../config/api';
-import type { Student } from '../types/student';
+import type { Student, StudentStatus } from '../types/student';
 import type { GuardianResponseDto } from '../types/guardian';
 import { 
   User, Mail, Phone, MapPin, Building2, Calendar, 
@@ -24,16 +24,44 @@ import {
 } from "../components/ui/dropdown-menu";
 import { StudentAcademicTab } from '../components/StudentAcademicTab';
 import { StudentFeesTab } from '../components/StudentFeesTab';
-import { formatLocalDate } from '../lib/utils';
+import { StudentStatusHistoryTab } from '../components/StudentStatusHistoryTab';
+import { ChangeStudentStatusDialog } from '../components/ChangeStudentStatusDialog';
+
+const VALID_TRANSITIONS: Record<StudentStatus, { status: StudentStatus; label: string; className?: string }[]> = {
+  ACTIVE: [
+    { status: 'SUSPENDED', label: 'Suspend Enrollment', className: 'text-amber-600' },
+    { status: 'INACTIVE', label: 'Mark Inactive', className: 'text-slate-600' },
+    { status: 'GRADUATED', label: 'Mark as Graduated', className: 'text-emerald-600' },
+    { status: 'DROPPED', label: 'Withdraw / Drop', className: 'text-red-600' },
+    { status: 'TRANSFERRED', label: 'Transfer Out', className: 'text-blue-600' },
+  ],
+  SUSPENDED: [
+    { status: 'ACTIVE', label: 'Reinstate to Active', className: 'text-emerald-600 font-semibold' },
+    { status: 'DROPPED', label: 'Withdraw / Drop', className: 'text-red-600' },
+    { status: 'TRANSFERRED', label: 'Transfer Out', className: 'text-blue-600' },
+  ],
+  INACTIVE: [
+    { status: 'ACTIVE', label: 'Reactivate to Active', className: 'text-emerald-600 font-semibold' },
+    { status: 'DROPPED', label: 'Withdraw / Drop', className: 'text-red-600' },
+    { status: 'TRANSFERRED', label: 'Transfer Out', className: 'text-blue-600' },
+  ],
+  GRADUATED: [
+    { status: 'ALUMNI', label: 'Transition to Alumni', className: 'text-purple-600 font-bold' },
+  ],
+  ALUMNI: [],
+  DROPPED: [],
+  TRANSFERRED: [],
+};
 
 export default function StudentProfile() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const canManage = user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN';
-  const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState<'overview' | 'academic' | 'attendance' | 'fees' | 'documents' | 'history'>('overview');
+  const [selectedTargetStatus, setSelectedTargetStatus] = useState<StudentStatus | null>(null);
+  const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
 
   const { data: student, isLoading, isError } = useQuery<Student>({
     queryKey: ['student', id],
@@ -53,26 +81,6 @@ export default function StudentProfile() {
   });
 
   const guardians: GuardianResponseDto[] = guardiansResponse?.data || [];
-
-  const statusMutation = useMutation({
-    mutationFn: async (newStatus: string) => {
-      const res = await apiClient.patch(`/api/v1/students/${id}/status`, {
-        status: newStatus,
-        reason: 'Updated via portal',
-        effectiveDate: formatLocalDate()
-      });
-      return res.data;
-    },
-    onSuccess: () => {
-      toast.success('Status updated successfully');
-      queryClient.invalidateQueries({ queryKey: ['student', id] });
-      queryClient.invalidateQueries({ queryKey: ['students'] });
-    },
-    onError: (error: any) => {
-      const msg = error.response?.data?.message || error.response?.data?.error || 'Failed to update status';
-      toast.error(msg);
-    }
-  });
 
   if (isLoading) {
     return (
@@ -94,6 +102,8 @@ export default function StudentProfile() {
       </PageFrame>
     );
   }
+
+  const validOptions = VALID_TRANSITIONS[student.status] || [];
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: User },
@@ -120,15 +130,31 @@ export default function StudentProfile() {
                   <MoreVertical className="w-3.5 h-3.5 mr-1" /> Options
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-40 text-xs">
-                <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-slate-500">Manage Status</DropdownMenuLabel>
+              <DropdownMenuContent align="end" className="w-52 text-xs bg-white border border-slate-200 shadow-md">
+                <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-slate-500">
+                  Manage Lifecycle Status
+                </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => statusMutation.mutate('ACTIVE')}>Mark Active</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => statusMutation.mutate('SUSPENDED')} className="text-orange-600">Suspend</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => statusMutation.mutate('DROPPED')} className="text-red-600">Drop</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => statusMutation.mutate('GRADUATED')} className="text-emerald-600">Graduated</DropdownMenuItem>
+                {validOptions.length > 0 ? (
+                  validOptions.map((opt) => (
+                    <DropdownMenuItem
+                      key={opt.status}
+                      className={`cursor-pointer ${opt.className || ''}`}
+                      onClick={() => {
+                        setSelectedTargetStatus(opt.status);
+                        setIsStatusDialogOpen(true);
+                      }}
+                    >
+                      {opt.label}
+                    </DropdownMenuItem>
+                  ))
+                ) : (
+                  <DropdownMenuItem disabled className="text-slate-400 italic">
+                    Terminal Status (No Transitions)
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => toast.info('Edit student functionality coming soon')}>
+                <DropdownMenuItem onClick={() => toast.info('Edit profile functionality coming soon')}>
                   <Edit className="w-3.5 h-3.5 mr-2" /> Edit Profile
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -240,14 +266,18 @@ export default function StudentProfile() {
             <StudentFeesTab studentId={Number(id)} />
           )}
 
-          {(activeTab === 'attendance' || activeTab === 'history') && (
+          {activeTab === 'history' && (
+            <StudentStatusHistoryTab studentId={Number(id)} />
+          )}
+
+          {activeTab === 'attendance' && (
             <div className="flex flex-col items-center justify-center p-12 bg-slate-50 border border-slate-200">
                <div className="w-10 h-10 bg-slate-200 flex items-center justify-center mb-3">
                  <ShieldAlert className="w-5 h-5 text-slate-400" />
                </div>
-               <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900">Module Unreachable</h3>
+               <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900">Attendance Module</h3>
                <p className="text-slate-500 text-xs text-center max-w-sm mt-1">
-                 This module will be connected to the new APIs in the upcoming phases. The UI layout foundation is ready.
+                 Attendance roster and history are accessible via the main Attendance workspace.
                </p>
             </div>
           )}
@@ -310,6 +340,15 @@ export default function StudentProfile() {
           </div>
         </div>
       </div>
+
+      <ChangeStudentStatusDialog
+        open={isStatusDialogOpen}
+        onOpenChange={setIsStatusDialogOpen}
+        studentId={student.id}
+        studentName={`${student.firstName} ${student.lastName}`}
+        currentStatus={student.status}
+        targetStatus={selectedTargetStatus}
+      />
     </PageFrame>
   );
 }

@@ -25,6 +25,8 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -81,10 +83,26 @@ public class CourseRegistrationService {
             throw new BusinessException("Cannot register for an inactive section");
         }
 
-        // Check Prerequisites (Prerequisite course completion records not tracked at course-level in current schema)
+        // Check Course Prerequisites
         List<CoursePrerequisite> prerequisites = prerequisiteRepository.findByCourseId(offering.getCourse().getId());
         if (!prerequisites.isEmpty()) {
-            // Documented gap: course-specific completion grades are not stored in student_academic_records
+            List<CourseRegistration> studentRegistrations = registrationRepository.findByStudentId(studentId);
+            Set<Long> registeredCourseIds = studentRegistrations.stream()
+                    .filter(r -> r.getStatus() == RegistrationStatus.REGISTERED)
+                    .filter(r -> r.getCourseOffering() != null && r.getCourseOffering().getCourse() != null)
+                    .map(r -> r.getCourseOffering().getCourse().getId())
+                    .collect(Collectors.toSet());
+
+            for (CoursePrerequisite prereq : prerequisites) {
+                Long prereqCourseId = prereq.getPrerequisiteCourse().getId();
+                if (!registeredCourseIds.contains(prereqCourseId)) {
+                    throw new BusinessException(String.format(
+                            "Prerequisite not satisfied: Student has not completed or registered for required course '%s (%s)'",
+                            prereq.getPrerequisiteCourse().getName(),
+                            prereq.getPrerequisiteCourse().getCode()
+                    ));
+                }
+            }
         }
 
         // Lock a seat in the section by assigning the student physically via pessimistic write lock in SectionService

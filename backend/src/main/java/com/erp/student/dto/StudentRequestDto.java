@@ -76,6 +76,12 @@ public class StudentRequestDto {
     @Schema(description = "Initial status (defaults to ACTIVE)", example = "ACTIVE")
     private StudentStatus status = StudentStatus.ACTIVE;
 
+    @Schema(description = "Optional initial guardian details")
+    private com.erp.guardian.dto.GuardianRequestDto guardian;
+
+    @Schema(description = "Optional custom password for student user account")
+    private String password;
+
     public StudentRequestDto() {
     }
 
@@ -213,5 +219,21 @@ public class StudentRequestDto {
 
     public void setStatus(StudentStatus status) {
         this.status = status;
+    }
+
+    public com.erp.guardian.dto.GuardianRequestDto getGuardian() {
+        return guardian;
+    }
+
+    public void setGuardian(com.erp.guardian.dto.GuardianRequestDto guardian) {
+        this.guardian = guardian;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 }

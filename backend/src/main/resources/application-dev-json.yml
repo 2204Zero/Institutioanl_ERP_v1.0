@@ -1,0 +1,44 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:erp_json_dev;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;NON_KEYWORDS=VALUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+      settings:
+        web-allow-others: false
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+
+logging:
+  level:
+    com.erp: INFO
+    com.erp.devjson: DEBUG
+    org.springframework.web: INFO
+
+flyway:
+  enabled: false
+
+jwt:
+  secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+
+bootstrap:
+  superadmin:
+    enabled: true
+    username: superadmin
+    email: superadmin@erp.com
+    password: Admin@123
+
+erp:
+  devjson:
+    enabled: true
+    storage-dir: data/dev-json

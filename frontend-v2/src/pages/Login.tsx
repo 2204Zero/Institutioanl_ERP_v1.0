@@ -50,7 +50,7 @@ export default function Login() {
         break;
       case 'FACULTY':
         setUsername('faculty');
-        setPassword('Faculty@123');
+        setPassword('Admin@123');
         break;
       case 'FINANCE':
         setUsername('finance');

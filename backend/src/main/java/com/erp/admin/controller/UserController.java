@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.*;
 
 import com.erp.faculty.entity.Faculty;
 import com.erp.faculty.repository.FacultyRepository;
+import com.erp.guardian.entity.Guardian;
+import com.erp.guardian.repository.GuardianRepository;
 import com.erp.student.entity.Student;
 import com.erp.student.repository.StudentRepository;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,15 +34,18 @@ public class UserController {
     private final PasswordEncoder passwordEncoder;
     private final FacultyRepository facultyRepository;
     private final StudentRepository studentRepository;
+    private final GuardianRepository guardianRepository;
 
     public UserController(UserRepository userRepository,
                           PasswordEncoder passwordEncoder,
                           FacultyRepository facultyRepository,
-                          StudentRepository studentRepository) {
+                          StudentRepository studentRepository,
+                          GuardianRepository guardianRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.facultyRepository = facultyRepository;
         this.studentRepository = studentRepository;
+        this.guardianRepository = guardianRepository;
     }
 
     public record UserSummary(Long id, String username, String email, String role, boolean enabled) {}
@@ -51,8 +56,13 @@ public class UserController {
             @NotBlank String email,
             @NotBlank String role,
             String firstName,
-            String lastName
-    ) {}
+            String lastName,
+            Long departmentId
+    ) {
+        public CreateUserRequest(String username, String password, String email, String role, String firstName, String lastName) {
+            this(username, password, email, role, firstName, lastName, null);
+        }
+    }
 
     @GetMapping
     @Operation(summary = "List system users", description = "Restricted to Administrators with USER_MANAGE permission")
@@ -107,6 +117,7 @@ public class UserController {
                     .firstName(request.firstName())
                     .lastName(request.lastName())
                     .officialEmail(request.email())
+                    .departmentId(request.departmentId())
                     .userId(savedUser.getId())
                     .isActive(true)
                     .build();
@@ -118,6 +129,14 @@ public class UserController {
                     studentRepository.save(student);
                 }
             });
+        } else if (role == Role.PARENT) {
+            List<Guardian> guardians = guardianRepository.findByEmail(request.email().trim().toLowerCase());
+            for (Guardian guardian : guardians) {
+                if (guardian.getUserId() == null) {
+                    guardian.setUserId(savedUser.getId());
+                    guardianRepository.save(guardian);
+                }
+            }
         }
 
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(

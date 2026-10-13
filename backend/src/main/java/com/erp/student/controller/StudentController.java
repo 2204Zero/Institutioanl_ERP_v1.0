@@ -18,6 +18,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 
 import java.util.List;
 
@@ -106,7 +107,11 @@ public class StudentController {
     @Operation(summary = "Update Student Status", description = "Updates student enrollment status (ACTIVE, INACTIVE, SUSPENDED, GRADUATED, ALUMNI) with audit remarks")
     public ResponseEntity<ApiResponse<StudentResponseDto>> updateStudentStatus(
             @PathVariable Long id,
-            @Valid @RequestBody StudentStatusUpdateDto statusUpdateDto) {
+            @Valid @RequestBody StudentStatusUpdateDto statusUpdateDto,
+            Authentication authentication) {
+        if ((statusUpdateDto.getChangedBy() == null || statusUpdateDto.getChangedBy().isBlank()) && authentication != null) {
+            statusUpdateDto.setChangedBy(authentication.getName());
+        }
         StudentResponseDto updated = studentService.updateStudentStatus(id, statusUpdateDto);
         return ResponseEntity.ok(ApiResponse.success("Student status updated successfully", updated));
     }

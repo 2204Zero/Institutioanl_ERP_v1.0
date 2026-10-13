@@ -1,5 +1,18 @@
 import { useState } from 'react';
-import { BookOpen, GraduationCap, Users, Search, Plus, MoreHorizontal, FileText, Calendar, LayoutList, Loader2 } from 'lucide-react';
+import {
+  BookOpen,
+  GraduationCap,
+  Users,
+  Search,
+  Plus,
+  MoreHorizontal,
+  FileText,
+  Calendar,
+  LayoutList,
+  Loader2,
+  Building2,
+  CalendarDays
+} from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -12,21 +25,44 @@ import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
 import { Skeleton } from '../components/ui/skeleton';
 import {
-  usePrograms, useCourses, useBatches, useSemesters,
-  useCourseOfferings, useCreateSemester, useCreateCourseOffering, useAcademicYears,
-  useSections, useCreateSection, useFacultyList, useAssignFaculty
+  usePrograms,
+  useCourses,
+  useBatches,
+  useSemesters,
+  useCourseOfferings,
+  useCreateSemester,
+  useCreateCourseOffering,
+  useAcademicYears,
+  useSections,
+  useCreateSection,
+  useFacultyList,
+  useAssignFaculty,
+  useDepartments,
+  useCreateProgram,
+  useCreateCourse,
+  useCreateBatch,
+  type Course
 } from '../hooks/queries/useAcademics';
 import { toast } from 'sonner';
 import { TimetableTab } from '../components/TimetableTab';
 import { useAuthStore } from '../store/useAuthStore';
+import { CreateDepartmentDialog } from '../components/academics/CreateDepartmentDialog';
+import { CreateAcademicYearDialog } from '../components/academics/CreateAcademicYearDialog';
+import { CoursePrerequisitesDialog } from '../components/academics/CoursePrerequisitesDialog';
 
 export default function Academics() {
   const [activeTab, setActiveTab] = useState('programs');
   const [isCreating, setIsCreating] = useState(false);
 
+  // Dialog States
+  const [deptDialogOpen, setDeptDialogOpen] = useState(false);
+  const [ayDialogOpen, setAyDialogOpen] = useState(false);
+  const [selectedCourseForPrereqs, setSelectedCourseForPrereqs] = useState<Course | null>(null);
+
   const { user } = useAuthStore();
   const isAdmin = user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN';
 
+  const { data: departments = [] } = useDepartments();
   const { data: programs, isLoading: isLoadingPrograms } = usePrograms();
   const { data: courses, isLoading: isLoadingCourses } = useCourses();
   const { data: batches, isLoading: isLoadingBatches } = useBatches();
@@ -36,10 +72,36 @@ export default function Academics() {
   const { data: sections, isLoading: isLoadingSections } = useSections();
   const { data: facultyList = [] } = useFacultyList({ enabled: isAdmin });
 
+  const createProgram = useCreateProgram();
+  const createCourse = useCreateCourse();
+  const createBatch = useCreateBatch();
   const createSemester = useCreateSemester();
   const createOffering = useCreateCourseOffering();
   const createSection = useCreateSection();
   const assignFaculty = useAssignFaculty();
+
+  // Program Form State
+  const [progCode, setProgCode] = useState('');
+  const [progName, setProgName] = useState('');
+  const [progDegree, setProgDegree] = useState('B.Tech');
+  const [progDeptId, setProgDeptId] = useState('');
+  const [progDuration, setProgDuration] = useState('4');
+
+  // Course Form State
+  const [crsCode, setCrsCode] = useState('');
+  const [crsName, setCrsName] = useState('');
+  const [crsType, setCrsType] = useState('THEORY');
+  const [crsCredits, setCrsCredits] = useState('3');
+  const [crsDeptId, setCrsDeptId] = useState('');
+  const [crsProgId, setCrsProgId] = useState('');
+
+  // Batch Form State
+  const [batchName, setBatchName] = useState('');
+  const [batchCode, setBatchCode] = useState('');
+  const [batchProgId, setBatchProgId] = useState('');
+  const [batchAdmYear, setBatchAdmYear] = useState('2026');
+  const [batchGradYear, setBatchGradYear] = useState('2030');
+  const [batchAyId, setBatchAyId] = useState('');
 
   // Section Form State
   const [secName, setSecName] = useState('');
@@ -62,6 +124,73 @@ export default function Academics() {
   const [offCourseId, setOffCourseId] = useState('');
   const [offSemesterId, setOffSemesterId] = useState('');
   const [offCapacity, setOffCapacity] = useState('');
+
+  const handleCreateProgram = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await createProgram.mutateAsync({
+        code: progCode.trim().toUpperCase(),
+        name: progName.trim(),
+        degree: progDegree,
+        departmentId: parseInt(progDeptId),
+        duration: parseInt(progDuration),
+        isActive: true
+      });
+      toast.success('Program created successfully');
+      setIsCreating(false);
+      setProgCode('');
+      setProgName('');
+      setProgDeptId('');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to create program');
+    }
+  };
+
+  const handleCreateCourse = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await createCourse.mutateAsync({
+        code: crsCode.trim().toUpperCase(),
+        name: crsName.trim(),
+        courseType: crsType,
+        credits: parseInt(crsCredits),
+        departmentId: parseInt(crsDeptId),
+        programId: crsProgId ? parseInt(crsProgId) : undefined,
+        isActive: true
+      });
+      toast.success('Course created successfully');
+      setIsCreating(false);
+      setCrsCode('');
+      setCrsName('');
+      setCrsDeptId('');
+      setCrsProgId('');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to create course');
+    }
+  };
+
+  const handleCreateBatch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await createBatch.mutateAsync({
+        name: batchName.trim(),
+        code: batchCode.trim().toUpperCase(),
+        programId: parseInt(batchProgId),
+        admissionYear: parseInt(batchAdmYear),
+        graduationYear: parseInt(batchGradYear),
+        academicYearId: batchAyId ? parseInt(batchAyId) : undefined,
+        isActive: true
+      });
+      toast.success('Batch created successfully');
+      setIsCreating(false);
+      setBatchName('');
+      setBatchCode('');
+      setBatchProgId('');
+      setBatchAyId('');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to create batch');
+    }
+  };
 
   const handleCreateSemester = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -172,7 +301,19 @@ export default function Academics() {
               {c.isActive ? 'ACTIVE' : 'INACTIVE'}
             </span>
           </TableCell>
-          <TableCell className="text-right px-6 py-4"><Button variant="ghost" size="icon"><MoreHorizontal className="w-4 h-4" /></Button></TableCell>
+          <TableCell className="text-right px-6 py-4">
+            <div className="flex items-center justify-end gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs font-semibold"
+                onClick={() => setSelectedCourseForPrereqs(c)}
+              >
+                Prerequisites
+              </Button>
+              <Button variant="ghost" size="icon"><MoreHorizontal className="w-4 h-4" /></Button>
+            </div>
+          </TableCell>
         </TableRow>
       ));
     }
@@ -320,14 +461,49 @@ export default function Academics() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 mb-1">Academics Core</h1>
-          <p className="text-slate-500 text-sm">Configure programs, degrees, course catalog, and academic batches.</p>
+          <p className="text-slate-500 text-sm">Configure programs, degrees, course catalog, batches, and prerequisites.</p>
         </div>
-        {(activeTab === 'semesters' || activeTab === 'offerings' || activeTab === 'sections') && !isCreating && isAdmin && (
-          <Button onClick={() => setIsCreating(true)} className="bg-black text-white hover:bg-black/80 px-6 rounded-full h-11">
-            <Plus className="w-4 h-4 mr-2" />
-            Add {activeTab === 'semesters' ? 'Semester' : activeTab === 'offerings' ? 'Offering' : 'Section'}
-          </Button>
-        )}
+
+        <div className="flex flex-wrap items-center gap-2">
+          {isAdmin && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setDeptDialogOpen(true)}
+                className="border-slate-300 text-slate-700 hover:bg-slate-50 h-10 px-4 rounded-full text-xs font-semibold"
+              >
+                <Building2 className="w-3.5 h-3.5 mr-1.5" />
+                + Department
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setAyDialogOpen(true)}
+                className="border-slate-300 text-slate-700 hover:bg-slate-50 h-10 px-4 rounded-full text-xs font-semibold"
+              >
+                <CalendarDays className="w-3.5 h-3.5 mr-1.5" />
+                + Academic Year
+              </Button>
+            </>
+          )}
+
+          {activeTab !== 'timetable' && !isCreating && isAdmin && (
+            <Button
+              onClick={() => setIsCreating(true)}
+              className="bg-black text-white hover:bg-black/80 px-6 rounded-full h-10 text-xs font-semibold"
+            >
+              <Plus className="w-4 h-4 mr-1.5" />
+              Add {
+                activeTab === 'programs' ? 'Program' :
+                activeTab === 'courses' ? 'Course' :
+                activeTab === 'batches' ? 'Batch' :
+                activeTab === 'semesters' ? 'Semester' :
+                activeTab === 'offerings' ? 'Offering' : 'Section'
+              }
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="bg-white border border-slate-100 rounded-3xl overflow-hidden shadow-sm">
@@ -352,6 +528,218 @@ export default function Academics() {
           ))}
         </div>
 
+        {/* 1. Create Program Form */}
+        {isCreating && activeTab === 'programs' && (
+          <div className="p-6 bg-slate-50 border-b border-slate-200">
+            <h3 className="text-lg font-bold mb-4">Create New Academic Program</h3>
+            <form onSubmit={handleCreateProgram} className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Program Code</label>
+                <Input required value={progCode} onChange={e => setProgCode(e.target.value)} placeholder="e.g. BTECH-CS" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Program Name</label>
+                <Input required value={progName} onChange={e => setProgName(e.target.value)} placeholder="e.g. Bachelor of Technology in CS" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Degree Title</label>
+                <select
+                  required
+                  className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
+                  value={progDegree}
+                  onChange={e => setProgDegree(e.target.value)}
+                >
+                  <option value="B.Tech">B.Tech</option>
+                  <option value="M.Tech">M.Tech</option>
+                  <option value="B.Sc">B.Sc</option>
+                  <option value="M.Sc">M.Sc</option>
+                  <option value="BBA">BBA</option>
+                  <option value="MBA">MBA</option>
+                  <option value="Ph.D">Ph.D</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Duration (Years)</label>
+                <Input required type="number" min="1" max="6" value={progDuration} onChange={e => setProgDuration(e.target.value)} />
+              </div>
+              <div className="md:col-span-2">
+                <div className="flex justify-between items-center mb-1">
+                  <label className="block text-xs font-bold text-slate-700">Department</label>
+                  <button
+                    type="button"
+                    onClick={() => setDeptDialogOpen(true)}
+                    className="text-xs text-blue-600 hover:underline font-medium"
+                  >
+                    + New Department
+                  </button>
+                </div>
+                <select
+                  required
+                  className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
+                  value={progDeptId}
+                  onChange={e => setProgDeptId(e.target.value)}
+                >
+                  <option value="">Select Department...</option>
+                  {departments.map(d => (
+                    <option key={d.id} value={d.id}>{d.name} ({d.code})</option>
+                  ))}
+                </select>
+                {departments.length === 0 && (
+                  <p className="text-xs text-red-500 mt-1">No departments found. Please create a Department first.</p>
+                )}
+              </div>
+              <div className="md:col-span-2 flex justify-end space-x-2 mt-4">
+                <Button type="button" variant="outline" onClick={() => setIsCreating(false)}>Cancel</Button>
+                <Button type="submit" disabled={createProgram.isPending}>
+                  {createProgram.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                  Save Program
+                </Button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* 2. Create Course Form */}
+        {isCreating && activeTab === 'courses' && (
+          <div className="p-6 bg-slate-50 border-b border-slate-200">
+            <h3 className="text-lg font-bold mb-4">Add Course to Catalog</h3>
+            <form onSubmit={handleCreateCourse} className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Course Code</label>
+                <Input required value={crsCode} onChange={e => setCrsCode(e.target.value)} placeholder="e.g. CS101" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Course Name</label>
+                <Input required value={crsName} onChange={e => setCrsName(e.target.value)} placeholder="e.g. Introduction to Programming" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Course Type</label>
+                <select
+                  required
+                  className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
+                  value={crsType}
+                  onChange={e => setCrsType(e.target.value)}
+                >
+                  <option value="THEORY">Theory</option>
+                  <option value="LAB">Lab / Practical</option>
+                  <option value="SEMINAR">Seminar</option>
+                  <option value="PROJECT">Project / Thesis</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Credits</label>
+                <Input required type="number" min="1" max="10" value={crsCredits} onChange={e => setCrsCredits(e.target.value)} />
+              </div>
+              <div>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="block text-xs font-bold text-slate-700">Department</label>
+                  <button
+                    type="button"
+                    onClick={() => setDeptDialogOpen(true)}
+                    className="text-xs text-blue-600 hover:underline font-medium"
+                  >
+                    + New
+                  </button>
+                </div>
+                <select
+                  required
+                  className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
+                  value={crsDeptId}
+                  onChange={e => setCrsDeptId(e.target.value)}
+                >
+                  <option value="">Select Department...</option>
+                  {departments.map(d => (
+                    <option key={d.id} value={d.id}>{d.name} ({d.code})</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Associated Program (Optional)</label>
+                <select
+                  className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
+                  value={crsProgId}
+                  onChange={e => setCrsProgId(e.target.value)}
+                >
+                  <option value="">None / Open Elective</option>
+                  {programs?.map(p => (
+                    <option key={p.id} value={p.id}>{p.code} - {p.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="md:col-span-2 flex justify-end space-x-2 mt-4">
+                <Button type="button" variant="outline" onClick={() => setIsCreating(false)}>Cancel</Button>
+                <Button type="submit" disabled={createCourse.isPending}>
+                  {createCourse.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                  Save Course
+                </Button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* 3. Create Batch Form */}
+        {isCreating && activeTab === 'batches' && (
+          <div className="p-6 bg-slate-50 border-b border-slate-200">
+            <h3 className="text-lg font-bold mb-4">Create Academic Batch</h3>
+            <form onSubmit={handleCreateBatch} className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Batch Name</label>
+                <Input required value={batchName} onChange={e => setBatchName(e.target.value)} placeholder="e.g. 2026 CS Batch" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Batch Code</label>
+                <Input required value={batchCode} onChange={e => setBatchCode(e.target.value)} placeholder="e.g. CS-2026" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Program</label>
+                <select
+                  required
+                  className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
+                  value={batchProgId}
+                  onChange={e => setBatchProgId(e.target.value)}
+                >
+                  <option value="">Select Program...</option>
+                  {programs?.map(p => (
+                    <option key={p.id} value={p.id}>{p.code} - {p.name}</option>
+                  ))}
+                </select>
+                {!programs?.length && (
+                  <p className="text-xs text-red-500 mt-1">No programs found. Please create a Program first.</p>
+                )}
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Academic Year (Optional)</label>
+                <select
+                  className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
+                  value={batchAyId}
+                  onChange={e => setBatchAyId(e.target.value)}
+                >
+                  <option value="">Select Academic Year...</option>
+                  {academicYears?.map(ay => (
+                    <option key={ay.id} value={ay.id}>{ay.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Admission Year</label>
+                <Input required type="number" min="2000" max="2100" value={batchAdmYear} onChange={e => setBatchAdmYear(e.target.value)} />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Graduation Year</label>
+                <Input required type="number" min="2000" max="2100" value={batchGradYear} onChange={e => setBatchGradYear(e.target.value)} />
+              </div>
+              <div className="md:col-span-2 flex justify-end space-x-2 mt-4">
+                <Button type="button" variant="outline" onClick={() => setIsCreating(false)}>Cancel</Button>
+                <Button type="submit" disabled={createBatch.isPending}>
+                  {createBatch.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                  Save Batch
+                </Button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* 4. Create Semester Form */}
         {isCreating && activeTab === 'semesters' && (
           <div className="p-6 bg-slate-50 border-b border-slate-200">
             <h3 className="text-lg font-bold mb-4">Create New Semester</h3>
@@ -365,7 +753,16 @@ export default function Academics() {
                 <Input required type="number" min="1" value={semNumber} onChange={e => setSemNumber(e.target.value)} placeholder="e.g. 1" />
               </div>
               <div className="md:col-span-2">
-                <label className="block text-xs font-bold text-slate-700 mb-1">Academic Year</label>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="block text-xs font-bold text-slate-700">Academic Year</label>
+                  <button
+                    type="button"
+                    onClick={() => setAyDialogOpen(true)}
+                    className="text-xs text-blue-600 hover:underline font-medium"
+                  >
+                    + New Academic Year
+                  </button>
+                </div>
                 <select required className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950" value={semAcademicYear} onChange={e => setSemAcademicYear(e.target.value)}>
                   <option value="">Select Academic Year...</option>
                   {academicYears?.map(ay => (
@@ -393,6 +790,7 @@ export default function Academics() {
           </div>
         )}
 
+        {/* 5. Create Offering Form */}
         {isCreating && activeTab === 'offerings' && (
           <div className="p-6 bg-slate-50 border-b border-slate-200">
             <h3 className="text-lg font-bold mb-4">Create Course Offering</h3>
@@ -403,6 +801,7 @@ export default function Academics() {
                   <option value="">Select Course...</option>
                   {courses?.map(c => <option key={c.id} value={c.id}>{c.code} - {c.name}</option>)}
                 </select>
+                {!courses?.length && <p className="text-xs text-red-500 mt-1">No Courses found. Please add a Course to the catalog first.</p>}
               </div>
               <div className="md:col-span-2">
                 <label className="block text-xs font-bold text-slate-700 mb-1">Select Semester</label>
@@ -410,6 +809,7 @@ export default function Academics() {
                   <option value="">Select Semester...</option>
                   {semesters?.map(s => <option key={s.id} value={s.id}>{s.name} (Sem {s.semesterNumber})</option>)}
                 </select>
+                {!semesters?.length && <p className="text-xs text-red-500 mt-1">No Semesters found. Please create a Semester first.</p>}
               </div>
               <div className="md:col-span-2">
                 <label className="block text-xs font-bold text-slate-700 mb-1">Max Capacity</label>
@@ -426,6 +826,7 @@ export default function Academics() {
           </div>
         )}
 
+        {/* 6. Create Section Form */}
         {isCreating && activeTab === 'sections' && (
           <div className="p-6 bg-slate-50 border-b border-slate-200">
             <h3 className="text-lg font-bold mb-4">Create Section</h3>
@@ -534,6 +935,25 @@ export default function Academics() {
           </Table>
         )}
       </div>
+
+      {/* Global Modals */}
+      <CreateDepartmentDialog
+        open={deptDialogOpen}
+        onOpenChange={setDeptDialogOpen}
+      />
+      <CreateAcademicYearDialog
+        open={ayDialogOpen}
+        onOpenChange={setAyDialogOpen}
+      />
+      <CoursePrerequisitesDialog
+        course={selectedCourseForPrereqs}
+        allCourses={courses}
+        open={!!selectedCourseForPrereqs}
+        onOpenChange={(open) => {
+          if (!open) setSelectedCourseForPrereqs(null);
+        }}
+        isAdmin={isAdmin}
+      />
     </div>
   );
 }

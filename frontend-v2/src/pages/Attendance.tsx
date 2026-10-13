@@ -1,4 +1,4 @@
-
+import { useState, useMemo } from 'react';
 import { Search, Loader2 } from 'lucide-react';
 import { apiClient } from '../config/api';
 import { Input } from '../components/ui/input';
@@ -14,16 +14,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "../components/ui/table"
+} from "../components/ui/table";
 
-export default function Attendance() {
+function StandardAttendance() {
   const { user } = useAuthStore();
   const { data: myStudentId, isLoading: isLoadingId } = useMyStudentId();
   const isPersonalView = user?.role === 'STUDENT' || user?.role === 'PARENT';
-
-  if (user?.role === 'FACULTY') {
-    return <FacultyAttendance />;
-  }
+  const [searchTerm, setSearchTerm] = useState('');
+  const [exceptionsOnly, setExceptionsOnly] = useState(false);
 
   const { data: records, isLoading, isError } = useQuery<AttendanceResponse[]>({
     queryKey: ['attendance', isPersonalView, myStudentId],
@@ -38,6 +36,19 @@ export default function Attendance() {
     },
     enabled: isPersonalView ? !!myStudentId : true
   });
+
+  const filteredRecords = useMemo(() => {
+    if (!records) return [];
+    return records.filter(record => {
+      if (exceptionsOnly && record.status === 'PRESENT') return false;
+      if (!searchTerm) return true;
+      const term = searchTerm.toLowerCase();
+      const name = (record.studentName || '').toLowerCase();
+      const roll = (record.rollNumber || '').toLowerCase();
+      const course = (record.courseCode || '').toLowerCase();
+      return name.includes(term) || roll.includes(term) || course.includes(term);
+    });
+  }, [records, searchTerm, exceptionsOnly]);
 
   if (isLoading || (isPersonalView && isLoadingId)) {
     return (
@@ -78,7 +89,11 @@ export default function Attendance() {
               ) : (
                 records.map((record) => (
                   <TableRow key={record.id} className="hover:bg-slate-50/80 transition-colors">
-                    <TableCell className="px-6 py-4 text-slate-600">{new Date(record.date).toLocaleDateString()}</TableCell>
+                    <TableCell className="px-6 py-4 text-slate-600">
+                      {Array.isArray(record.date) 
+                        ? new Date(record.date[0], record.date[1] - 1, record.date[2]).toLocaleDateString()
+                        : new Date(record.date).toLocaleDateString()}
+                    </TableCell>
                     <TableCell className="px-6 py-4 text-slate-600">{record.courseCode || 'General'}</TableCell>
                     <TableCell className="px-6 py-4">
                       <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
@@ -107,7 +122,16 @@ export default function Attendance() {
           <h1 className="text-3xl font-bold text-slate-900 mb-1">Attendance</h1>
           <p className="text-slate-500 text-sm">Monitor daily student attendance records.</p>
         </div>
-        <button className="bg-black text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-slate-800 transition-colors">View Exceptions</button>
+        <button 
+          onClick={() => setExceptionsOnly(prev => !prev)}
+          className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
+            exceptionsOnly 
+              ? 'bg-amber-600 text-white hover:bg-amber-700' 
+              : 'bg-black text-white hover:bg-slate-800'
+          }`}
+        >
+          {exceptionsOnly ? 'Showing Exceptions Only' : 'View Exceptions'}
+        </button>
       </div>
 
       <div className="bg-white p-4 rounded-t-2xl border-b border-slate-100 flex justify-between items-center shadow-sm mt-4">
@@ -116,13 +140,15 @@ export default function Attendance() {
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <Input 
               type="text" 
-              placeholder="Search by student name..." 
+              placeholder="Search by student name or roll number..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-9 pr-4 py-2 bg-slate-50 border-slate-200 rounded-lg text-sm w-full sm:w-72 h-10"
             />
           </div>
         </div>
         <div className="text-sm text-slate-500 font-medium">
-          {records?.length || 0} records
+          {filteredRecords.length} records {exceptionsOnly && '(exceptions)'}
         </div>
       </div>
 
@@ -150,14 +176,16 @@ export default function Attendance() {
               <TableRow>
                 <TableCell colSpan={5} className="h-24 text-center text-destructive">Failed to load attendance.</TableCell>
               </TableRow>
-            ) : records?.length === 0 ? (
+            ) : filteredRecords.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center text-slate-500">No attendance records found.</TableCell>
+                <TableCell colSpan={5} className="h-24 text-center text-slate-500">
+                  {records && records.length > 0 ? 'No matching attendance records found.' : 'No attendance records found.'}
+                </TableCell>
               </TableRow>
             ) : (
-              records?.map((record) => (
+              filteredRecords.map((record) => (
                 <TableRow key={record.id} className="hover:bg-slate-50/80 transition-colors">
-                                    <TableCell className="px-6 py-4 font-medium text-slate-700">
+                  <TableCell className="px-6 py-4 font-medium text-slate-700">
                     {Array.isArray(record.date) 
                       ? new Date(record.date[0], record.date[1] - 1, record.date[2]).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
                       : new Date(record.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) === 'Invalid Date'
@@ -194,8 +222,10 @@ export default function Attendance() {
   );
 }
 
-
-
-
-
-
+export default function Attendance() {
+  const { user } = useAuthStore();
+  if (user?.role === 'FACULTY') {
+    return <FacultyAttendance />;
+  }
+  return <StandardAttendance />;
+}

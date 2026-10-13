@@ -80,6 +80,14 @@ public class Student {
     @Column(name = "user_id", unique = true)
     private Long userId;
 
+    @Transient
+    @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+    private String temporaryPassword;
+
+    @Transient
+    @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+    private String username;
+
     @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Guardian> guardians = new ArrayList<>();
 
@@ -305,5 +313,21 @@ public class Student {
 
     public void setUserId(Long userId) {
         this.userId = userId;
+    }
+
+    public String getTemporaryPassword() {
+        return temporaryPassword;
+    }
+
+    public void setTemporaryPassword(String temporaryPassword) {
+        this.temporaryPassword = temporaryPassword;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
     }
 }
