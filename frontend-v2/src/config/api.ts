@@ -2,11 +2,8 @@ import axios from 'axios';
 import { useAuthStore } from '../store/useAuthStore';
 
 const envBaseUrl = import.meta.env.VITE_API_BASE_URL;
-if (import.meta.env.PROD && !envBaseUrl) {
-  console.error('CRITICAL: VITE_API_BASE_URL is not defined in production environment.');
-}
 
-export const BASE_URL = envBaseUrl || 'http://localhost:8081';
+export const BASE_URL = envBaseUrl || (import.meta.env.DEV ? 'http://localhost:8081' : '/api');
 
 export const getStudentPhotoUrl = (studentId: number | string | undefined | null, timestamp?: number) => {
   if (!studentId) return '';
