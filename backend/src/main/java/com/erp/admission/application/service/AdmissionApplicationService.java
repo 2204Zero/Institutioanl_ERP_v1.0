@@ -49,14 +49,26 @@ public class AdmissionApplicationService {
         return mapToDto(saved);
     }
 
+    private static final java.util.Comparator<AdmissionApplication> NEWEST_APPLICATION_COMPARATOR =
+            java.util.Comparator.comparing((AdmissionApplication a) -> {
+                if (a.getSubmittedAt() != null) return a.getSubmittedAt();
+                if (a.getCreatedAt() != null) return a.getCreatedAt();
+                return Instant.EPOCH;
+            }).thenComparing(AdmissionApplication::getId, java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder()))
+            .reversed();
+
     @Transactional(readOnly = true)
     public java.util.List<AdmissionApplicationDto> getAllApplications() {
-        return applicationRepository.findAll().stream().map(this::mapToDto).toList();
+        return applicationRepository.findAll().stream()
+                .sorted(NEWEST_APPLICATION_COMPARATOR)
+                .map(this::mapToDto)
+                .toList();
     }
 
     @Transactional(readOnly = true)
     public java.util.List<AdmissionApplicationDto> getApplicationsByApplicant(Long applicantId) {
         return applicationRepository.findByApplicantId(applicantId).stream()
+                .sorted(NEWEST_APPLICATION_COMPARATOR)
                 .map(this::mapToDto)
                 .toList();
     }
@@ -113,6 +125,7 @@ public class AdmissionApplicationService {
                 .status(entity.getStatus())
                 .meritScore(entity.getMeritScore())
                 .submittedAt(entity.getSubmittedAt())
+                .createdAt(entity.getCreatedAt())
                 .build();
     }
 }

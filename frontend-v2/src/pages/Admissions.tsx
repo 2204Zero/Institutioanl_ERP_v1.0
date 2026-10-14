@@ -92,7 +92,24 @@ export default function Admissions() {
     app.email.toLowerCase().includes(search.toLowerCase())
   );
 
-  const filteredApplications = applications?.filter(app =>
+  // Sort applications by submission / creation time descending (newest first, secondary by ID desc)
+  const sortedApplications = useMemo(() => {
+    if (!applications) return [];
+    return [...applications].sort((a, b) => {
+      const timeA = (a.submittedAt ? new Date(a.submittedAt).getTime() : 0) ||
+                    (a.createdAt ? new Date(a.createdAt).getTime() : 0) ||
+                    (a.applicationDate ? new Date(a.applicationDate).getTime() : 0);
+      const timeB = (b.submittedAt ? new Date(b.submittedAt).getTime() : 0) ||
+                    (b.createdAt ? new Date(b.createdAt).getTime() : 0) ||
+                    (b.applicationDate ? new Date(b.applicationDate).getTime() : 0);
+      if (timeB !== timeA) {
+        return timeB - timeA;
+      }
+      return (b.id || 0) - (a.id || 0);
+    });
+  }, [applications]);
+
+  const filteredApplications = sortedApplications.filter(app =>
     `APP-${app.id}`.toLowerCase().includes(search.toLowerCase()) ||
     getApplicantName(app.applicantId).toLowerCase().includes(search.toLowerCase()) ||
     getProgramName(app.programId).toLowerCase().includes(search.toLowerCase())

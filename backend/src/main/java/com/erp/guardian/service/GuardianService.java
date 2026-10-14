@@ -26,4 +26,6 @@ public interface GuardianService {
     List<GuardianResponseDto> getGuardiansByEmail(String email);
  
     List<GuardianResponseDto> getGuardiansByUserId(Long userId);
+
+    void unlinkGuardianFromStudent(Long studentId, Long guardianId);
 }

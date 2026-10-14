@@ -21,4 +21,5 @@ public class AdmissionApplicationDto {
     private ApplicationStatus status;
     private Double meritScore;
     private Instant submittedAt;
+    private Instant createdAt;
 }

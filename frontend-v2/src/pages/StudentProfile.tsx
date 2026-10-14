@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../store/useAuthStore';
 import { apiClient } from '../config/api';
+import { StudentAvatar } from '../components/StudentAvatar';
 import type { Student, StudentStatus } from '../types/student';
 import type { GuardianResponseDto } from '../types/guardian';
 import { 
@@ -10,7 +11,7 @@ import {
   BookOpen, MoreVertical, Edit, Loader2,
   AlertCircle, Download, FileText, CalendarCheck, Wallet, Clock,
   CreditCard, Copy, Check, Eye, ArrowUpRight, Pencil,
-  Camera, Upload, Trash2, Plus
+  Camera, Upload, Trash2, Plus, Link2, Unlink
 } from 'lucide-react';
 import { PageFrame } from '../components/ui/PageFrame';
 import { Button } from '../components/ui/button';
@@ -48,6 +49,8 @@ import { StudentIdCardModal } from '../components/StudentIdCardModal';
 import { StudentTranscriptModal } from '../components/StudentTranscriptModal';
 import { EditStudentDialog } from '../components/EditStudentDialog';
 import { EditGuardianDialog } from '../components/EditGuardianDialog';
+import { CreateGuardianDialog } from '../components/CreateGuardianDialog';
+import { LinkExistingGuardianDialog } from '../components/LinkExistingGuardianDialog';
 
 const VALID_TRANSITIONS: Record<StudentStatus, { status: StudentStatus; label: string; className?: string }[]> = {
   ACTIVE: [
@@ -143,11 +146,16 @@ export default function StudentProfile() {
   const [photoError, setPhotoError] = useState(false);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
 
+  useEffect(() => {
+    setPhotoError(false);
+  }, [student?.id, photoTimestamp]);
+
   // Document upload state
   const [isUploadDocOpen, setIsUploadDocOpen] = useState(false);
   const [uploadDocType, setUploadDocType] = useState('TENTH_MARKSHEET');
   const [uploadDocFile, setUploadDocFile] = useState<File | null>(null);
   const [isUploadingDoc, setIsUploadingDoc] = useState(false);
+  const [isLinkGuardianOpen, setIsLinkGuardianOpen] = useState(false);
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -201,6 +209,22 @@ export default function StudentProfile() {
     }
   };
 
+  const handleUnlinkGuardian = async (g: GuardianResponseDto) => {
+    if (!student) return;
+    const guardianName = `${g.firstName} ${g.lastName}`.trim() || 'this guardian';
+    if (!window.confirm(`Are you sure you want to unlink ${guardianName} from this student? This removes the student relationship without deleting the guardian's user account or other linked student profiles.`)) {
+      return;
+    }
+    try {
+      await apiClient.delete(`/api/v1/students/${student.id}/guardians/${g.id}`);
+      toast.success(`${guardianName} unlinked successfully`);
+      queryClient.invalidateQueries({ queryKey: ['student-guardians', id] });
+      queryClient.invalidateQueries({ queryKey: ['guardians'] });
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to unlink guardian');
+    }
+  };
+
   const handleUploadDocument = async () => {
     if (!uploadDocFile) {
       toast.error('Please choose a file to upload');
@@ -215,6 +239,11 @@ export default function StudentProfile() {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       toast.success('Document uploaded successfully!');
+      if (uploadDocType === 'PHOTOGRAPH') {
+        setPhotoTimestamp(Date.now());
+        setPhotoError(false);
+        queryClient.invalidateQueries({ queryKey: ['student', id] });
+      }
       setIsUploadDocOpen(false);
       setUploadDocFile(null);
       queryClient.invalidateQueries({ queryKey: ['student-documents', id] });
@@ -233,6 +262,41 @@ export default function StudentProfile() {
       queryClient.invalidateQueries({ queryKey: ['student-documents', id] });
     } catch (err: any) {
       toast.error('Failed to delete document');
+    }
+  };
+
+  const handleViewDocument = async (docId: number) => {
+    try {
+      const res = await apiClient.get(`/api/v1/documents/${docId}/view`, {
+        responseType: 'blob',
+      });
+      const contentType = (res.headers['content-type'] as string) || 'application/pdf';
+      const blob = new Blob([res.data], { type: contentType });
+      const blobUrl = window.URL.createObjectURL(blob);
+      window.open(blobUrl, '_blank');
+      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 60000);
+    } catch (err: any) {
+      toast.error('Failed to open document preview');
+    }
+  };
+
+  const handleDownloadDocument = async (docId: number, fileName: string) => {
+    try {
+      const res = await apiClient.get(`/api/v1/documents/${docId}/download`, {
+        responseType: 'blob',
+      });
+      const contentType = (res.headers['content-type'] as string) || 'application/octet-stream';
+      const blob = new Blob([res.data], { type: contentType });
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = fileName || `document-${docId}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err: any) {
+      toast.error('Failed to download document');
     }
   };
 
@@ -436,9 +500,28 @@ export default function StudentProfile() {
               </div>
 
               <div className="border border-slate-200 bg-white">
-                <div className="px-4 py-3 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">Associated Guardians</h3>
-                  <span className="text-[10px] font-semibold text-slate-500">{guardians.length} Registered</span>
+                <div className="px-4 py-3 border-b border-slate-200 bg-slate-50 flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center space-x-2">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">Associated Guardians</h3>
+                    <span className="text-[10px] font-semibold text-slate-500">({guardians.length} Registered)</span>
+                  </div>
+                  {canManage && (
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs px-2.5 border-slate-300 text-slate-700 hover:bg-slate-100"
+                        onClick={() => setIsLinkGuardianOpen(true)}
+                      >
+                        <Link2 className="w-3.5 h-3.5 mr-1 text-slate-600" /> Link Existing
+                      </Button>
+                      <CreateGuardianDialog
+                        studentId={student.id}
+                        size="sm"
+                        triggerClassName="h-7 text-xs px-2.5 bg-primary text-white hover:bg-primary/90 flex items-center space-x-1 rounded-md"
+                      />
+                    </div>
+                  )}
                 </div>
                 {guardians.length > 0 ? (
                   <div className="divide-y divide-slate-100">
@@ -459,14 +542,24 @@ export default function StudentProfile() {
                             {g.occupation && <p className="text-[10px] text-slate-400">{g.occupation}</p>}
                           </div>
                           {canManage && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-xs h-7 px-2 border-slate-200 text-slate-600 hover:text-slate-900 ml-2"
-                              onClick={() => setEditingGuardian(g)}
-                            >
-                              <Pencil className="w-3 h-3 mr-1" /> Edit
-                            </Button>
+                            <div className="flex items-center space-x-1.5 ml-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-xs h-7 px-2 border-slate-200 text-slate-600 hover:text-slate-900"
+                                onClick={() => setEditingGuardian(g)}
+                              >
+                                <Pencil className="w-3 h-3 mr-1" /> Edit
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-xs h-7 px-2 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                                onClick={() => handleUnlinkGuardian(g)}
+                              >
+                                <Unlink className="w-3 h-3 mr-1" /> Unlink
+                              </Button>
+                            </div>
                           )}
                         </div>
                       </div>
@@ -632,25 +725,25 @@ export default function StudentProfile() {
                           <div>
                             <p className="text-xs font-bold text-slate-900">{doc.originalFileName}</p>
                             <p className="text-[10px] text-slate-500 font-medium">
-                              Type: <span className="font-semibold text-slate-700">{doc.documentType}</span> • Uploaded: {new Date(doc.uploadDate).toLocaleDateString()} • {Math.round(doc.fileSize / 1024)} KB
+                              Type: <span className="font-semibold text-slate-700">{doc.documentType}</span> • Uploaded: {formatDateDisplay(doc.uploadedAt || doc.uploadDate)} • {Math.round(doc.fileSize / 1024)} KB
                             </p>
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <a
-                            href={`/api/v1/documents/${doc.id}/view`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-[11px] font-semibold text-slate-600 hover:text-slate-900 px-2 py-1 border border-slate-200 rounded hover:bg-white inline-flex items-center"
+                          <button
+                            type="button"
+                            onClick={() => handleViewDocument(doc.id)}
+                            className="text-[11px] font-semibold text-slate-600 hover:text-slate-900 px-2 py-1 border border-slate-200 rounded hover:bg-white inline-flex items-center cursor-pointer"
                           >
                             <Eye className="w-3 h-3 mr-1" /> View
-                          </a>
-                          <a
-                            href={`/api/v1/documents/${doc.id}/download`}
-                            className="text-[11px] font-semibold text-slate-600 hover:text-slate-900 px-2 py-1 border border-slate-200 rounded hover:bg-white inline-flex items-center"
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDownloadDocument(doc.id, doc.originalFileName)}
+                            className="text-[11px] font-semibold text-slate-600 hover:text-slate-900 px-2 py-1 border border-slate-200 rounded hover:bg-white inline-flex items-center cursor-pointer"
                           >
                             <Download className="w-3 h-3 mr-1" /> Download
-                          </a>
+                          </button>
                           {canManage && (
                             <Button
                               variant="ghost"
@@ -678,20 +771,17 @@ export default function StudentProfile() {
         <div className="space-y-6">
           {/* Profile Photo Card */}
           <div className="border border-slate-200 bg-white p-5 flex flex-col items-center text-center">
-            <div className="relative group w-32 h-32 rounded-2xl overflow-hidden border-2 border-slate-200 bg-slate-100 flex items-center justify-center shadow-xs">
-              {!photoError ? (
-                <img
-                  src={`/api/v1/students/${student.id}/photo?t=${photoTimestamp}`}
-                  alt={`${student.firstName} ${student.lastName}`}
-                  className="w-full h-full object-cover"
-                  onError={() => setPhotoError(true)}
-                />
-              ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900 text-white font-bold text-2xl uppercase tracking-wider">
-                  <span>{student.firstName[0]}{student.lastName[0]}</span>
-                </div>
-              )}
-
+            <StudentAvatar
+              studentId={student.id}
+              firstName={student.firstName}
+              lastName={student.lastName}
+              photoTimestamp={photoTimestamp}
+              sizeClassName="w-32 h-32 rounded-2xl"
+              textClassName="text-2xl"
+              className="border-2 border-slate-200 bg-slate-100 shadow-xs relative group"
+              onLoad={() => setPhotoError(false)}
+              onError={() => setPhotoError(true)}
+            >
               {canManage && (
                 <label className="absolute inset-0 bg-black/50 text-white flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
                   <Camera className="w-6 h-6 mb-1" />
@@ -705,7 +795,7 @@ export default function StudentProfile() {
                   />
                 </label>
               )}
-            </div>
+            </StudentAvatar>
 
             <div className="mt-3">
               <h3 className="font-bold text-sm text-slate-900">{student.firstName} {student.lastName}</h3>
@@ -755,14 +845,14 @@ export default function StudentProfile() {
                 <BookOpen className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Program / Degree</p>
-                  <p className="font-bold text-slate-900 text-sm mt-0.5">{student.program || 'General Academic'}</p>
+                  <p className="font-bold text-slate-900 text-sm mt-0.5">{student.program || 'Not Assigned'}</p>
                 </div>
               </div>
               <div className="flex items-start space-x-3">
                 <Calendar className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Batch Cohort</p>
-                  <p className="font-bold text-slate-900 text-sm mt-0.5">{student.batch || 'Current'}</p>
+                  <p className="font-bold text-slate-900 text-sm mt-0.5">{student.batch || 'Not Assigned'}</p>
                 </div>
               </div>
               <div className="flex items-start space-x-3">
@@ -832,6 +922,13 @@ export default function StudentProfile() {
           studentId={student.id}
         />
       )}
+
+      <LinkExistingGuardianDialog
+        open={isLinkGuardianOpen}
+        onOpenChange={setIsLinkGuardianOpen}
+        studentId={student.id}
+        currentGuardians={guardians}
+      />
 
       {/* Upload Document Dialog */}
       <Dialog open={isUploadDocOpen} onOpenChange={setIsUploadDocOpen}>

@@ -50,6 +50,10 @@ public class UserAccountProvisioningService {
         Optional<AppUser> existingUserOpt = userRepository.findByEmailIgnoreCase(normalizedEmail);
         if (existingUserOpt.isPresent()) {
             AppUser existingUser = existingUserOpt.get();
+            if (existingUser.getRole() == Role.APPLICANT) {
+                throw new BusinessException("Email '" + normalizedEmail + "' is registered as an applicant account. " +
+                        "Student ERP accounts must use institutional email.");
+            }
             if (existingUser.getRole() != Role.STUDENT) {
                 throw new BusinessException("Email '" + normalizedEmail + "' is already registered with role '"
                         + existingUser.getRole() + "'. Cross-role identity mapping is strictly prohibited.");

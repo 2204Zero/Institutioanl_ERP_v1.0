@@ -25,7 +25,7 @@ public class DevelopmentFixtureSeeder {
     private final com.erp.guardian.repository.GuardianRepository guardianRepository;
 
     @org.springframework.beans.factory.annotation.Value("${erp.devjson.seed-fixtures:true}")
-    private boolean seedFixturesEnabled;
+    private boolean seedFixturesEnabled = true;
 
     public DevelopmentFixtureSeeder(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this(userRepository, passwordEncoder, null, null);

@@ -127,17 +127,32 @@ public class StudentDocumentServiceImpl implements StudentDocumentService {
         try {
             Path filePath = Paths.get(document.getStoragePath()).normalize();
             if (!Files.exists(filePath)) {
-                if (document.getFileName() != null && Files.exists(this.storageLocation.resolve(document.getFileName()))) {
-                    filePath = this.storageLocation.resolve(document.getFileName()).normalize();
-                } else if (document.getStoragePath() != null) {
+                String fileName = document.getFileName();
+                String baseName = null;
+                if (document.getStoragePath() != null) {
                     String cleanPath = document.getStoragePath();
                     int lastSlash = Math.max(cleanPath.lastIndexOf('/'), cleanPath.lastIndexOf('\\'));
                     if (lastSlash >= 0) {
-                        String baseName = cleanPath.substring(lastSlash + 1);
-                        Path candidate = this.storageLocation.resolve(baseName).normalize();
-                        if (Files.exists(candidate)) {
-                            filePath = candidate;
-                        }
+                        baseName = cleanPath.substring(lastSlash + 1);
+                    }
+                }
+                List<Path> candidateRoots = List.of(
+                        this.storageLocation,
+                        this.storageLocation.resolve("documents"),
+                        this.storageLocation.resolve("students"),
+                        Paths.get("uploads").toAbsolutePath().normalize(),
+                        Paths.get("uploads/documents").toAbsolutePath().normalize(),
+                        Paths.get("data/dev-json/uploads").toAbsolutePath().normalize(),
+                        Paths.get("data/dev-json/uploads/documents").toAbsolutePath().normalize()
+                );
+                for (Path root : candidateRoots) {
+                    if (fileName != null && Files.exists(root.resolve(fileName))) {
+                        filePath = root.resolve(fileName).normalize();
+                        break;
+                    }
+                    if (baseName != null && Files.exists(root.resolve(baseName))) {
+                        filePath = root.resolve(baseName).normalize();
+                        break;
                     }
                 }
             }

@@ -12,5 +12,6 @@ public interface ApplicantRepository extends JpaRepository<Applicant, Long> {
     boolean existsByEmail(String email);
     Optional<Applicant> findByPhone(String phone);
     boolean existsByPhone(String phone);
+    Optional<Applicant> findByUserId(Long userId);
     java.util.List<Applicant> findAllByOrderByCreatedAtDescIdDesc();
 }

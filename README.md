@@ -14,6 +14,18 @@
 
 ---
 
+## Abstract
+
+Modern higher education institutions struggle with operational silos, fragmented student records, uncoordinated fee tracking, and insecure credential management. **EduPulse** addresses these challenges by delivering a centralized, multi-tenant capable, modular monolith built on **Spring Boot 3.3.4 (Java 21 LTS)** and a modern **React 19** frontend.
+
+The platform provides a comprehensive **Student Information System (SIS)** supporting multi-attribute search, guardian linking, multipart document archiving, and an immutable academic status transition state machine (Active, Inactive, Suspended, Graduated, Alumni). Security is enforced through stateless JWT authentication backed by database-tracked session revocation, method-level Role-Based Access Control (`@PreAuthorize`), and strict Insecure Direct Object Reference (IDOR) mitigations. Database integrity is preserved across 5 Flyway migrations (`V1` to `V5`), enforcing relational cascades, payment idempotency keys, and automated identity linking.
+
+Quality assurance is verified through a dual-profile test architecture comprising an in-memory **H2** developer test suite, an isolated **PostgreSQL 17** integration suite (`edupulse_test`) protected by fail-fast test safety guards (`PostgresSafetyGuard`), a 35-test SIS acceptance matrix, and live browser workflow acceptance across 18 administrative and academic routes. The system is containerized via Docker Compose, including production-ready multi-stage build definitions.
+
+*Read the full academic abstract and problem definition in [`docs/project-overview/abstract.md`](docs/project-overview/abstract.md).*
+
+---
+
 ## Er. RAM BABU BURI - Project Mentor
 
 **Er. Ram Babu Buri** serves as the **Project Mentor and Technical Advisor** for EduPulse ERP. As an academician and engineering educator, he provided foundational project guidance, technical direction, and architectural oversight throughout the design and realization of this enterprise institutional management system.
@@ -93,7 +105,7 @@ Technical guidance and advisement for the project encompass enterprise backend f
    - [Quick Start Guide](#quick-start-guide)
    - [Release Verification Summary](#release-verification-summary)
    - [Repository Directory Structure](#repository-directory-structure)
-2. [Abstract](#2-abstract)
+2. [Overview](#2-overview)
 3. [Problem Statement & Objectives](#3-problem-statement--objectives)
 4. [Scope, Boundaries & User Roles](#4-scope-boundaries--user-roles)
 5. [Features & Module-Status Acceptance Matrix](#5-features--module-status-acceptance-matrix)
@@ -325,7 +337,7 @@ Institutional_ERP_v1.0/
 
 ---
 
-## 2. Abstract
+## 2. Overview
 
 Modern higher education institutions struggle with operational silos, fragmented student records, uncoordinated fee tracking, and insecure credential management. **EduPulse** addresses these challenges by delivering a centralized, multi-tenant capable, modular monolith built on **Spring Boot 3.3.4 (Java 21 LTS)** and a modern **React 19** frontend.
 

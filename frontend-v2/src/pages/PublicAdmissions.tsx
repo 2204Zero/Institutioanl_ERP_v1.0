@@ -1,16 +1,25 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '../config/api';
-import { formatAcademicYearLabel, formatProgramLabel } from '../lib/academicUtils';
+import { useAuthStore } from '../store/useAuthStore';
 import { 
-  GraduationCap, 
   Send, 
   CheckCircle, 
   ArrowRight, 
   Clock, 
   Loader2, 
-  FileCheck
+  FileCheck,
+  User,
+  LogIn,
+  UserPlus,
+  ShieldCheck,
+  Search,
+  ArrowLeft,
+  Building2,
+  AlertCircle,
+  HelpCircle,
+  BookOpen
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -34,9 +43,64 @@ interface PublicAcademicYear {
 }
 
 export default function PublicAdmissions() {
-  const [activeTab, setActiveTab] = useState<'programs' | 'inquiry' | 'apply'>('programs');
+  const navigate = useNavigate();
+  const { user, isAuthenticated, login, logout } = useAuthStore();
 
-  // Fetch public programs
+  // Search & Filters
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedDegree, setSelectedDegree] = useState('ALL');
+
+  // Selected Program for Action & Intended Action
+  const [selectedProgram, setSelectedProgram] = useState<PublicProgram | null>(null);
+  const [intendedAction, setIntendedAction] = useState<'inquiry' | 'apply' | null>(null);
+
+  // Modals state
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [showInquiryModal, setShowInquiryModal] = useState(false);
+  const [showApplicationModal, setShowApplicationModal] = useState(false);
+  const [confirmationData, setConfirmationData] = useState<{
+    type: 'inquiry' | 'application';
+    referenceId: string;
+    programName: string;
+    message: string;
+  } | null>(null);
+
+  // Login Form State
+  const [loginUsername, setLoginUsername] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginSubmitting, setLoginSubmitting] = useState(false);
+
+  // Register Form State
+  const [regFirstName, setRegFirstName] = useState('');
+  const [regLastName, setRegLastName] = useState('');
+  const [regEmail, setRegEmail] = useState('');
+  const [regPhone, setRegPhone] = useState('');
+  const [regPassword, setRegPassword] = useState('');
+  const [regDob, setRegDob] = useState('');
+  const [regGender, setRegGender] = useState('MALE');
+  const [regAddress, setRegAddress] = useState('');
+  const [regSubmitting, setRegSubmitting] = useState(false);
+
+  // Inquiry Form State
+  const [inquiryMessage, setInquiryMessage] = useState('');
+  const [inquirySubmitting, setInquirySubmitting] = useState(false);
+
+  // Application Form State
+  const [appAcademicYearId, setAppAcademicYearId] = useState<string>('');
+  const [appDob, setAppDob] = useState('');
+  const [appGender, setAppGender] = useState('MALE');
+  const [appAddress, setAppAddress] = useState('');
+  const [appRemarks, setAppRemarks] = useState('');
+  const [appSubmitting, setAppSubmitting] = useState(false);
+
+  // Documents state
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [tenthMarksheetFile, setTenthMarksheetFile] = useState<File | null>(null);
+  const [twelfthMarksheetFile, setTwelfthMarksheetFile] = useState<File | null>(null);
+  const [govtIdFile, setGovtIdFile] = useState<File | null>(null);
+
+  // Fetch Public Programs
   const { data: programs = [], isLoading: loadingPrograms } = useQuery<PublicProgram[]>({
     queryKey: ['public-programs'],
     queryFn: async () => {
@@ -51,14 +115,19 @@ export default function PublicAdmissions() {
     },
   });
 
-  // Fetch public academic years
+  // Fetch Public Academic Years
   const { data: academicYears = [] } = useQuery<PublicAcademicYear[]>({
     queryKey: ['public-academic-years'],
     queryFn: async () => {
       try {
         const res = await apiClient.get('/api/v1/admissions/public/academic-years');
         const raw = res.data;
-        return Array.isArray(raw) ? raw : (raw?.data && Array.isArray(raw.data) ? raw.data : []);
+        const list = Array.isArray(raw) ? raw : (raw?.data && Array.isArray(raw.data) ? raw.data : []);
+        if (list.length > 0 && !appAcademicYearId) {
+          const active = list.find((ay: any) => ay.isActive);
+          setAppAcademicYearId(active ? String(active.id) : String(list[0].id));
+        }
+        return list;
       } catch (err) {
         console.warn('Failed to fetch public academic years:', err);
         return [];
@@ -66,87 +135,180 @@ export default function PublicAdmissions() {
     },
   });
 
-  // Inquiry Form State
-  const [inquiryName, setInquiryName] = useState('');
-  const [inquiryEmail, setInquiryEmail] = useState('');
-  const [inquiryPhone, setInquiryPhone] = useState('');
-  const [inquiryProgram, setInquiryProgram] = useState('');
-  const [inquiryMessage, setInquiryMessage] = useState('');
-  const [inquirySubmitting, setInquirySubmitting] = useState(false);
-  const [inquirySuccessRef, setInquirySuccessRef] = useState<string | null>(null);
+  // Filtered Programs
+  const filteredPrograms = programs.filter(p => {
+    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          p.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          p.degree.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesDegree = selectedDegree === 'ALL' || p.degree.toUpperCase() === selectedDegree.toUpperCase();
+    return matchesSearch && matchesDegree;
+  });
 
-  // Formal Application Form State
-  const [appFirstName, setAppFirstName] = useState('');
-  const [appLastName, setAppLastName] = useState('');
-  const [appEmail, setAppEmail] = useState('');
-  const [appPhone, setAppPhone] = useState('');
-  const [appDob, setAppDob] = useState('');
-  const [appGender, setAppGender] = useState('MALE');
-  const [appAddress, setAppAddress] = useState('');
-  const [appProgramId, setAppProgramId] = useState<string>('');
-  const [appAcademicYearId, setAppAcademicYearId] = useState<string>('');
-  const [appSubmitting, setAppSubmitting] = useState(false);
-  const [appSuccessResult, setAppSuccessResult] = useState<{ id: number; applicationNumber?: string } | null>(null);
+  // Available degree types for filter pills
+  const availableDegrees = Array.from(new Set(programs.map(p => p.degree))).filter(Boolean);
 
-  // Document Uploads State
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [tenthMarksheetFile, setTenthMarksheetFile] = useState<File | null>(null);
-  const [twelfthMarksheetFile, setTwelfthMarksheetFile] = useState<File | null>(null);
-  const [govtIdFile, setGovtIdFile] = useState<File | null>(null);
+  // Handle Action Trigger ("Make an Inquiry" or "Apply")
+  const handleInitiateAction = (program: PublicProgram, action: 'inquiry' | 'apply') => {
+    setSelectedProgram(program);
+    setIntendedAction(action);
 
-  const handleInquirySubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inquiryName.trim() || !inquiryEmail.trim() || !inquiryPhone.trim()) {
-      toast.error('Please provide name, email, and contact phone number.');
+    if (!isAuthenticated) {
+      setShowAuthModal(true);
       return;
     }
+
+    if (action === 'inquiry') {
+      setShowInquiryModal(true);
+    } else {
+      setShowApplicationModal(true);
+    }
+  };
+
+  // Sign In Handler
+  const handleAuthLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!loginUsername.trim() || !loginPassword.trim()) {
+      toast.error('Please enter both email/username and password.');
+      return;
+    }
+    setLoginSubmitting(true);
+    try {
+      const res = await apiClient.post('/auth/login', {
+        username: loginUsername.trim(),
+        password: loginPassword,
+      });
+      const data = res.data;
+      login(data.accessToken, data.refreshToken, {
+        username: data.username,
+        role: data.role,
+        permissions: data.permissions || [],
+      });
+      toast.success(`Welcome back, ${data.username}!`);
+      setShowAuthModal(false);
+
+      // Seamless point-of-action resumption
+      if (intendedAction === 'inquiry' && selectedProgram) {
+        setShowInquiryModal(true);
+      } else if (intendedAction === 'apply' && selectedProgram) {
+        setShowApplicationModal(true);
+      } else if (data.role === 'APPLICANT') {
+        navigate('/dashboard');
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Invalid username or password.');
+    } finally {
+      setLoginSubmitting(false);
+    }
+  };
+
+  // Register Handler
+  const handleAuthRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!regFirstName.trim() || !regLastName.trim() || !regEmail.trim() || !regPhone.trim() || !regPassword.trim()) {
+      toast.error('Please fill in all required fields.');
+      return;
+    }
+    if (regPassword.length < 6) {
+      toast.error('Password must be at least 6 characters.');
+      return;
+    }
+    setRegSubmitting(true);
+    try {
+      await apiClient.post('/api/v1/admissions/public/register', {
+        firstName: regFirstName.trim(),
+        lastName: regLastName.trim(),
+        email: regEmail.trim(),
+        phone: regPhone.trim(),
+        password: regPassword,
+        dateOfBirth: regDob || undefined,
+        gender: regGender,
+        address: regAddress || undefined,
+      });
+      toast.success('Account created successfully! Logging you in...');
+
+      // Auto login with new applicant account
+      const loginRes = await apiClient.post('/auth/login', {
+        username: regEmail.trim(),
+        password: regPassword,
+      });
+      const data = loginRes.data;
+      login(data.accessToken, data.refreshToken, {
+        username: data.username,
+        role: data.role,
+        permissions: data.permissions || [],
+      });
+      setShowAuthModal(false);
+
+      // Seamless point-of-action resumption
+      if (intendedAction === 'inquiry' && selectedProgram) {
+        setShowInquiryModal(true);
+      } else if (intendedAction === 'apply' && selectedProgram) {
+        setShowApplicationModal(true);
+      } else {
+        navigate('/dashboard');
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to create account. Please check your details.');
+    } finally {
+      setRegSubmitting(false);
+    }
+  };
+
+  // Submit Inquiry (Authenticated)
+  const handleSubmitInquiry = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedProgram) return;
+
     setInquirySubmitting(true);
     try {
       const res = await apiClient.post('/api/v1/admissions/public/inquiries', {
-        prospectName: inquiryName.trim(),
-        email: inquiryEmail.trim(),
-        phone: inquiryPhone.trim(),
-        programOfInterest: inquiryProgram || undefined,
-        notes: inquiryMessage || undefined,
+        programOfInterest: selectedProgram.name,
+        notes: inquiryMessage.trim() || 'General inquiry regarding admissions requirements and curriculum structure.',
       });
-      const applicant = res.data;
-      setInquirySuccessRef(`INQ-${applicant.id || Math.floor(1000 + Math.random() * 9000)}`);
+
+      const data = res.data;
+      const refId = data.referenceNumber || (data.id ? `INQ-${data.id}` : 'INQ-ACK');
+      
+      setShowInquiryModal(false);
+      setInquiryMessage('');
+      setConfirmationData({
+        type: 'inquiry',
+        referenceId: refId,
+        programName: selectedProgram.name,
+        message: 'Your inquiry has been successfully registered with the Admissions Office. An admissions counselor will review your question and respond directly to your applicant dashboard.',
+      });
       toast.success('Inquiry submitted successfully!');
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to submit inquiry. Please try again.');
+      toast.error(err.response?.data?.message || 'Failed to submit inquiry. Please ensure you are signed in.');
     } finally {
       setInquirySubmitting(false);
     }
   };
 
-  const handleApplicationSubmit = async (e: React.FormEvent) => {
+  // Submit Application (Authenticated)
+  const handleSubmitApplication = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!appFirstName.trim() || !appLastName.trim() || !appEmail.trim() || !appPhone.trim()) {
-      toast.error('Please complete all required applicant details.');
-      return;
-    }
-    if (!appProgramId || !appAcademicYearId) {
-      toast.error('Please select both a Degree Program and Academic Year.');
+    if (!selectedProgram) return;
+    if (!appAcademicYearId) {
+      toast.error('Please select an Academic Year.');
       return;
     }
 
     setAppSubmitting(true);
     try {
       const res = await apiClient.post('/api/v1/admissions/public/applications', {
-        firstName: appFirstName.trim(),
-        lastName: appLastName.trim(),
-        email: appEmail.trim(),
-        phone: appPhone.trim(),
+        programId: selectedProgram.id,
+        academicYearId: Number(appAcademicYearId),
         dateOfBirth: appDob || undefined,
         gender: appGender,
         address: appAddress || undefined,
-        programId: Number(appProgramId),
-        academicYearId: Number(appAcademicYearId),
+        remarks: appRemarks || undefined,
       });
+
       const createdApp = res.data;
       const appId = createdApp.id;
 
-      // Upload selected applicant documents
+      // Upload documents if selected
       const uploadDoc = async (type: string, file: File) => {
         try {
           const fd = new FormData();
@@ -165,506 +327,792 @@ export default function PublicAdmissions() {
       if (twelfthMarksheetFile) await uploadDoc('TWELFTH_MARKSHEET', twelfthMarksheetFile);
       if (govtIdFile) await uploadDoc('GOVERNMENT_ID', govtIdFile);
 
-      setAppSuccessResult({
-        id: createdApp.id,
-        applicationNumber: createdApp.applicationNumber || `APP-${createdApp.id}`,
+      const appNum = createdApp.applicationNumber || `APP-${createdApp.id}`;
+      setShowApplicationModal(false);
+      setConfirmationData({
+        type: 'application',
+        referenceId: appNum,
+        programName: selectedProgram.name,
+        message: 'Your formal application has been submitted for administrative review and document verification. You can track progress, view decisions, and upload additional certificates anytime from your applicant dashboard.',
       });
-      toast.success('Application and documents registered and submitted for review!');
+      toast.success('Application submitted successfully!');
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to submit application. Please verify details.');
+      toast.error(err.response?.data?.message || 'Failed to submit application. Please verify your details.');
     } finally {
       setAppSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-800">
-      {/* Header / Brand Nav */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-30">
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-800 flex flex-col">
+      {/* 1. Portal Navigation Header */}
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <img src="/logo.jpg?v=3" alt="EduPulse Logo" className="w-9 h-9 rounded-lg object-cover shadow-xs" />
-            <div>
-              <span className="text-lg font-bold text-slate-900 tracking-tight">EduPulse ERP</span>
-              <span className="hidden sm:inline-block ml-2 text-xs font-semibold px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full">
-                Admissions Portal
-              </span>
+            <Link 
+              to="/" 
+              className="flex items-center text-slate-500 hover:text-slate-900 transition-colors mr-2 text-xs font-semibold"
+              title="Return to EduPulse ERP Product Website"
+            >
+              <ArrowLeft className="h-4 w-4 mr-1 text-slate-400" />
+              <span className="hidden sm:inline">Product Website</span>
+            </Link>
+            <div className="h-4 w-px bg-slate-200 hidden sm:block" />
+            <div className="flex items-center gap-2">
+              <img 
+                src="/logo.jpg" 
+                alt="EduPulse Logo" 
+                className="h-8 w-8 rounded-lg object-cover shadow-xs border border-slate-200" 
+              />
+              <div>
+                <span className="text-base font-bold text-slate-900 tracking-tight">Institutional Admissions</span>
+                <span className="hidden sm:inline-block ml-2 text-[10px] font-semibold px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full uppercase tracking-wider">
+                  Degree Programs
+                </span>
+              </div>
             </div>
           </div>
-          <div className="flex items-center space-x-3 text-xs font-semibold">
-            <Link 
-              to="/login"
-              className="px-3.5 py-1.5 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-100 transition-colors"
-            >
-              Sign In to ERP
-            </Link>
+
+          <div className="flex items-center space-x-2.5 text-xs font-semibold">
+            {isAuthenticated ? (
+              <>
+                <span className="text-slate-600 hidden md:inline mr-1">
+                  Signed in as <strong className="text-slate-900">{user?.username}</strong>
+                </span>
+                <Button 
+                  size="sm" 
+                  onClick={() => navigate('/dashboard')}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-medium"
+                >
+                  <User className="h-3.5 w-3.5 mr-1.5" />
+                  Applicant Dashboard
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => {
+                    logout();
+                    toast.success('Signed out successfully.');
+                  }}
+                  className="text-slate-600 hover:bg-slate-100"
+                >
+                  Sign Out
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setSelectedProgram(null);
+                    setIntendedAction(null);
+                    setAuthMode('login');
+                    setShowAuthModal(true);
+                  }}
+                  className="border-slate-300 text-slate-700 hover:bg-slate-100"
+                >
+                  <LogIn className="h-3.5 w-3.5 mr-1.5" />
+                  Sign In
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setSelectedProgram(null);
+                    setIntendedAction(null);
+                    setAuthMode('register');
+                    setShowAuthModal(true);
+                  }}
+                  className="bg-slate-900 hover:bg-slate-800 text-white"
+                >
+                  <UserPlus className="h-3.5 w-3.5 mr-1.5" />
+                  Create Applicant Account
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="bg-gradient-to-b from-white to-slate-100/60 border-b border-slate-200 py-12 px-4 sm:px-6 text-center">
-        <div className="max-w-3xl mx-auto space-y-3">
-          <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-blue-100/80 text-blue-800 text-xs font-bold uppercase tracking-wide">
-            <GraduationCap className="w-3.5 h-3.5" />
-            <span>Admissions & Enrollments</span>
-          </div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-            Institutional Degree Programs & Admissions
-          </h1>
-          <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-            Explore accredited undergraduate and graduate programs, submit general inquiries to admissions counselors, or submit your formal online application.
-          </p>
-        </div>
+      {/* 2. Institutional Header & Info Banner */}
+      <section className="bg-white border-b border-slate-200 py-10 px-4 sm:px-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="space-y-2 max-w-2xl">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs font-bold uppercase tracking-wider">
+                <Building2 className="h-3.5 w-3.5 text-blue-600" />
+                Accredited Institutional Degree Catalogue
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                Academic Programs & Admissions
+              </h1>
+              <p className="text-sm text-slate-600 leading-relaxed">
+                Explore accredited degree programs offered by the institution. Browse curriculum requirements, make inquiries to admissions counselors, or submit your formal application online.
+              </p>
+            </div>
 
-        {/* Tab Buttons */}
-        <div className="flex justify-center mt-8">
-          <div className="inline-flex bg-slate-200/80 p-1 rounded-xl shadow-inner text-xs font-semibold space-x-1">
-            <button
-              onClick={() => setActiveTab('programs')}
-              className={`px-4 py-2 rounded-lg transition-all ${
-                activeTab === 'programs'
-                  ? 'bg-white text-slate-900 shadow-xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              1. Degree Programs ({programs.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('inquiry')}
-              className={`px-4 py-2 rounded-lg transition-all ${
-                activeTab === 'inquiry'
-                  ? 'bg-white text-slate-900 shadow-xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              2. Submit Inquiry
-            </button>
-            <button
-              onClick={() => setActiveTab('apply')}
-              className={`px-4 py-2 rounded-lg transition-all ${
-                activeTab === 'apply'
-                  ? 'bg-blue-600 text-white shadow-xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              3. Formal Application
-            </button>
+            {/* Quick status card for prospective candidates */}
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center gap-4 shrink-0">
+              <div className="h-10 w-10 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center">
+                <ShieldCheck className="h-5 w-5" />
+              </div>
+              <div className="text-xs space-y-0.5">
+                <div className="font-bold text-slate-900">Authenticated Point-of-Action</div>
+                <div className="text-slate-500">Inquiries and applications are tied directly to your applicant ID</div>
+                {isAuthenticated ? (
+                  <div className="text-emerald-700 font-semibold pt-1 flex items-center gap-1">
+                    <CheckCircle className="h-3.5 w-3.5 text-emerald-600" /> Session Active ({user?.username})
+                  </div>
+                ) : (
+                  <div className="text-blue-700 font-semibold pt-1">
+                    Sign in when applying to track decisions
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Search & Degree Filters */}
+          <div className="mt-8 pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="relative w-full sm:w-80">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+              <Input
+                type="text"
+                placeholder="Search programs by name or code..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 bg-white"
+              />
+            </div>
+
+            <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1">
+              <button
+                onClick={() => setSelectedDegree('ALL')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors shrink-0 ${
+                  selectedDegree === 'ALL'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                All Programs ({programs.length})
+              </button>
+              {availableDegrees.map(deg => (
+                <button
+                  key={deg}
+                  onClick={() => setSelectedDegree(deg)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors shrink-0 ${
+                    selectedDegree === deg
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  {deg}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Main Content Area */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        
-        {/* Tab 1: Programs Exploration */}
-        {activeTab === 'programs' && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <div>
-                <h2 className="text-lg font-bold text-slate-900">Academic Offerings</h2>
-                <p className="text-xs text-slate-500">Live institutional curricula available for enrollment</p>
-              </div>
-              <Button size="sm" onClick={() => setActiveTab('apply')} className="bg-slate-900 text-white hover:bg-slate-800 text-xs">
-                Apply for Admission <ArrowRight className="w-3.5 h-3.5 ml-1" />
-              </Button>
-            </div>
-
-            {loadingPrograms ? (
-              <div className="p-12 text-center flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>
-            ) : programs.length === 0 ? (
-              <div className="p-12 text-center bg-white border border-slate-200 rounded-xl text-slate-500 text-sm">
-                No active academic programs currently configured.
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {programs.map((prog) => (
-                  <Card key={prog.id} className="border-slate-200 bg-white hover:border-slate-300 transition-shadow hover:shadow-md">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[10px] font-mono font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded">
-                          {prog.code}
-                        </span>
-                        <span className="text-[11px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">
-                          {prog.degree || 'Degree Program'}
-                        </span>
-                      </div>
-                      <CardTitle className="text-base font-bold text-slate-900">{prog.name}</CardTitle>
-                      <CardDescription className="text-xs text-slate-500">
-                        {prog.duration ? `${prog.duration} Academic Years • Full Time` : 'Comprehensive Multi-Semester Curriculum'}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="pt-0 text-xs text-slate-600 space-y-3">
-                      <div className="border-t border-slate-100 pt-3 flex justify-between items-center text-[11px]">
-                        <span className="text-slate-400 flex items-center"><Clock className="w-3 h-3 mr-1" /> Modular Credit System</span>
-                        <button
-                          onClick={() => {
-                            setAppProgramId(String(prog.id));
-                            setActiveTab('apply');
-                          }}
-                          className="font-bold text-blue-600 hover:text-blue-800 inline-flex items-center"
-                        >
-                          Select &amp; Apply &rarr;
-                        </button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
+      {/* 3. Program Catalogue Grid */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex-1">
+        {loadingPrograms ? (
+          <div className="flex flex-col items-center justify-center py-20 space-y-3">
+            <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
+            <p className="text-sm text-slate-500 font-medium">Loading institutional degree programs...</p>
           </div>
-        )}
-
-        {/* Tab 2: General Inquiry Form */}
-        {activeTab === 'inquiry' && (
-          <div className="max-w-xl mx-auto">
-            {inquirySuccessRef ? (
-              <div className="bg-white border border-emerald-200 rounded-2xl p-8 text-center space-y-4 shadow-sm">
-                <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto">
-                  <CheckCircle className="w-6 h-6" />
-                </div>
-                <h3 className="text-xl font-bold text-slate-900">Inquiry Received</h3>
-                <p className="text-xs text-slate-600">
-                  Thank you for your interest! Your inquiry has been registered with reference ID:
-                </p>
-                <div className="font-mono font-bold text-lg text-emerald-700 bg-emerald-50 py-2 px-4 rounded-lg inline-block">
-                  {inquirySuccessRef}
-                </div>
-                <p className="text-[11px] text-slate-500">
-                  An institutional admissions officer will contact you within 1-2 business days.
-                </p>
-                <div className="pt-2 flex justify-center space-x-3">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => {
-                      setInquirySuccessRef(null);
-                      setInquiryName('');
-                      setInquiryEmail('');
-                      setInquiryPhone('');
-                      setInquiryMessage('');
-                    }}
-                  >
-                    Submit Another Inquiry
-                  </Button>
-                  <Button size="sm" onClick={() => setActiveTab('apply')} className="bg-blue-600 text-white hover:bg-blue-700">
-                    Proceed to Application
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <Card className="border-slate-200 bg-white shadow-sm">
-                <CardHeader>
-                  <CardTitle className="text-lg font-bold text-slate-900">Request Information / Admissions Inquiry</CardTitle>
-                  <CardDescription className="text-xs text-slate-500">
-                    Have questions about courses, deadlines, or fees? Leave your details below.
+        ) : filteredPrograms.length === 0 ? (
+          <div className="text-center py-16 bg-white rounded-xl border border-slate-200 space-y-3">
+            <BookOpen className="h-10 w-10 text-slate-400 mx-auto" />
+            <h3 className="text-lg font-bold text-slate-800">No programs match your search</h3>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+              Try adjusting your search terms or clearing the degree filter to view all available academic programs.
+            </p>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => { setSearchTerm(''); setSelectedDegree('ALL'); }}
+            >
+              Reset Filters
+            </Button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredPrograms.map((program) => (
+              <Card key={program.id} className="border-slate-200 bg-white hover:border-blue-300 hover:shadow-md transition-all flex flex-col justify-between">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 uppercase tracking-wide">
+                      {program.degree || 'Degree Program'}
+                    </span>
+                    <span className="text-xs font-mono font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                      {program.code}
+                    </span>
+                  </div>
+                  <CardTitle className="text-lg font-bold text-slate-900 leading-snug line-clamp-2">
+                    {program.name}
+                  </CardTitle>
+                  <CardDescription className="text-xs text-slate-500 flex items-center gap-1.5 pt-1">
+                    <Clock className="h-3.5 w-3.5 text-slate-400" />
+                    <span>Duration: {program.duration ? `${program.duration} Years (${program.duration * 2} Semesters)` : 'Full-Time Academic Program'}</span>
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleInquirySubmit} className="space-y-4 text-xs">
-                    <div>
-                      <label className="block font-semibold text-slate-700 mb-1">Full Name*</label>
-                      <Input
-                        required
-                        placeholder="e.g. Priya Sharma"
-                        value={inquiryName}
-                        onChange={(e) => setInquiryName(e.target.value)}
-                        className="bg-slate-50 text-xs"
-                      />
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="block font-semibold text-slate-700 mb-1">Email Address*</label>
-                        <Input
-                          required
-                          type="email"
-                          placeholder="priya@example.com"
-                          value={inquiryEmail}
-                          onChange={(e) => setInquiryEmail(e.target.value)}
-                          className="bg-slate-50 text-xs"
-                        />
-                      </div>
-                      <div>
-                        <label className="block font-semibold text-slate-700 mb-1">Phone Number*</label>
-                        <Input
-                          required
-                          placeholder="+91 98765 43210"
-                          value={inquiryPhone}
-                          onChange={(e) => setInquiryPhone(e.target.value)}
-                          className="bg-slate-50 text-xs"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block font-semibold text-slate-700 mb-1">Program of Interest</label>
-                      <select
-                        value={inquiryProgram}
-                        onChange={(e) => setInquiryProgram(e.target.value)}
-                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-md text-xs text-slate-800"
-                      >
-                        <option value="">Select a Program (Optional)</option>
-                        {programs.map((p) => (
-                          <option key={p.id} value={p.name}>
-                            {formatProgramLabel(p)}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block font-semibold text-slate-700 mb-1">Questions / Notes</label>
-                      <textarea
-                        rows={3}
-                        placeholder="Tell us about your background or ask any questions..."
-                        value={inquiryMessage}
-                        onChange={(e) => setInquiryMessage(e.target.value)}
-                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-md text-xs text-slate-800"
-                      />
-                    </div>
-                    <Button type="submit" disabled={inquirySubmitting} className="w-full bg-slate-900 text-white hover:bg-slate-800">
-                      {inquirySubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Send className="w-4 h-4 mr-1" />}
-                      Send Inquiry
+
+                <CardContent className="pt-0 space-y-4">
+                  <div className="text-xs text-slate-600 line-clamp-2 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                    Comprehensive accredited curriculum covering departmental core disciplines, laboratory workshops, and semester electives.
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleInitiateAction(program, 'inquiry')}
+                      className="w-full text-xs border-slate-300 text-slate-700 hover:bg-slate-100"
+                    >
+                      <HelpCircle className="h-3.5 w-3.5 mr-1 text-slate-500" />
+                      Inquiry
                     </Button>
-                  </form>
+                    <Button 
+                      size="sm"
+                      onClick={() => handleInitiateAction(program, 'apply')}
+                      className="w-full text-xs bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+                    >
+                      <Send className="h-3.5 w-3.5 mr-1" />
+                      Apply Now
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
-            )}
-          </div>
-        )}
-
-        {/* Tab 3: Formal Application Form */}
-        {activeTab === 'apply' && (
-          <div className="max-w-2xl mx-auto">
-            {appSuccessResult ? (
-              <div className="bg-white border border-emerald-200 rounded-2xl p-8 text-center space-y-4 shadow-sm">
-                <div className="w-14 h-14 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto">
-                  <FileCheck className="w-8 h-8" />
-                </div>
-                <h3 className="text-xl font-bold text-slate-900">Application Submitted!</h3>
-                <p className="text-xs text-slate-600">
-                  Your formal admissions application has been submitted to the institutional review workflow.
-                </p>
-                <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Official Application Reference</p>
-                  <p className="text-xl font-mono font-bold text-slate-900">{appSuccessResult.applicationNumber}</p>
-                  <p className="text-[11px] text-slate-500">Internal Record #{appSuccessResult.id}</p>
-                </div>
-                <p className="text-xs text-slate-500">
-                  Please retain this application number for correspondence and tracking your admissions status.
-                </p>
-                <div className="pt-2">
-                  <Button asChild variant="outline" size="sm">
-                    <Link to="/login">Return to ERP Login</Link>
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <Card className="border-slate-200 bg-white shadow-sm">
-                <CardHeader>
-                  <CardTitle className="text-lg font-bold text-slate-900">Formal Student Application Form</CardTitle>
-                  <CardDescription className="text-xs text-slate-500">
-                    Submit applicant credentials to initiate verification and departmental evaluation.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleApplicationSubmit} className="space-y-4 text-xs">
-                    
-                    {/* Program & AY */}
-                    <div className="bg-blue-50/50 border border-blue-100 rounded-lg p-3.5 space-y-3">
-                      <p className="font-bold text-blue-900 text-xs">Academic Selection</p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                          <label className="block font-semibold text-slate-700 mb-1">Degree Program*</label>
-                          <select
-                            required
-                            value={appProgramId}
-                            onChange={(e) => setAppProgramId(e.target.value)}
-                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-md text-xs text-slate-800"
-                          >
-                            <option value="">Select Degree Program</option>
-                            {programs.map((p) => (
-                              <option key={p.id} value={p.id}>
-                                {formatProgramLabel(p)}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block font-semibold text-slate-700 mb-1">Academic Year*</label>
-                          <select
-                            required
-                            value={appAcademicYearId}
-                            onChange={(e) => setAppAcademicYearId(e.target.value)}
-                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-md text-xs text-slate-800"
-                          >
-                            <option value="">Select Academic Year</option>
-                            {academicYears.map((ay) => (
-                              <option key={ay.id} value={ay.id}>
-                                {formatAcademicYearLabel(ay)}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Applicant Profile */}
-                    <div className="space-y-3">
-                      <p className="font-bold text-slate-800 text-xs">Personal Information</p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                          <label className="block font-semibold text-slate-700 mb-1">First Name*</label>
-                          <Input
-                            required
-                            placeholder="Aarav"
-                            value={appFirstName}
-                            onChange={(e) => setAppFirstName(e.target.value)}
-                            className="bg-slate-50 text-xs"
-                          />
-                        </div>
-                        <div>
-                          <label className="block font-semibold text-slate-700 mb-1">Last Name*</label>
-                          <Input
-                            required
-                            placeholder="Sharma"
-                            value={appLastName}
-                            onChange={(e) => setAppLastName(e.target.value)}
-                            className="bg-slate-50 text-xs"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                          <label className="block font-semibold text-slate-700 mb-1">Email Address*</label>
-                          <Input
-                            required
-                            type="email"
-                            placeholder="aarav.sharma@example.com"
-                            value={appEmail}
-                            onChange={(e) => setAppEmail(e.target.value)}
-                            className="bg-slate-50 text-xs"
-                          />
-                        </div>
-                        <div>
-                          <label className="block font-semibold text-slate-700 mb-1">Mobile Phone*</label>
-                          <Input
-                            required
-                            placeholder="+91 98765 43210"
-                            value={appPhone}
-                            onChange={(e) => setAppPhone(e.target.value)}
-                            className="bg-slate-50 text-xs"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                          <label className="block font-semibold text-slate-700 mb-1">Date of Birth</label>
-                          <Input
-                            type="date"
-                            value={appDob}
-                            onChange={(e) => setAppDob(e.target.value)}
-                            className="bg-slate-50 text-xs"
-                          />
-                        </div>
-                        <div>
-                          <label className="block font-semibold text-slate-700 mb-1">Gender</label>
-                          <select
-                            value={appGender}
-                            onChange={(e) => setAppGender(e.target.value)}
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-md text-xs text-slate-800"
-                          >
-                            <option value="MALE">Male</option>
-                            <option value="FEMALE">Female</option>
-                            <option value="OTHER">Other</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block font-semibold text-slate-700 mb-1">Residential Address</label>
-                        <Input
-                          placeholder="Street, City, State, Pincode"
-                          value={appAddress}
-                          onChange={(e) => setAppAddress(e.target.value)}
-                          className="bg-slate-50 text-xs"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Document Uploads */}
-                    <div className="space-y-3 pt-2 border-t border-slate-200">
-                      <div>
-                        <p className="font-bold text-slate-800 text-xs">Required & Supporting Documents</p>
-                        <p className="text-[11px] text-slate-500">Upload clear scans or photos (PDF, JPEG, PNG, max 5MB each).</p>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                          <label className="block font-semibold text-slate-700 text-xs mb-1">
-                            Passport Photograph (JPEG/PNG)
-                          </label>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => setPhotoFile(e.target.files?.[0] || null)}
-                            className="text-[11px] text-slate-600 file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
-                          />
-                          {photoFile && <span className="text-[10px] text-emerald-600 font-semibold block mt-1">✓ {photoFile.name}</span>}
-                        </div>
-
-                        <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                          <label className="block font-semibold text-slate-700 text-xs mb-1">
-                            Government ID / Aadhaar Card
-                          </label>
-                          <input
-                            type="file"
-                            accept="application/pdf,image/*"
-                            onChange={(e) => setGovtIdFile(e.target.files?.[0] || null)}
-                            className="text-[11px] text-slate-600 file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
-                          />
-                          {govtIdFile && <span className="text-[10px] text-emerald-600 font-semibold block mt-1">✓ {govtIdFile.name}</span>}
-                        </div>
-
-                        <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                          <label className="block font-semibold text-slate-700 text-xs mb-1">
-                            10th Standard Marksheet / Certificate
-                          </label>
-                          <input
-                            type="file"
-                            accept="application/pdf,image/*"
-                            onChange={(e) => setTenthMarksheetFile(e.target.files?.[0] || null)}
-                            className="text-[11px] text-slate-600 file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
-                          />
-                          {tenthMarksheetFile && <span className="text-[10px] text-emerald-600 font-semibold block mt-1">✓ {tenthMarksheetFile.name}</span>}
-                        </div>
-
-                        <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                          <label className="block font-semibold text-slate-700 text-xs mb-1">
-                            12th Standard Marksheet / Diploma
-                          </label>
-                          <input
-                            type="file"
-                            accept="application/pdf,image/*"
-                            onChange={(e) => setTwelfthMarksheetFile(e.target.files?.[0] || null)}
-                            className="text-[11px] text-slate-600 file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
-                          />
-                          {twelfthMarksheetFile && <span className="text-[10px] text-emerald-600 font-semibold block mt-1">✓ {twelfthMarksheetFile.name}</span>}
-                        </div>
-                      </div>
-                    </div>
-
-                    <Button type="submit" disabled={appSubmitting} className="w-full bg-blue-600 text-white hover:bg-blue-700 mt-2">
-                      {appSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <FileCheck className="w-4 h-4 mr-1" />}
-                      Submit Application for Review
-                    </Button>
-                  </form>
-                </CardContent>
-              </Card>
-            )}
+            ))}
           </div>
         )}
       </main>
+
+      {/* 4. Footer */}
+      <footer className="bg-white border-t border-slate-200 py-6 text-xs text-slate-500">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-slate-700">EduPulse Admissions Portal</span>
+            <span>·</span>
+            <span>Accredited Academic Programs</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <Link to="/" className="hover:text-blue-600 transition-colors">
+              Product Overview
+            </Link>
+            <Link to="/login" className="hover:text-blue-600 transition-colors">
+              Staff Sign In
+            </Link>
+            {isAuthenticated && (
+              <Link to="/dashboard" className="text-blue-600 font-semibold hover:underline">
+                Applicant Dashboard
+              </Link>
+            )}
+          </div>
+        </div>
+      </footer>
+
+      {/* ========================================================================= */}
+      {/* MODAL 1: Authentication Gate Dialog                                        */}
+      {/* ========================================================================= */}
+      {showAuthModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden space-y-0">
+            {/* Context Header */}
+            <div className="bg-blue-600 p-5 text-white space-y-1.5">
+              <div className="flex items-center justify-between">
+                <div className="text-xs font-bold uppercase tracking-wider text-blue-200 flex items-center gap-1.5">
+                  <ShieldCheck className="h-4 w-4" />
+                  Applicant Account Required
+                </div>
+                <button 
+                  onClick={() => setShowAuthModal(false)}
+                  className="text-white/80 hover:text-white text-lg font-bold"
+                >
+                  ✕
+                </button>
+              </div>
+              <h3 className="text-lg font-bold">
+                {authMode === 'login' ? 'Sign In to Proceed' : 'Create Applicant Account'}
+              </h3>
+              {selectedProgram && (
+                <p className="text-xs text-blue-100 bg-blue-700/60 p-2 rounded-lg">
+                  <strong>Selected Action:</strong> {intendedAction === 'apply' ? 'Apply for ' : 'Inquiry regarding '}{selectedProgram.name} ({selectedProgram.degree})
+                </p>
+              )}
+            </div>
+
+            {/* Explanation Banner */}
+            <div className="p-4 bg-amber-50 border-b border-amber-200/80 text-xs text-amber-800 flex items-start gap-2.5">
+              <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+              <span>
+                To ensure your inquiries, replies, and formal applications are securely tracked and verified, an applicant account is required before submitting.
+              </span>
+            </div>
+
+            {/* Tabs */}
+            <div className="p-5 space-y-4">
+              <div className="grid grid-cols-2 p-1 bg-slate-100 rounded-lg text-xs font-semibold">
+                <button
+                  type="button"
+                  onClick={() => setAuthMode('login')}
+                  className={`py-1.5 rounded-md transition-all ${
+                    authMode === 'login' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Sign In
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAuthMode('register')}
+                  className={`py-1.5 rounded-md transition-all ${
+                    authMode === 'register' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Create Account
+                </button>
+              </div>
+
+              {/* Login Form */}
+              {authMode === 'login' ? (
+                <form onSubmit={handleAuthLogin} className="space-y-3.5">
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-700">Email or Username</label>
+                    <Input
+                      type="text"
+                      placeholder="e.g. applicant@example.com"
+                      value={loginUsername}
+                      onChange={(e) => setLoginUsername(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-700">Password</label>
+                    <Input
+                      type="password"
+                      placeholder="••••••••"
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <Button 
+                    type="submit" 
+                    disabled={loginSubmitting} 
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+                  >
+                    {loginSubmitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Signing In...
+                      </>
+                    ) : (
+                      <>
+                        <LogIn className="h-4 w-4 mr-2" />
+                        Sign In & Continue
+                      </>
+                    )}
+                  </Button>
+                </form>
+              ) : (
+                /* Register Form */
+                <form onSubmit={handleAuthRegister} className="space-y-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-slate-700">First Name *</label>
+                      <Input
+                        type="text"
+                        placeholder="First"
+                        value={regFirstName}
+                        onChange={(e) => setRegFirstName(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-slate-700">Last Name *</label>
+                      <Input
+                        type="text"
+                        placeholder="Last"
+                        value={regLastName}
+                        onChange={(e) => setRegLastName(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-700">Email Address *</label>
+                    <Input
+                      type="email"
+                      placeholder="applicant@example.com"
+                      value={regEmail}
+                      onChange={(e) => setRegEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-700">Mobile Phone *</label>
+                    <Input
+                      type="tel"
+                      placeholder="10-digit mobile number"
+                      value={regPhone}
+                      onChange={(e) => setRegPhone(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-slate-700">Date of Birth</label>
+                      <Input
+                        type="date"
+                        value={regDob}
+                        onChange={(e) => setRegDob(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-slate-700">Gender</label>
+                      <select
+                        value={regGender}
+                        onChange={(e) => setRegGender(e.target.value)}
+                        className="w-full text-xs p-2 rounded-lg border border-slate-300 bg-white"
+                      >
+                        <option value="MALE">Male</option>
+                        <option value="FEMALE">Female</option>
+                        <option value="OTHER">Other</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-700">Address</label>
+                    <Input
+                      type="text"
+                      placeholder="City, State"
+                      value={regAddress}
+                      onChange={(e) => setRegAddress(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-700">Password (min 6 characters) *</label>
+                    <Input
+                      type="password"
+                      placeholder="••••••••"
+                      value={regPassword}
+                      onChange={(e) => setRegPassword(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <Button 
+                    type="submit" 
+                    disabled={regSubmitting} 
+                    className="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold mt-2"
+                  >
+                    {regSubmitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Creating Account...
+                      </>
+                    ) : (
+                      <>
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        Register & Continue
+                      </>
+                    )}
+                  </Button>
+                </form>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL 2: Inquiry Submission Dialog (Authenticated)                        */}
+      {/* ========================================================================= */}
+      {showInquiryModal && selectedProgram && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden space-y-0">
+            <div className="bg-slate-900 p-5 text-white flex items-center justify-between">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-blue-400">Admissions Inquiry</span>
+                <h3 className="text-lg font-bold mt-0.5">{selectedProgram.name}</h3>
+              </div>
+              <button 
+                onClick={() => setShowInquiryModal(false)}
+                className="text-white/70 hover:text-white text-lg font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitInquiry} className="p-5 space-y-4">
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-800">
+                Submitting inquiry as <strong>{user?.username}</strong> ({user?.role}). Our counselors will respond to your registered email and applicant dashboard.
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-700">Questions or Topics of Interest</label>
+                <textarea
+                  rows={4}
+                  placeholder="e.g. Inquiring about eligibility requirements, specialization options, fee schedule, and scholarship opportunities..."
+                  value={inquiryMessage}
+                  onChange={(e) => setInquiryMessage(e.target.value)}
+                  className="w-full text-xs p-3 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowInquiryModal(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  size="sm"
+                  disabled={inquirySubmitting}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+                >
+                  {inquirySubmitting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4 mr-2" />
+                      Submit Inquiry
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL 3: Formal Application Dialog (Authenticated)                        */}
+      {/* ========================================================================= */}
+      {showApplicationModal && selectedProgram && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden my-8">
+            <div className="bg-blue-700 p-5 text-white flex items-center justify-between">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-blue-200">Formal Admission Application</span>
+                <h3 className="text-xl font-bold mt-0.5">{selectedProgram.name}</h3>
+                <span className="text-xs text-blue-200">Degree: {selectedProgram.degree} · Code: {selectedProgram.code}</span>
+              </div>
+              <button 
+                onClick={() => setShowApplicationModal(false)}
+                className="text-white/70 hover:text-white text-lg font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitApplication} className="p-6 space-y-5">
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-800 flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-blue-600 shrink-0" />
+                <span>Applying under authenticated applicant profile <strong>{user?.username}</strong>.</span>
+              </div>
+
+              {/* Academic Year Selection */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-700">Target Academic Year *</label>
+                <select
+                  value={appAcademicYearId}
+                  onChange={(e) => setAppAcademicYearId(e.target.value)}
+                  className="w-full text-xs p-2.5 rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  <option value="">Select Academic Year</option>
+                  {academicYears.map((ay) => (
+                    <option key={ay.id} value={ay.id}>
+                      {ay.name} {ay.isActive ? '(Current Active Intake)' : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Personal Details */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-700">Date of Birth</label>
+                  <Input
+                    type="date"
+                    value={appDob}
+                    onChange={(e) => setAppDob(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-700">Gender</label>
+                  <select
+                    value={appGender}
+                    onChange={(e) => setAppGender(e.target.value)}
+                    className="w-full text-xs p-2 rounded-lg border border-slate-300 bg-white"
+                  >
+                    <option value="MALE">Male</option>
+                    <option value="FEMALE">Female</option>
+                    <option value="OTHER">Other</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-700">Permanent / Mailing Address</label>
+                <Input
+                  type="text"
+                  placeholder="Street address, City, State, Postal code"
+                  value={appAddress}
+                  onChange={(e) => setAppAddress(e.target.value)}
+                />
+              </div>
+
+              {/* Document Attachments */}
+              <div className="space-y-2 pt-2 border-t border-slate-100">
+                <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                  <FileCheck className="h-4 w-4 text-blue-600" />
+                  Academic & Identity Documents (Optional now, can also upload from dashboard)
+                </label>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div className="p-3 border border-slate-200 rounded-lg space-y-1">
+                    <span className="font-semibold text-slate-700 block">Recent Photograph</span>
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      onChange={(e) => setPhotoFile(e.target.files?.[0] || null)}
+                      className="text-xs file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-blue-50 file:text-blue-700"
+                    />
+                  </div>
+                  <div className="p-3 border border-slate-200 rounded-lg space-y-1">
+                    <span className="font-semibold text-slate-700 block">10th Marksheet</span>
+                    <input 
+                      type="file" 
+                      accept=".pdf,image/*" 
+                      onChange={(e) => setTenthMarksheetFile(e.target.files?.[0] || null)}
+                      className="text-xs file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-blue-50 file:text-blue-700"
+                    />
+                  </div>
+                  <div className="p-3 border border-slate-200 rounded-lg space-y-1">
+                    <span className="font-semibold text-slate-700 block">12th / Diploma Marksheet</span>
+                    <input 
+                      type="file" 
+                      accept=".pdf,image/*" 
+                      onChange={(e) => setTwelfthMarksheetFile(e.target.files?.[0] || null)}
+                      className="text-xs file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-blue-50 file:text-blue-700"
+                    />
+                  </div>
+                  <div className="p-3 border border-slate-200 rounded-lg space-y-1">
+                    <span className="font-semibold text-slate-700 block">Government ID Proof</span>
+                    <input 
+                      type="file" 
+                      accept=".pdf,image/*" 
+                      onChange={(e) => setGovtIdFile(e.target.files?.[0] || null)}
+                      className="text-xs file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-blue-50 file:text-blue-700"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-slate-700">Remarks or Special Category / Quota Details</label>
+                <Input
+                  type="text"
+                  placeholder="e.g. Merit quota, sports quota, or previous academic honors"
+                  value={appRemarks}
+                  onChange={(e) => setAppRemarks(e.target.value)}
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowApplicationModal(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  size="sm"
+                  disabled={appSubmitting}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+                >
+                  {appSubmitting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Registering Application...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4 mr-2" />
+                      Submit Formal Application
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL 4: Genuine Confirmation Dialog                                      */}
+      {/* ========================================================================= */}
+      {confirmationData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 p-6 text-center space-y-4">
+            <div className="h-14 w-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
+              <CheckCircle className="h-8 w-8" />
+            </div>
+
+            <div className="space-y-1">
+              <span className="text-xs font-bold uppercase tracking-wider text-emerald-700">
+                {confirmationData.type === 'inquiry' ? 'Inquiry Registered' : 'Application Submitted'}
+              </span>
+              <h3 className="text-xl font-extrabold text-slate-900">
+                {confirmationData.referenceId}
+              </h3>
+              <p className="text-xs font-semibold text-slate-600">
+                Program: {confirmationData.programName}
+              </p>
+            </div>
+
+            <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-100">
+              {confirmationData.message}
+            </p>
+
+            <div className="pt-2 flex flex-col sm:flex-row gap-2">
+              <Button 
+                onClick={() => navigate('/dashboard')}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold"
+              >
+                Go to Applicant Dashboard
+                <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => setConfirmationData(null)}
+                className="w-full text-xs border-slate-300 text-slate-700 hover:bg-slate-100"
+              >
+                Browse More Programs
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

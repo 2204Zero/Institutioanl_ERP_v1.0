@@ -32,17 +32,20 @@ public class AuthService {
     private final JwtService jwtService;
     private final JwtProperties jwtProperties;
     private final SessionService sessionService;
+    private final com.erp.auth.repository.UserRepository userRepository;
 
     public AuthService(CustomUserDetailsService userDetailsService,
                        PasswordEncoder passwordEncoder,
                        JwtService jwtService,
                        JwtProperties jwtProperties,
-                       SessionService sessionService) {
+                       SessionService sessionService,
+                       com.erp.auth.repository.UserRepository userRepository) {
         this.userDetailsService = userDetailsService;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.jwtProperties = jwtProperties;
         this.sessionService = sessionService;
+        this.userRepository = userRepository;
     }
 
     public AuthResponse login(LoginRequest request, String clientIp) {
@@ -197,6 +200,58 @@ public class AuthService {
                 expiresAt,
                 active ? "Session is active and valid." : "Session is expired or inactive."
         );
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public void changePassword(String username, com.erp.auth.dto.ChangePasswordRequest request) {
+        if (username == null || username.isBlank()) {
+            throw new BadCredentialsException("User is not authenticated");
+        }
+        if (request.currentPassword() == null || request.currentPassword().isBlank()) {
+            throw new IllegalArgumentException("Current password is required");
+        }
+        if (request.newPassword() == null || request.newPassword().isBlank()) {
+            throw new IllegalArgumentException("New password is required");
+        }
+        if (request.confirmPassword() == null || !request.newPassword().equals(request.confirmPassword())) {
+            throw new IllegalArgumentException("New password and confirmation password do not match");
+        }
+
+        validatePasswordPolicy(request.newPassword());
+
+        com.erp.auth.entity.AppUser user = userRepository.findByUsernameIgnoreCase(username)
+                .or(() -> userRepository.findByEmailIgnoreCase(username))
+                .orElseThrow(() -> new com.erp.common.exception.ResourceNotFoundException("User not found"));
+
+        if (!passwordEncoder.matches(request.currentPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("Current password is incorrect");
+        }
+
+        if (passwordEncoder.matches(request.newPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("New password cannot be the same as your current password");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.newPassword()));
+        userRepository.save(user);
+        log.info("Password successfully changed for user: {}", user.getUsername());
+    }
+
+    private void validatePasswordPolicy(String password) {
+        if (password.length() < 8) {
+            throw new IllegalArgumentException("Password must be at least 8 characters long");
+        }
+        if (!password.matches(".*[A-Z].*")) {
+            throw new IllegalArgumentException("Password must contain at least one uppercase letter");
+        }
+        if (!password.matches(".*[a-z].*")) {
+            throw new IllegalArgumentException("Password must contain at least one lowercase letter");
+        }
+        if (!password.matches(".*\\d.*")) {
+            throw new IllegalArgumentException("Password must contain at least one number");
+        }
+        if (!password.matches(".*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?].*")) {
+            throw new IllegalArgumentException("Password must contain at least one special character");
+        }
     }
 }
 

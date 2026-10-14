@@ -8,6 +8,13 @@ if (import.meta.env.PROD && !envBaseUrl) {
 
 export const BASE_URL = envBaseUrl || 'http://localhost:8081';
 
+export const getStudentPhotoUrl = (studentId: number | string | undefined | null, timestamp?: number) => {
+  if (!studentId) return '';
+  const base = BASE_URL ? BASE_URL.replace(/\/$/, '') : '';
+  const ts = timestamp ? `?t=${timestamp}` : '';
+  return `${base}/api/v1/students/${studentId}/photo${ts}`;
+};
+
 export const apiClient = axios.create({
   baseURL: BASE_URL,
   timeout: 15000,

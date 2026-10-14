@@ -40,7 +40,15 @@ const guardianSchema = z.object({
 
 type FormValues = z.infer<typeof guardianSchema>;
 
-export function CreateGuardianDialog({ studentId }: { studentId?: number }) {
+export function CreateGuardianDialog({
+  studentId,
+  triggerClassName,
+  size,
+}: {
+  studentId?: number;
+  triggerClassName?: string;
+  size?: 'default' | 'sm' | 'lg' | 'icon';
+}) {
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
 
@@ -88,7 +96,13 @@ export function CreateGuardianDialog({ studentId }: { studentId?: number }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="flex items-center space-x-2 bg-red-50 text-primary hover:bg-red-100 hover:text-primary rounded-xl">
+        <Button
+          size={size || (studentId ? 'sm' : 'default')}
+          className={
+            triggerClassName ||
+            'flex items-center space-x-2 bg-red-50 text-primary hover:bg-red-100 hover:text-primary rounded-xl'
+          }
+        >
           {studentId ? <UserPlus className="w-4 h-4 text-primary" /> : <PlusCircle className="w-4 h-4 text-primary" />}
           <span>{studentId ? 'Add Guardian' : 'Register New Guardian'}</span>
         </Button>

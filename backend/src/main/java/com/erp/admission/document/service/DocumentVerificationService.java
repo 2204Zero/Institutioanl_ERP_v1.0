@@ -135,6 +135,10 @@ public class DocumentVerificationService {
 
     @Transactional(readOnly = true)
     public List<ApplicantDocument> getApplicantDocuments(Long applicantId) {
-        return documentRepository.findByApplicantId(applicantId);
+        return documentRepository.findByApplicantId(applicantId).stream()
+                .sorted(java.util.Comparator.comparing((ApplicantDocument d) -> d.getUploadedAt() != null ? d.getUploadedAt() : Instant.EPOCH)
+                        .thenComparing(ApplicantDocument::getId, java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder()))
+                        .reversed())
+                .toList();
     }
 }

@@ -247,6 +247,140 @@ public class DevJsonDataHydrator {
                 }
             }
 
+            // 4b. Hydrate Applicants Early
+            try {
+                Path appFile = storageDir.resolve("applicants.json");
+                if (Files.exists(appFile) && applicantRepository != null) {
+                    List<ApplicantRecord> appRecords = storageEngine.readList(appFile, ApplicantRecord.class);
+                    for (ApplicantRecord ar : appRecords) {
+                        try {
+                            boolean exists = applicantRepository.findAll().stream().anyMatch(a -> 
+                                (a.getEmail() != null && a.getEmail().equalsIgnoreCase(ar.getEmail())) ||
+                                (a.getPhone() != null && a.getPhone().equals(ar.getPhone())));
+                            if (!exists) {
+                                com.erp.admission.applicant.entity.Applicant applicant = new com.erp.admission.applicant.entity.Applicant();
+                                applicant.setFirstName(ar.getFirstName());
+                                applicant.setLastName(ar.getLastName());
+                                applicant.setEmail(ar.getEmail());
+                                applicant.setPhone(ar.getPhone());
+                                applicant.setDateOfBirth(ar.getDateOfBirth());
+                                applicant.setGender(ar.getGender());
+                                applicant.setAddress(ar.getAddress());
+                                if (ar.getCreatedAt() != null) applicant.setCreatedAt(ar.getCreatedAt());
+                                if (userRepository != null && ar.getEmail() != null) {
+                                    userRepository.findByEmailIgnoreCase(ar.getEmail()).ifPresent(u -> applicant.setUserId(u.getId()));
+                                }
+                                applicantRepository.save(applicant);
+                            }
+                        } catch (Exception ex) {
+                            log.debug("Skipping duplicate applicant: {}", ex.getMessage());
+                        }
+                    }
+                }
+            } catch (Exception ex) {
+                log.warn("Failed hydrating applicants: {}", ex.getMessage());
+            }
+
+            // 4c. Hydrate Admission Applications Early
+            try {
+                Path applnFile = storageDir.resolve("admission_applications.json");
+                if (Files.exists(applnFile) && admissionApplicationRepository != null && applicantRepository != null) {
+                    List<AdmissionApplicationRecord> applnRecords = storageEngine.readList(applnFile, AdmissionApplicationRecord.class);
+                    for (AdmissionApplicationRecord aar : applnRecords) {
+                        try {
+                            boolean exists = admissionApplicationRepository.findAll().stream().anyMatch(aa -> aa.getApplicationNumber() != null && aa.getApplicationNumber().equalsIgnoreCase(aar.getApplicationNumber()));
+                            if (!exists) {
+                                com.erp.admission.applicant.entity.Applicant applicant = null;
+                                if (aar.getApplicantId() != null) {
+                                    applicant = applicantRepository.findById(aar.getApplicantId()).orElse(null);
+                                }
+                                if (applicant == null && Files.exists(storageDir.resolve("applicants.json"))) {
+                                    try {
+                                        List<ApplicantRecord> arList = storageEngine.readList(storageDir.resolve("applicants.json"), ApplicantRecord.class);
+                                        String targetEmail = arList.stream()
+                                                .filter(ar -> ar.getId() != null && ar.getId().equals(aar.getApplicantId()))
+                                                .map(ApplicantRecord::getEmail)
+                                                .findFirst().orElse(null);
+                                        if (targetEmail != null) {
+                                            applicant = applicantRepository.findByEmail(targetEmail).orElse(null);
+                                        }
+                                    } catch (Exception ignored) {}
+                                }
+                                if (applicant == null && applicantRepository.count() > 0) {
+                                    applicant = applicantRepository.findAll().get(0);
+                                }
+
+                                Program program = aar.getProgramId() != null ? programRepository.findById(aar.getProgramId()).orElse(null) : null;
+                                if (program == null && programRepository != null && programRepository.count() > 0) {
+                                    program = programRepository.findAll().get(0);
+                                }
+                                AcademicYear academicYear = aar.getAcademicYearId() != null ? academicYearRepository.findById(aar.getAcademicYearId()).orElse(null) : null;
+                                if (academicYear == null && academicYearRepository != null && academicYearRepository.count() > 0) {
+                                    academicYear = academicYearRepository.findAll().get(0);
+                                }
+
+                                com.erp.admission.application.entity.AdmissionApplication appln = new com.erp.admission.application.entity.AdmissionApplication();
+                                appln.setApplicationNumber(aar.getApplicationNumber());
+                                appln.setApplicant(applicant);
+                                appln.setProgram(program);
+                                appln.setAcademicYear(academicYear);
+                                if (aar.getStatus() != null) {
+                                    try {
+                                        appln.setStatus(ApplicationStatus.valueOf(aar.getStatus()));
+                                    } catch (Exception ignored) {
+                                        appln.setStatus(ApplicationStatus.SUBMITTED);
+                                    }
+                                }
+                                appln.setMeritScore(aar.getMeritScore());
+                                appln.setReviewerRemarks(aar.getReviewerRemarks());
+                                if (aar.getSubmittedAt() != null) appln.setSubmittedAt(aar.getSubmittedAt());
+                                if (aar.getCreatedAt() != null) appln.setCreatedAt(aar.getCreatedAt());
+                                admissionApplicationRepository.save(appln);
+                            }
+                        } catch (Exception ex) {
+                            log.debug("Skipping duplicate application: {}", ex.getMessage());
+                        }
+                    }
+                }
+            } catch (Exception ex) {
+                log.warn("Failed hydrating admission applications: {}", ex.getMessage());
+            }
+
+            // 4d. Hydrate Applicant Documents Early
+            try {
+                Path appDocFile = storageDir.resolve("applicant_documents.json");
+                if (Files.exists(appDocFile) && applicantDocumentRepository != null && applicantRepository != null) {
+                    List<ApplicantDocumentRecord> appDocRecords = storageEngine.readList(appDocFile, ApplicantDocumentRecord.class);
+                    for (ApplicantDocumentRecord adr : appDocRecords) {
+                        try {
+                            if (adr.getApplicantId() != null) {
+                                com.erp.admission.applicant.entity.Applicant applicant = applicantRepository.findById(adr.getApplicantId()).orElse(null);
+                                if (applicant != null) {
+                                    boolean exists = applicantDocumentRepository.findByApplicantId(applicant.getId()).stream()
+                                            .anyMatch(d -> d.getDocumentType() != null && d.getDocumentType().equalsIgnoreCase(adr.getDocumentType()));
+                                    if (!exists) {
+                                        com.erp.admission.document.entity.ApplicantDocument ad = com.erp.admission.document.entity.ApplicantDocument.builder()
+                                                .applicant(applicant)
+                                                .documentType(adr.getDocumentType())
+                                                .fileUrl(adr.getFileUrl())
+                                                .verificationStatus(adr.getVerificationStatus() != null ? adr.getVerificationStatus() : "PENDING")
+                                                .remarks(adr.getRemarks())
+                                                .uploadedAt(adr.getUploadedAt() != null ? adr.getUploadedAt() : java.time.Instant.now())
+                                                .verifiedAt(adr.getVerifiedAt())
+                                                .build();
+                                        applicantDocumentRepository.save(ad);
+                                    }
+                                }
+                            }
+                        } catch (Exception ex) {
+                            log.debug("Skipping applicant document: {}", ex.getMessage());
+                        }
+                    }
+                }
+            } catch (Exception ex) {
+                log.warn("Failed hydrating applicant documents: {}", ex.getMessage());
+            }
+
             // 5. Hydrate Courses
             Path courseFile = storageDir.resolve("courses.json");
             if (Files.exists(courseFile)) {
@@ -426,6 +560,21 @@ public class DevJsonDataHydrator {
                         for (Long studentId : g.getWardStudentIds()) {
                             Student student = studentRepository.findById(studentId).orElse(null);
                             if (student != null) {
+                                Long resolvedUserId = null;
+                                if (g.getUserId() != null && userRepository.existsById(g.getUserId())) {
+                                    resolvedUserId = g.getUserId();
+                                } else if (g.getEmail() != null) {
+                                    resolvedUserId = userRepository.findByEmailIgnoreCase(g.getEmail()).map(AppUser::getId).orElse(null);
+                                }
+
+                                final Long finalResolvedUserId = resolvedUserId;
+                                boolean alreadyExists = guardianRepository.findByStudentId(studentId).stream()
+                                        .anyMatch(existing -> (finalResolvedUserId != null && finalResolvedUserId.equals(existing.getUserId()))
+                                                || (g.getEmail() != null && !g.getEmail().isBlank() && g.getEmail().equalsIgnoreCase(existing.getEmail())));
+                                if (alreadyExists) {
+                                    continue;
+                                }
+
                                 String name = g.getName() != null ? g.getName() : "Guardian";
                                 String[] parts = name.split(" ", 2);
                                 String first = parts[0];
@@ -438,13 +587,7 @@ public class DevJsonDataHydrator {
                                 guardian.setRelation(rel);
                                 guardian.setPhone(g.getPhone() != null ? g.getPhone() : "+15550000000");
                                 guardian.setEmail(g.getEmail());
-                                Long resolvedUserId = null;
-                                if (g.getUserId() != null && userRepository.existsById(g.getUserId())) {
-                                    resolvedUserId = g.getUserId();
-                                } else if (g.getEmail() != null) {
-                                    resolvedUserId = userRepository.findByEmailIgnoreCase(g.getEmail()).map(AppUser::getId).orElse(null);
-                                }
-                                guardian.setUserId(resolvedUserId);
+                                guardian.setUserId(finalResolvedUserId);
                                 guardianRepository.save(guardian);
                             }
                         }
@@ -655,24 +798,32 @@ public class DevJsonDataHydrator {
             }
 
             // Hydrate Attendance Records
-            Path attFile = storageDir.resolve("attendance_records.json");
-            if (Files.exists(attFile) && attendanceRecordRepository != null) {
-                List<com.erp.devjson.model.AttendanceJsonModels.AttendanceRecord> attRecords = 
-                        storageEngine.readList(attFile, com.erp.devjson.model.AttendanceJsonModels.AttendanceRecord.class);
-                for (com.erp.devjson.model.AttendanceJsonModels.AttendanceRecord ar : attRecords) {
-                    if (ar.getId() != null && attendanceRecordRepository.findById(ar.getId()).isEmpty()) {
-                        com.erp.attendance.entity.StudentAttendanceRecord entity = com.erp.attendance.entity.StudentAttendanceRecord.builder()
-                                .id(ar.getId())
-                                .studentId(ar.getStudentId())
-                                .scheduleId(ar.getScheduleId())
-                                .attendanceDate(ar.getAttendanceDate())
-                                .status(ar.getStatus())
-                                .remarks(ar.getRemarks())
-                                .markedByFacultyId(ar.getMarkedByFacultyId())
-                                .build();
-                        attendanceRecordRepository.save(entity);
+            try {
+                Path attFile = storageDir.resolve("attendance_records.json");
+                if (Files.exists(attFile) && attendanceRecordRepository != null) {
+                    List<com.erp.devjson.model.AttendanceJsonModels.AttendanceRecord> attRecords = 
+                            storageEngine.readList(attFile, com.erp.devjson.model.AttendanceJsonModels.AttendanceRecord.class);
+                    for (com.erp.devjson.model.AttendanceJsonModels.AttendanceRecord ar : attRecords) {
+                        try {
+                            if (ar.getId() != null && attendanceRecordRepository.findById(ar.getId()).isEmpty()) {
+                                com.erp.attendance.entity.StudentAttendanceRecord entity = com.erp.attendance.entity.StudentAttendanceRecord.builder()
+                                        .id(ar.getId())
+                                        .studentId(ar.getStudentId())
+                                        .scheduleId(ar.getScheduleId())
+                                        .attendanceDate(ar.getAttendanceDate())
+                                        .status(ar.getStatus())
+                                        .remarks(ar.getRemarks())
+                                        .markedByFacultyId(ar.getMarkedByFacultyId())
+                                        .build();
+                                attendanceRecordRepository.save(entity);
+                            }
+                        } catch (Exception ex) {
+                            log.debug("Skipping duplicate or unhydratable attendance record: {}", ex.getMessage());
+                        }
                     }
                 }
+            } catch (Exception ex) {
+                log.warn("Failed hydrating attendance records: {}", ex.getMessage());
             }
 
             // 14. Link default development test users to fixtures if needed
@@ -910,121 +1061,50 @@ public class DevJsonDataHydrator {
                 }
             }
 
-            // Hydrate Applicants
-            Path appFile = storageDir.resolve("applicants.json");
-            if (Files.exists(appFile) && applicantRepository != null) {
-                List<ApplicantRecord> appRecords = storageEngine.readList(appFile, ApplicantRecord.class);
-                for (ApplicantRecord ar : appRecords) {
-                    boolean exists = applicantRepository.findAll().stream().anyMatch(a -> a.getEmail() != null && a.getEmail().equalsIgnoreCase(ar.getEmail()));
-                    if (!exists) {
-                        com.erp.admission.applicant.entity.Applicant applicant = new com.erp.admission.applicant.entity.Applicant();
-                        applicant.setFirstName(ar.getFirstName());
-                        applicant.setLastName(ar.getLastName());
-                        applicant.setEmail(ar.getEmail());
-                        applicant.setPhone(ar.getPhone());
-                        applicant.setDateOfBirth(ar.getDateOfBirth());
-                        applicant.setGender(ar.getGender());
-                        applicant.setAddress(ar.getAddress());
-                        if (ar.getCreatedAt() != null) applicant.setCreatedAt(ar.getCreatedAt());
-                        applicantRepository.save(applicant);
-                    }
-                }
-            }
-
-            // Hydrate Admission Applications
-            Path applnFile = storageDir.resolve("admission_applications.json");
-            if (Files.exists(applnFile) && admissionApplicationRepository != null && applicantRepository != null) {
-                List<AdmissionApplicationRecord> applnRecords = storageEngine.readList(applnFile, AdmissionApplicationRecord.class);
-                for (AdmissionApplicationRecord aar : applnRecords) {
-                    boolean exists = admissionApplicationRepository.findAll().stream().anyMatch(aa -> aa.getApplicationNumber() != null && aa.getApplicationNumber().equalsIgnoreCase(aar.getApplicationNumber()));
-                    if (!exists) {
-                        com.erp.admission.applicant.entity.Applicant applicant = aar.getApplicantId() != null ? applicantRepository.findById(aar.getApplicantId()).orElse(null) : null;
-                        Program program = aar.getProgramId() != null ? programRepository.findById(aar.getProgramId()).orElse(null) : null;
-                        AcademicYear academicYear = aar.getAcademicYearId() != null ? academicYearRepository.findById(aar.getAcademicYearId()).orElse(null) : null;
-
-                        com.erp.admission.application.entity.AdmissionApplication appln = new com.erp.admission.application.entity.AdmissionApplication();
-                        appln.setApplicationNumber(aar.getApplicationNumber());
-                        appln.setApplicant(applicant);
-                        appln.setProgram(program);
-                        appln.setAcademicYear(academicYear);
-                        if (aar.getStatus() != null) {
-                            try {
-                                appln.setStatus(ApplicationStatus.valueOf(aar.getStatus()));
-                            } catch (Exception ignored) {
-                                appln.setStatus(ApplicationStatus.SUBMITTED);
-                            }
-                        }
-                        appln.setMeritScore(aar.getMeritScore());
-                        appln.setReviewerRemarks(aar.getReviewerRemarks());
-                        if (aar.getSubmittedAt() != null) appln.setSubmittedAt(aar.getSubmittedAt());
-                        if (aar.getCreatedAt() != null) appln.setCreatedAt(aar.getCreatedAt());
-                        admissionApplicationRepository.save(appln);
-                    }
-                }
-            }
-
-            // Hydrate Applicant Documents
-            Path appDocFile = storageDir.resolve("applicant_documents.json");
-            if (Files.exists(appDocFile) && applicantDocumentRepository != null && applicantRepository != null) {
-                List<ApplicantDocumentRecord> appDocRecords = storageEngine.readList(appDocFile, ApplicantDocumentRecord.class);
-                for (ApplicantDocumentRecord adr : appDocRecords) {
-                    if (adr.getApplicantId() != null) {
-                        com.erp.admission.applicant.entity.Applicant applicant = applicantRepository.findById(adr.getApplicantId()).orElse(null);
-                        if (applicant != null) {
-                            boolean exists = applicantDocumentRepository.findByApplicantId(applicant.getId()).stream()
-                                    .anyMatch(d -> d.getDocumentType() != null && d.getDocumentType().equalsIgnoreCase(adr.getDocumentType()));
-                            if (!exists) {
-                                com.erp.admission.document.entity.ApplicantDocument ad = com.erp.admission.document.entity.ApplicantDocument.builder()
-                                        .applicant(applicant)
-                                        .documentType(adr.getDocumentType())
-                                        .fileUrl(adr.getFileUrl())
-                                        .verificationStatus(adr.getVerificationStatus() != null ? adr.getVerificationStatus() : "PENDING")
-                                        .remarks(adr.getRemarks())
-                                        .uploadedAt(adr.getUploadedAt() != null ? adr.getUploadedAt() : java.time.Instant.now())
-                                        .verifiedAt(adr.getVerifiedAt())
-                                        .build();
-                                applicantDocumentRepository.save(ad);
-                            }
-                        }
-                    }
-                }
-            }
 
             // Hydrate Student Documents
-            Path stuDocFile = storageDir.resolve("student_documents.json");
-            if (Files.exists(stuDocFile) && studentDocumentRepository != null && studentRepository != null) {
-                List<StudentDocumentRecord> stuDocRecords = storageEngine.readList(stuDocFile, StudentDocumentRecord.class);
-                for (StudentDocumentRecord sdr : stuDocRecords) {
-                    if (sdr.getStudentId() != null) {
-                        Student student = studentRepository.findById(sdr.getStudentId()).orElse(null);
-                        if (student != null) {
-                            com.erp.student.entity.DocumentType dt;
-                            try {
-                                dt = sdr.getDocumentType() != null ? com.erp.student.entity.DocumentType.valueOf(sdr.getDocumentType()) : com.erp.student.entity.DocumentType.MARKSHEET;
-                            } catch (Exception ex) {
-                                dt = com.erp.student.entity.DocumentType.MARKSHEET;
-                            }
-                            final com.erp.student.entity.DocumentType finalDt = dt;
-                            boolean exists = studentDocumentRepository.findByStudentId(student.getId()).stream()
-                                    .anyMatch(d -> d.getDocumentType() == finalDt && d.getFileName() != null && d.getFileName().equalsIgnoreCase(sdr.getFileName()));
-                            if (!exists) {
-                                com.erp.student.entity.StudentDocument sd = new com.erp.student.entity.StudentDocument(
-                                        student,
-                                        dt,
-                                        sdr.getFileName(),
-                                        sdr.getOriginalFileName() != null ? sdr.getOriginalFileName() : sdr.getFileName(),
-                                        sdr.getFileType() != null ? sdr.getFileType() : "application/octet-stream",
-                                        sdr.getFileSize() != null ? sdr.getFileSize() : 0L,
-                                        sdr.getStoragePath()
-                                );
-                                if (sdr.getUploadedAt() != null) {
-                                    sd.setUploadedAt(sdr.getUploadedAt());
+            try {
+                Path stuDocFile = storageDir.resolve("student_documents.json");
+                if (Files.exists(stuDocFile) && studentDocumentRepository != null && studentRepository != null) {
+                    List<StudentDocumentRecord> stuDocRecords = storageEngine.readList(stuDocFile, StudentDocumentRecord.class);
+                    for (StudentDocumentRecord sdr : stuDocRecords) {
+                        try {
+                            if (sdr.getStudentId() != null) {
+                                Student student = studentRepository.findById(sdr.getStudentId()).orElse(null);
+                                if (student != null) {
+                                    com.erp.student.entity.DocumentType dt;
+                                    try {
+                                        dt = sdr.getDocumentType() != null ? com.erp.student.entity.DocumentType.valueOf(sdr.getDocumentType()) : com.erp.student.entity.DocumentType.MARKSHEET;
+                                    } catch (Exception ex) {
+                                        dt = com.erp.student.entity.DocumentType.MARKSHEET;
+                                    }
+                                    final com.erp.student.entity.DocumentType finalDt = dt;
+                                    boolean exists = studentDocumentRepository.findByStudentId(student.getId()).stream()
+                                            .anyMatch(d -> d.getDocumentType() == finalDt && d.getFileName() != null && d.getFileName().equalsIgnoreCase(sdr.getFileName()));
+                                    if (!exists) {
+                                        com.erp.student.entity.StudentDocument sd = new com.erp.student.entity.StudentDocument(
+                                                student,
+                                                dt,
+                                                sdr.getFileName(),
+                                                sdr.getOriginalFileName() != null ? sdr.getOriginalFileName() : sdr.getFileName(),
+                                                sdr.getFileType() != null ? sdr.getFileType() : "application/octet-stream",
+                                                sdr.getFileSize() != null ? sdr.getFileSize() : 0L,
+                                                sdr.getStoragePath()
+                                        );
+                                        if (sdr.getUploadedAt() != null) {
+                                            sd.setUploadedAt(sdr.getUploadedAt());
+                                        }
+                                        studentDocumentRepository.save(sd);
+                                    }
                                 }
-                                studentDocumentRepository.save(sd);
                             }
+                        } catch (Exception ex) {
+                            log.debug("Skipping student document: {}", ex.getMessage());
                         }
                     }
                 }
+            } catch (Exception ex) {
+                log.warn("Failed hydrating student documents: {}", ex.getMessage());
             }
 
             log.info("DevJsonDataHydrator successfully hydrated records from {}", storageDir);

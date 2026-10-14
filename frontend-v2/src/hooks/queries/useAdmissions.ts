@@ -16,7 +16,9 @@ export interface AdmissionApplication {
   programId: number;
   academicYearId: number;
   status: string;
-  applicationDate: string;
+  applicationDate?: string;
+  submittedAt?: string;
+  createdAt?: string;
   remarks?: string;
 }
 

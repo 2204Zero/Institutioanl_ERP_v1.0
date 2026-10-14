@@ -35,17 +35,21 @@ public class UserController {
     private final FacultyRepository facultyRepository;
     private final StudentRepository studentRepository;
     private final GuardianRepository guardianRepository;
+    private final com.erp.auth.service.UserAccountProvisioningService userAccountProvisioningService;
 
     public UserController(UserRepository userRepository,
                           PasswordEncoder passwordEncoder,
                           FacultyRepository facultyRepository,
                           StudentRepository studentRepository,
-                          GuardianRepository guardianRepository) {
+                          GuardianRepository guardianRepository,
+                          @org.springframework.beans.factory.annotation.Autowired(required = false)
+                          com.erp.auth.service.UserAccountProvisioningService userAccountProvisioningService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.facultyRepository = facultyRepository;
         this.studentRepository = studentRepository;
         this.guardianRepository = guardianRepository;
+        this.userAccountProvisioningService = userAccountProvisioningService;
     }
 
     public record UserSummary(Long id, String username, String email, String role, boolean enabled) {}
@@ -142,5 +146,37 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
                 "message", "User " + request.username() + " created successfully with role " + role.name()
         ));
+    }
+
+    @PostMapping("/{id}/reset-password")
+    @PreAuthorize("hasAuthority('USER_MANAGE') or hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @Operation(summary = "Reset user password", description = "Generates a secure temporary password for the user and returns it for authorized one-time communication")
+    @Transactional
+    public ResponseEntity<Map<String, String>> resetUserPassword(@PathVariable Long id) {
+        AppUser user = userRepository.findById(id)
+                .orElseThrow(() -> new com.erp.common.exception.ResourceNotFoundException("User not found with id: " + id));
+
+        String temporaryPassword = (userAccountProvisioningService != null)
+                ? userAccountProvisioningService.generateSecurePassword()
+                : generateSecureFallbackPassword();
+
+        user.setPassword(passwordEncoder.encode(temporaryPassword));
+        userRepository.save(user);
+
+        return ResponseEntity.ok(Map.of(
+                "message", "Password reset successfully.",
+                "username", user.getUsername(),
+                "temporaryPassword", temporaryPassword
+        ));
+    }
+
+    private String generateSecureFallbackPassword() {
+        String chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*";
+        java.security.SecureRandom random = new java.security.SecureRandom();
+        StringBuilder sb = new StringBuilder(12);
+        for (int i = 0; i < 12; i++) {
+            sb.append(chars.charAt(random.nextInt(chars.length())));
+        }
+        return sb.toString();
     }
 }

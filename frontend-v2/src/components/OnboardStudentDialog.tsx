@@ -21,7 +21,8 @@ import {
   Loader2, 
   ShieldAlert, 
   UserCheck, 
-  ExternalLink 
+  ExternalLink,
+  Users
 } from 'lucide-react';
 
 interface OnboardStudentDialogProps {
@@ -51,6 +52,13 @@ export function OnboardStudentDialog({
   const [selectedAcademicYearId, setSelectedAcademicYearId] = useState<string>('');
   const [selectedBatchId, setSelectedBatchId] = useState<string>('');
   const [selectedSemesterId, setSelectedSemesterId] = useState<string>('');
+
+  // Guardian Review Form State
+  const [guardianFirstName, setGuardianFirstName] = useState('');
+  const [guardianLastName, setGuardianLastName] = useState('');
+  const [guardianRelation, setGuardianRelation] = useState('PARENT');
+  const [guardianPhone, setGuardianPhone] = useState('');
+  const [guardianEmail, setGuardianEmail] = useState('');
 
   // Confirmation step
   const [isConfirming, setIsConfirming] = useState(false);
@@ -122,6 +130,14 @@ export function OnboardStudentDialog({
       setGender(targetApplicant?.gender || 'MALE');
       setAddress(targetApplicant?.address || '');
 
+      // Prepopulate guardian details
+      const gNameParts = (targetApplicant?.guardianName || '').trim().split(/\s+/);
+      setGuardianFirstName(targetApplicant?.guardianFirstName || (gNameParts[0] || ''));
+      setGuardianLastName(targetApplicant?.guardianLastName || (gNameParts.length > 1 ? gNameParts.slice(1).join(' ') : targetApplicant?.lastName || ''));
+      setGuardianRelation(targetApplicant?.guardianRelation || 'PARENT');
+      setGuardianPhone(targetApplicant?.guardianPhone || targetApplicant?.phone || '');
+      setGuardianEmail(targetApplicant?.guardianEmail || (targetApplicant?.email ? `guardian.${targetApplicant.email}` : ''));
+
       const progId = String(application.programId || '');
       setSelectedProgramId(progId);
       const ayId = String(application.academicYearId || '');
@@ -178,6 +194,11 @@ export function OnboardStudentDialog({
         academicYearId: selectedAcademicYearId ? Number(selectedAcademicYearId) : undefined,
         batchId: selectedBatchId ? Number(selectedBatchId) : undefined,
         semesterId: selectedSemesterId ? Number(selectedSemesterId) : undefined,
+        guardianFirstName: guardianFirstName.trim() || undefined,
+        guardianLastName: guardianLastName.trim() || undefined,
+        guardianRelation: guardianRelation.trim() || undefined,
+        guardianPhone: guardianPhone.trim() || undefined,
+        guardianEmail: guardianEmail.trim() || undefined,
       };
 
       const res = await apiClient.post(
@@ -231,7 +252,15 @@ export function OnboardStudentDialog({
               </DialogDescription>
             </div>
 
+            {/* STUDENT ERP ACCOUNT CREDENTIALS */}
             <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+              <div className="flex items-center space-x-2 pb-2 border-b border-slate-200/60">
+                <UserCheck className="w-4 h-4 text-emerald-600" />
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-800">
+                  Student Institutional ERP Account (Student Role)
+                </span>
+              </div>
+
               <div className="flex justify-between items-center pb-2 border-b border-slate-200/60">
                 <span className="text-xs text-slate-500 font-medium">Student Name:</span>
                 <span className="text-sm font-bold text-slate-900">
@@ -243,11 +272,11 @@ export function OnboardStudentDialog({
                 <span className="text-xs text-slate-500 font-medium">Canonical Enrollment No:</span>
                 <div className="flex items-center space-x-2">
                   <span className="font-mono text-xs font-bold bg-blue-50 text-blue-800 px-2 py-0.5 rounded border border-blue-200">
-                    {provisionedStudent.enrollmentNumber || 'Assigned'}
+                    {provisionedStudent.enrollmentNumber || provisionedStudent.rollNumber || 'Assigned'}
                   </span>
-                  {provisionedStudent.enrollmentNumber && (
+                  {(provisionedStudent.enrollmentNumber || provisionedStudent.rollNumber) && (
                     <button
-                      onClick={() => copyToClipboard(provisionedStudent.enrollmentNumber, 'Enrollment Number')}
+                      onClick={() => copyToClipboard(provisionedStudent.enrollmentNumber || provisionedStudent.rollNumber, 'Enrollment Number')}
                       className="text-slate-400 hover:text-slate-800"
                     >
                       <Copy className="w-3.5 h-3.5" />
@@ -257,13 +286,13 @@ export function OnboardStudentDialog({
               </div>
 
               <div className="flex justify-between items-center pb-2 border-b border-slate-200/60">
-                <span className="text-xs text-slate-500 font-medium">Login Username / Email:</span>
+                <span className="text-xs text-slate-500 font-medium">Student Login Username / Email:</span>
                 <div className="flex items-center space-x-2">
                   <span className="font-mono text-xs font-semibold text-slate-900">
                     {provisionedStudent.username || provisionedStudent.email}
                   </span>
                   <button
-                    onClick={() => copyToClipboard(provisionedStudent.username || provisionedStudent.email, 'Username')}
+                    onClick={() => copyToClipboard(provisionedStudent.username || provisionedStudent.email, 'Student Username')}
                     className="text-slate-400 hover:text-slate-800"
                   >
                     <Copy className="w-3.5 h-3.5" />
@@ -274,15 +303,15 @@ export function OnboardStudentDialog({
               {provisionedStudent.temporaryPassword && (
                 <div className="flex justify-between items-center pb-2 border-b border-slate-200/60">
                   <div>
-                    <span className="text-xs text-slate-500 font-medium block">Initial Temporary Password:</span>
-                    <span className="text-[10px] text-amber-700">Disclosed one-time upon account creation</span>
+                    <span className="text-xs text-slate-500 font-medium block">Student Initial Password:</span>
+                    <span className="text-[10px] text-amber-700">One-time initial temporary password</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <span className="font-mono text-xs font-bold bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded border border-emerald-200">
                       {provisionedStudent.temporaryPassword}
                     </span>
                     <button
-                      onClick={() => copyToClipboard(provisionedStudent.temporaryPassword, 'Password')}
+                      onClick={() => copyToClipboard(provisionedStudent.temporaryPassword, 'Student Password')}
                       className="text-slate-400 hover:text-slate-800"
                     >
                       <Copy className="w-3.5 h-3.5" />
@@ -299,13 +328,67 @@ export function OnboardStudentDialog({
               </div>
             </div>
 
+            {/* LINKED GUARDIAN ERP ACCOUNT CREDENTIALS */}
+            {provisionedStudent.guardians && provisionedStudent.guardians.length > 0 && (
+              <div className="p-4 bg-blue-50/50 border border-blue-200 rounded-xl space-y-3">
+                <div className="flex items-center space-x-2 pb-2 border-b border-blue-200/60">
+                  <Users className="w-4 h-4 text-blue-700" />
+                  <span className="text-xs font-bold uppercase tracking-wider text-blue-900">
+                    Linked Guardian / Parent Account (Parent Role)
+                  </span>
+                </div>
+
+                <div className="flex justify-between items-center pb-2 border-b border-blue-200/60">
+                  <span className="text-xs text-blue-700 font-medium">Guardian Name & Relation:</span>
+                  <span className="text-sm font-bold text-slate-900">
+                    {provisionedStudent.guardians[0].firstName} {provisionedStudent.guardians[0].lastName} ({provisionedStudent.guardians[0].relation || 'PARENT'})
+                  </span>
+                </div>
+
+                <div className="flex justify-between items-center pb-2 border-b border-blue-200/60">
+                  <span className="text-xs text-blue-700 font-medium">Guardian Login Identifier:</span>
+                  <div className="flex items-center space-x-2">
+                    <span className="font-mono text-xs font-semibold text-slate-900">
+                      {provisionedStudent.guardians[0].username || provisionedStudent.guardians[0].email}
+                    </span>
+                    <button
+                      onClick={() => copyToClipboard(provisionedStudent.guardians[0].username || provisionedStudent.guardians[0].email, 'Guardian Username')}
+                      className="text-slate-400 hover:text-slate-800"
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                {provisionedStudent.guardians[0].temporaryPassword && (
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <span className="text-xs text-blue-700 font-medium block">Guardian Initial Password:</span>
+                      <span className="text-[10px] text-amber-700">One-time initial temporary password</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="font-mono text-xs font-bold bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded border border-emerald-200">
+                        {provisionedStudent.guardians[0].temporaryPassword}
+                      </span>
+                      <button
+                        onClick={() => copyToClipboard(provisionedStudent.guardians[0].temporaryPassword, 'Guardian Password')}
+                        className="text-slate-400 hover:text-slate-800"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-900 space-y-1">
               <p className="font-bold flex items-center">
                 <FileCheck className="w-4 h-4 mr-1.5 text-blue-700" />
-                Next Steps for Student Portal Access:
+                Access & Sign-in Instructions:
               </p>
               <p className="text-[11px] text-blue-800 leading-relaxed">
-                The student can now log in at <code className="bg-white/80 px-1 py-0.5 rounded font-mono">/login</code> using their username or institutional email and the temporary password above. They should update their password on first sign in.
+                Student and Guardian can now log in at <code className="bg-white/80 px-1 py-0.5 rounded font-mono">/login</code> by selecting the respective role tab (Student or Parent) using their provisioned login identifiers and initial passwords above.
               </p>
             </div>
 
@@ -329,6 +412,7 @@ export function OnboardStudentDialog({
                 <ul className="list-disc list-inside space-y-0.5 text-[11px] text-amber-800 mt-2">
                   <li>A permanent student record and canonical ENR number will be generated.</li>
                   <li>A dedicated student portal login account will be provisioned.</li>
+                  <li>A dedicated parent/guardian portal login account will be provisioned.</li>
                   <li>Academic placement in the selected Department and Batch will be locked.</li>
                   <li>Application documents will be associated with the student profile.</li>
                   <li>Application status will be marked as <span className="font-bold">ENROLLED</span>.</li>
@@ -340,6 +424,12 @@ export function OnboardStudentDialog({
               <div className="flex justify-between">
                 <span className="text-slate-500">Applicant:</span>
                 <span className="font-semibold text-slate-800">{firstName} {lastName}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Linked Guardian:</span>
+                <span className="font-semibold text-slate-800">
+                  {guardianFirstName || firstName} {guardianLastName || lastName} ({guardianRelation})
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">Program:</span>
@@ -451,9 +541,69 @@ export function OnboardStudentDialog({
               </div>
             </div>
 
+            {/* Guardian Information */}
+            <div className="space-y-3 pt-2 border-t border-slate-100">
+              <div className="flex justify-between items-center">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">2. Linked Guardian / Parent Identity</h4>
+                <span className="text-[10px] text-blue-600 font-semibold bg-blue-50 px-2 py-0.5 rounded border border-blue-200">Independent ERP Parent Account</span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium text-slate-600">Guardian First Name</Label>
+                  <Input
+                    value={guardianFirstName}
+                    onChange={(e) => setGuardianFirstName(e.target.value)}
+                    placeholder="e.g. Robert"
+                    className="h-9 text-xs"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium text-slate-600">Guardian Last Name</Label>
+                  <Input
+                    value={guardianLastName}
+                    onChange={(e) => setGuardianLastName(e.target.value)}
+                    placeholder="e.g. Vance"
+                    className="h-9 text-xs"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium text-slate-600">Relationship</Label>
+                  <select
+                    value={guardianRelation}
+                    onChange={(e) => setGuardianRelation(e.target.value)}
+                    className="w-full h-9 px-3 bg-white border border-slate-200 rounded-lg text-xs font-medium"
+                  >
+                    <option value="FATHER">Father</option>
+                    <option value="MOTHER">Mother</option>
+                    <option value="PARENT">Parent / Legal Guardian</option>
+                    <option value="OTHER">Other Guardian</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium text-slate-600">Guardian Phone</Label>
+                  <Input
+                    value={guardianPhone}
+                    onChange={(e) => setGuardianPhone(e.target.value)}
+                    placeholder="+1..."
+                    className="h-9 text-xs"
+                  />
+                </div>
+                <div className="col-span-2 space-y-1">
+                  <Label className="text-xs font-medium text-slate-600">Guardian Institutional / Contact Email</Label>
+                  <Input
+                    type="email"
+                    value={guardianEmail}
+                    onChange={(e) => setGuardianEmail(e.target.value)}
+                    placeholder="parent@institution.edu or personal email"
+                    className="h-9 text-xs"
+                  />
+                </div>
+              </div>
+            </div>
+
             {/* Academic Placement */}
             <div className="space-y-3 pt-2 border-t border-slate-100">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">2. Academic Assignments</h4>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">3. Academic Assignments</h4>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <Label className="text-xs font-medium text-slate-600">Department *</Label>
@@ -526,7 +676,7 @@ export function OnboardStudentDialog({
             {/* Uploaded Documents Review */}
             <div className="space-y-2 pt-2 border-t border-slate-100">
               <div className="flex justify-between items-center">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">3. Application Documents</h4>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">4. Application Documents</h4>
                 <span className="text-[10px] text-slate-500 font-semibold">{applicantDocs.length} Uploaded</span>
               </div>
               {loadingDocs ? (

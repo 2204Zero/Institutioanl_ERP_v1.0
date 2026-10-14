@@ -4,6 +4,7 @@ import StudentDashboard from './StudentDashboard';
 import ParentDashboard from './ParentDashboard';
 import FinanceDashboardHome from './FinanceDashboardHome';
 import ManagementDashboard from './ManagementDashboard';
+import ApplicantDashboard from './ApplicantDashboard';
 import { PageFrame } from '../components/ui/PageFrame';
 
 export default function Dashboard() {
@@ -22,6 +23,8 @@ export default function Dashboard() {
     case 'SUPER_ADMIN':
     case 'ADMIN':
       return <ManagementDashboard />;
+    case 'APPLICANT':
+      return <ApplicantDashboard />;
     default:
       return (
         <PageFrame title="Dashboard" description="Welcome back.">

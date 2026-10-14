@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '../config/api';
+import { StudentAvatar } from '../components/StudentAvatar';
 import { Link, useNavigate } from 'react-router-dom';
 import { PageFrame } from '../components/ui/PageFrame';
 import { Input } from '../components/ui/input';
@@ -141,17 +142,13 @@ export default function StudentsList() {
                   <tr key={student.id} className="hover:bg-slate-50 transition-colors group">
                     <td className="px-3 py-2 border-r border-slate-100/50">
                       <div className="flex items-center space-x-2">
-                        <div className="h-7 w-7 rounded overflow-hidden relative bg-slate-900 flex items-center justify-center text-white font-bold shrink-0 text-[10px]">
-                          <img
-                            src={`/api/v1/students/${student.id}/photo`}
-                            alt=""
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              (e.target as HTMLElement).style.display = 'none';
-                            }}
-                          />
-                          <span className="only:block">{student.firstName.charAt(0)}{student.lastName.charAt(0)}</span>
-                        </div>
+                        <StudentAvatar
+                          studentId={student.id}
+                          firstName={student.firstName}
+                          lastName={student.lastName}
+                          sizeClassName="h-7 w-7 rounded"
+                          textClassName="text-[10px]"
+                        />
                         <div>
                           <div className="flex items-center space-x-1.5">
                             <p className="font-semibold text-slate-900">{student.firstName} {student.lastName}</p>

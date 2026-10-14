@@ -258,7 +258,7 @@ export function CreateStudentDialog() {
         enrollmentNumber: enr,
         username: studentData?.username || variables.email.split('@')[0],
         email: studentData?.email || variables.email,
-        temporaryPassword: studentData?.temporaryPassword || 'EduPulse@123',
+        temporaryPassword: studentData?.temporaryPassword || undefined,
         firstName: studentData?.firstName || variables.firstName,
         lastName: studentData?.lastName || variables.lastName,
       });
@@ -352,16 +352,24 @@ export function CreateStudentDialog() {
               <div className="flex items-center justify-between py-1">
                 <div>
                   <span className="text-[11px] font-medium text-slate-400 block uppercase tracking-wider">Temporary Password</span>
-                  <span className="font-mono font-bold text-sm text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded border border-indigo-100">
-                    {createdCredentials.temporaryPassword}
-                  </span>
+                  {createdCredentials.temporaryPassword ? (
+                    <span className="font-mono font-bold text-sm text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded border border-indigo-100">
+                      {createdCredentials.temporaryPassword}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded border border-slate-200">
+                      Linked to existing verified user credentials
+                    </span>
+                  )}
                 </div>
-                <Button variant="ghost" size="sm" className="h-7 text-xs text-slate-600 hover:text-black" onClick={() => {
-                  navigator.clipboard.writeText(createdCredentials.temporaryPassword || '');
-                  toast.success('Password copied!');
-                }}>
-                  <Copy className="w-3.5 h-3.5 mr-1" /> Copy
-                </Button>
+                {createdCredentials.temporaryPassword && (
+                  <Button variant="ghost" size="sm" className="h-7 text-xs text-slate-600 hover:text-black" onClick={() => {
+                    navigator.clipboard.writeText(createdCredentials.temporaryPassword || '');
+                    toast.success('Password copied!');
+                  }}>
+                    <Copy className="w-3.5 h-3.5 mr-1" /> Copy
+                  </Button>
+                )}
               </div>
             </div>
 

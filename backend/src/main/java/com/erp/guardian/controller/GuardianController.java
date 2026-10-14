@@ -137,4 +137,14 @@ public class GuardianController {
         }
         return ResponseEntity.ok(ApiResponse.success(allProfiles));
     }
+
+    @DeleteMapping("/api/v1/students/{studentId}/guardians/{guardianId}")
+    @PreAuthorize("@securityOwnershipService.canAccessStudentData(authentication, #studentId) or hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @Operation(summary = "Unlink Guardian from Student", description = "Unlinks a guardian relationship from a student without destroying the guardian account")
+    public ResponseEntity<ApiResponse<Void>> unlinkGuardianFromStudent(
+            @PathVariable Long studentId,
+            @PathVariable Long guardianId) {
+        guardianService.unlinkGuardianFromStudent(studentId, guardianId);
+        return ResponseEntity.ok(ApiResponse.success("Guardian unlinked successfully from student", null));
+    }
 }

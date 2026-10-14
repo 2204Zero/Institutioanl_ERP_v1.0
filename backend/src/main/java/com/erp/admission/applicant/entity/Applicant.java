@@ -41,6 +41,9 @@ public class Applicant {
     @Column(columnDefinition = "TEXT")
     private String address;
 
+    @Column(name = "user_id")
+    private Long userId;
+
     @Column(name = "created_at", updatable = false)
     @Builder.Default
     private Instant createdAt = Instant.now();

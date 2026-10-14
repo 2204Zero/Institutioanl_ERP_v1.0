@@ -78,5 +78,20 @@ public class AuthController {
                 "authenticated", auth.isAuthenticated()
         ));
     }
+
+    @PostMapping({"/change-password", "/api/v1/auth/change-password"})
+    @Operation(summary = "Change authenticated user password", description = "Allows user to change their own password by verifying current credentials")
+    @SecurityRequirement(name = "BearerAuth")
+    @org.springframework.security.access.prepost.PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Map<String, String>> changePassword(
+            @Valid @RequestBody com.erp.auth.dto.ChangePasswordRequest request,
+            Authentication authentication) {
+        if (authentication == null || authentication.getName() == null) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "User is not authenticated"));
+        }
+        authService.changePassword(authentication.getName(), request);
+        return ResponseEntity.ok(Map.of("message", "Password changed successfully. Please use your new password on next login."));
+    }
 }
 

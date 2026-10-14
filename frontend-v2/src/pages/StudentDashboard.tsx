@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '../config/api';
+import { StudentAvatar } from '../components/StudentAvatar';
 import { PageFrame } from '../components/ui/PageFrame';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { Button } from '../components/ui/button';
@@ -183,17 +184,14 @@ export default function StudentDashboard() {
         {/* Student Identity Card Banner */}
         <div className="bg-white border border-slate-200 p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-start md:items-center space-x-4">
-            <div className="w-14 h-14 rounded-full overflow-hidden relative bg-slate-900 text-white flex items-center justify-center font-bold text-xl uppercase shrink-0">
-              <img
-                src={`/api/v1/students/${student.id}/photo`}
-                alt=""
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  (e.target as HTMLElement).style.display = 'none';
-                }}
-              />
-              <span className="only:block">{student.firstName?.[0] || 'S'}{student.lastName?.[0] || ''}</span>
-            </div>
+            <StudentAvatar
+              studentId={student.id}
+              firstName={student.firstName}
+              lastName={student.lastName}
+              fullName={student.fullName}
+              sizeClassName="w-14 h-14 rounded-full"
+              textClassName="text-xl"
+            />
             <div>
               <div className="flex items-center space-x-3">
                 <h2 className="text-xl font-bold text-slate-900 tracking-tight">{student.fullName}</h2>

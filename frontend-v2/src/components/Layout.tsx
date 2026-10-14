@@ -8,14 +8,16 @@ import {
   LayoutDashboard, Users, GraduationCap, CalendarCheck, Wallet, 
   Building2, MapPin, Store, ShieldAlert, UserCheck, 
   Menu, X, LogOut, ChevronDown, UserCircle, Bell,
-  Check
+  Check, KeyRound
 } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { ChangePasswordModal } from './ChangePasswordModal';
 
 export default function Layout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
@@ -79,8 +81,13 @@ export default function Layout() {
   });
 
   const handleLogout = () => {
+    const isApplicant = user?.role === 'APPLICANT';
     logout();
-    navigate('/login');
+    if (isApplicant) {
+      navigate('/login?tab=applicant');
+    } else {
+      navigate('/login');
+    }
   };
 
   const NavItem = ({ path, icon: Icon, label, disabled = false }: { path: string, icon: React.ElementType, label: string, disabled?: boolean }) => {
@@ -227,6 +234,16 @@ export default function Layout() {
             
             <NavGroup title="Directory">
               <NavItem path="/dashboard/students" icon={Users} label="Student Lookup" />
+            </NavGroup>
+          </>
+        );
+
+      case 'APPLICANT':
+        return (
+          <>
+            <NavGroup title="Applicant Portal">
+              <NavItem path="/dashboard" icon={LayoutDashboard} label="My Application" />
+              <NavItem path="/admissions" icon={GraduationCap} label="Admissions Catalog" />
             </NavGroup>
           </>
         );
@@ -431,6 +448,16 @@ export default function Layout() {
                       <p className="text-xs text-slate-500">{user?.role?.replace('_', ' ')}</p>
                     </div>
                     <button 
+                      onClick={() => {
+                        setIsProfileOpen(false);
+                        setIsChangePasswordOpen(true);
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center space-x-2 border-b border-slate-100"
+                    >
+                      <KeyRound className="w-4 h-4 text-slate-500" />
+                      <span>Change Password</span>
+                    </button>
+                    <button 
                       onClick={handleLogout}
                       className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
                     >
@@ -441,6 +468,10 @@ export default function Layout() {
                 </>
               )}
             </div>
+            <ChangePasswordModal 
+              isOpen={isChangePasswordOpen} 
+              onClose={() => setIsChangePasswordOpen(false)} 
+            />
           </div>
         </header>
 

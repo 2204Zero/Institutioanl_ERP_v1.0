@@ -1,5 +1,6 @@
 package com.erp;
 
+import com.erp.auth.dto.ChangePasswordRequest;
 import com.erp.auth.dto.LoginRequest;
 import com.erp.auth.dto.RefreshTokenRequest;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -172,6 +173,113 @@ class AuthenticationIntegrationTest {
                 .andExpect(jsonPath("$.accessToken").isNotEmpty())
                 .andExpect(jsonPath("$.username").value("superadmin"))
                 .andExpect(jsonPath("$.role").value("SUPER_ADMIN"));
+    }
+
+    @Test
+    @DisplayName("Should allow authenticated user to change password and login with new password")
+    void shouldChangePasswordSuccessfullyAndVerifyLogin() throws Exception {
+        // 1. Login with current credentials
+        LoginRequest loginRequest = new LoginRequest("faculty", "Faculty@123", null);
+        MvcResult loginResult = mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginRequest)))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String accessToken = objectMapper.readTree(loginResult.getResponse().getContentAsString()).get("accessToken").asText();
+
+        try {
+            // 2. Change password
+            ChangePasswordRequest changeReq = new ChangePasswordRequest("Faculty@123", "NewFaculty@2026!", "NewFaculty@2026!");
+            mockMvc.perform(post("/auth/change-password")
+                            .header("Authorization", "Bearer " + accessToken)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(changeReq)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.message").value("Password changed successfully. Please use your new password on next login."));
+
+            // 3. Old password must now fail
+            mockMvc.perform(post("/auth/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(new LoginRequest("faculty", "Faculty@123", null))))
+                    .andExpect(status().isUnauthorized());
+
+            // 4. New password must now succeed
+            mockMvc.perform(post("/auth/login")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(new LoginRequest("faculty", "NewFaculty@2026!", null))))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.username").value("faculty"));
+        } finally {
+            // Always restore password back to Faculty@123 so other tests are unaffected
+            try {
+                MvcResult restoredLoginResult = mockMvc.perform(post("/auth/login")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(new LoginRequest("faculty", "NewFaculty@2026!", null))))
+                        .andReturn();
+                if (restoredLoginResult.getResponse().getStatus() == 200) {
+                    String restoredToken = objectMapper.readTree(restoredLoginResult.getResponse().getContentAsString()).get("accessToken").asText();
+                    mockMvc.perform(post("/auth/change-password")
+                                    .header("Authorization", "Bearer " + restoredToken)
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(objectMapper.writeValueAsString(new ChangePasswordRequest("NewFaculty@2026!", "Faculty@123", "Faculty@123"))))
+                            .andExpect(status().isOk());
+                }
+            } catch (Exception ignored) {}
+        }
+    }
+
+    @Test
+    @DisplayName("Should reject password change when current password is wrong")
+    void shouldRejectPasswordChangeWhenCurrentPasswordIsWrong() throws Exception {
+        LoginRequest loginRequest = new LoginRequest("student", "Student@123", null);
+        MvcResult loginResult = mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginRequest)))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String accessToken = objectMapper.readTree(loginResult.getResponse().getContentAsString()).get("accessToken").asText();
+
+        ChangePasswordRequest changeReq = new ChangePasswordRequest("WrongCurrentPass1!", "NewStudent@2026!", "NewStudent@2026!");
+        mockMvc.perform(post("/auth/change-password")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(changeReq)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Current password is incorrect"));
+    }
+
+    @Test
+    @DisplayName("Should reject password change when new password does not meet policy")
+    void shouldRejectPasswordChangeWhenNewPasswordDoesNotMeetPolicy() throws Exception {
+        LoginRequest loginRequest = new LoginRequest("student", "Student@123", null);
+        MvcResult loginResult = mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginRequest)))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        String accessToken = objectMapper.readTree(loginResult.getResponse().getContentAsString()).get("accessToken").asText();
+
+        // Too weak (no special char, no uppercase)
+        ChangePasswordRequest changeReq = new ChangePasswordRequest("Student@123", "simplepass", "simplepass");
+        mockMvc.perform(post("/auth/change-password")
+                        .header("Authorization", "Bearer " + accessToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(changeReq)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Password must contain at least one uppercase letter"));
+    }
+
+    @Test
+    @DisplayName("Should reject unauthenticated password change")
+    void shouldRejectUnauthenticatedPasswordChange() throws Exception {
+        ChangePasswordRequest changeReq = new ChangePasswordRequest("Student@123", "NewPass@12345", "NewPass@12345");
+        mockMvc.perform(post("/auth/change-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(changeReq)))
+                .andExpect(status().is4xxClientError());
     }
 }
 

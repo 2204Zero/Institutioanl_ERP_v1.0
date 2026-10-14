@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '../config/api';
 import { PageFrame } from '../components/ui/PageFrame';
@@ -76,7 +76,17 @@ export default function ParentDashboard() {
     staleTime: 60000,
   });
 
-  const activeWard = wards[selectedWardIndex] || wards[0];
+  // Deduplicate wards by distinct student identity
+  const distinctWards = useMemo(() => {
+    const seen = new Set<number>();
+    return wards.filter(w => {
+      if (!w.studentId || seen.has(w.studentId)) return false;
+      seen.add(w.studentId);
+      return true;
+    });
+  }, [wards]);
+
+  const activeWard = distinctWards[selectedWardIndex] || distinctWards[0];
   const activeStudentId = activeWard?.studentId;
 
   // 2. Fetch selected ward's full student profile
@@ -139,7 +149,7 @@ export default function ParentDashboard() {
     );
   }
 
-  if (errorWards || wards.length === 0) {
+  if (errorWards || distinctWards.length === 0) {
     return (
       <PageFrame title="Ward Portal" description="Parent & Guardian Access">
         <div className="bg-white border border-slate-200 p-8 max-w-xl mx-auto text-center space-y-4 shadow-sm my-8">
@@ -187,13 +197,13 @@ export default function ParentDashboard() {
     >
       <div className="space-y-8">
         
-        {/* Multi-Ward Switcher (when parent has multiple students) */}
-        {wards.length > 1 && (
+        {/* Multi-Ward Switcher (when parent has multiple distinct students) */}
+        {distinctWards.length > 1 && (
           <div className="bg-white border border-slate-200 p-3 shadow-sm flex items-center space-x-2 overflow-x-auto">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-500 px-3">Select Ward:</span>
-            {wards.map((ward, idx) => (
+            {distinctWards.map((ward, idx) => (
               <button
-                key={ward.id}
+                key={ward.studentId}
                 onClick={() => setSelectedWardIndex(idx)}
                 className={`px-3 py-1.5 text-xs font-bold rounded transition-colors ${
                   selectedWardIndex === idx

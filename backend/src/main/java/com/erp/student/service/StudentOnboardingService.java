@@ -17,6 +17,9 @@ import com.erp.student.entity.StudentStatus;
 import com.erp.student.repository.StudentEnrollmentRepository;
 import com.erp.student.repository.StudentRepository;
 import com.erp.auth.service.UserAccountProvisioningService;
+import com.erp.guardian.entity.Guardian;
+import com.erp.guardian.repository.GuardianRepository;
+import com.erp.auth.service.ProvisioningCredentialDisclosureService;
 import com.erp.department.entity.Department;
 import com.erp.department.repository.DepartmentRepository;
 import com.erp.admission.document.repository.ApplicantDocumentRepository;
@@ -28,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.UUID;
+import java.util.List;
 
 @Service
 public class StudentOnboardingService {
@@ -42,6 +46,8 @@ public class StudentOnboardingService {
     private final ApplicantDocumentRepository applicantDocumentRepository;
     private final StudentDocumentRepository studentDocumentRepository;
     private final UserRepository userRepository;
+    private final GuardianRepository guardianRepository;
+    private final ProvisioningCredentialDisclosureService credentialDisclosureService;
 
     public record OnboardingReviewRequest(
             String firstName,
@@ -55,8 +61,23 @@ public class StudentOnboardingService {
             Long programId,
             Long academicYearId,
             Long batchId,
-            Long semesterId
-    ) {}
+            Long semesterId,
+            String guardianFirstName,
+            String guardianLastName,
+            String guardianRelation,
+            String guardianPhone,
+            String guardianEmail
+    ) {
+        public OnboardingReviewRequest(
+                String firstName, String lastName, String email, String phone,
+                LocalDate dateOfBirth, String gender, String address,
+                Long departmentId, Long programId, Long academicYearId,
+                Long batchId, Long semesterId) {
+            this(firstName, lastName, email, phone, dateOfBirth, gender, address,
+                 departmentId, programId, academicYearId, batchId, semesterId,
+                 null, null, null, null, null);
+        }
+    }
 
     @Autowired
     public StudentOnboardingService(
@@ -69,7 +90,9 @@ public class StudentOnboardingService {
             @Autowired(required = false) DepartmentRepository departmentRepository,
             @Autowired(required = false) ApplicantDocumentRepository applicantDocumentRepository,
             @Autowired(required = false) StudentDocumentRepository studentDocumentRepository,
-            @Autowired(required = false) UserRepository userRepository) {
+            @Autowired(required = false) UserRepository userRepository,
+            @Autowired(required = false) GuardianRepository guardianRepository,
+            @Autowired(required = false) ProvisioningCredentialDisclosureService credentialDisclosureService) {
         this.applicationRepository = applicationRepository;
         this.studentRepository = studentRepository;
         this.studentEnrollmentRepository = studentEnrollmentRepository;
@@ -80,6 +103,8 @@ public class StudentOnboardingService {
         this.applicantDocumentRepository = applicantDocumentRepository;
         this.studentDocumentRepository = studentDocumentRepository;
         this.userRepository = userRepository;
+        this.guardianRepository = guardianRepository;
+        this.credentialDisclosureService = credentialDisclosureService;
     }
 
     @Transactional
@@ -101,13 +126,21 @@ public class StudentOnboardingService {
                             && e.getProgramId().equals(application.getProgram().getId())
                             && e.getStudent() != null
                             && (e.getStudent().getEmail().equalsIgnoreCase(applicant.getEmail())
-                                || e.getStudent().getPhone().equals(applicant.getPhone())))
+                                || e.getStudent().getPhone().equals(applicant.getPhone())
+                                || (applicant.getFirstName() != null && applicant.getFirstName().equalsIgnoreCase(e.getStudent().getFirstName())
+                                    && applicant.getLastName() != null && applicant.getLastName().equalsIgnoreCase(e.getStudent().getLastName()))))
                     .findFirst();
             if (existingEnrollment.isPresent()) {
                 Student existingStudent = existingEnrollment.get().getStudent();
                 if (existingStudent.getUserId() != null && userRepository != null) {
                     userRepository.findById(existingStudent.getUserId())
                             .ifPresent(u -> existingStudent.setUsername(u.getUsername()));
+                }
+                if (guardianRepository != null) {
+                    List<Guardian> gList = guardianRepository.findByStudentId(existingStudent.getId());
+                    if (!gList.isEmpty()) {
+                        existingStudent.setGuardians(gList);
+                    }
                 }
                 return existingStudent;
             }
@@ -192,7 +225,7 @@ public class StudentOnboardingService {
                 LocalDate.now()
         );
 
-        // Provision student login account
+        // Provision genuine ERP student account with institutional email (preserving applicant account)
         UserAccountProvisioningService.ProvisionedAccount studentAccount = null;
         if (userAccountProvisioningService != null) {
             studentAccount = userAccountProvisioningService.provisionOrLinkStudentAccount(
@@ -238,6 +271,83 @@ public class StudentOnboardingService {
             if (studentAccount.user() != null) {
                 savedStudent.setUsername(studentAccount.user().getUsername());
             }
+        }
+
+        // Provision or link genuine Guardian ERP account and record
+        String gFirst = reviewRequest != null && reviewRequest.guardianFirstName() != null && !reviewRequest.guardianFirstName().isBlank()
+                ? reviewRequest.guardianFirstName().trim() : ("Guardian of " + firstName);
+        String gLast = reviewRequest != null && reviewRequest.guardianLastName() != null && !reviewRequest.guardianLastName().isBlank()
+                ? reviewRequest.guardianLastName().trim() : lastName;
+        String gRelation = reviewRequest != null && reviewRequest.guardianRelation() != null && !reviewRequest.guardianRelation().isBlank()
+                ? reviewRequest.guardianRelation().trim().toUpperCase() : "PARENT";
+        String gPhone = reviewRequest != null && reviewRequest.guardianPhone() != null && !reviewRequest.guardianPhone().isBlank()
+                ? reviewRequest.guardianPhone().trim() : phone;
+        String gEmail = reviewRequest != null && reviewRequest.guardianEmail() != null && !reviewRequest.guardianEmail().isBlank()
+                ? reviewRequest.guardianEmail().trim().toLowerCase() : ("guardian." + baseEmail + "@institution.edu");
+
+        Guardian linkedGuardian = null;
+        if (guardianRepository != null) {
+            List<Guardian> existingGuardians = guardianRepository.findByStudentId(savedStudent.getId());
+            if (!existingGuardians.isEmpty()) {
+                linkedGuardian = existingGuardians.get(0);
+            }
+        }
+
+        UserAccountProvisioningService.ProvisionedAccount guardianAccount = null;
+        if (linkedGuardian == null && userAccountProvisioningService != null && guardianRepository != null) {
+            String preferredGuardianUsername = "par_" + rollNumber.toLowerCase();
+            guardianAccount = userAccountProvisioningService.provisionOrLinkGuardianAccount(
+                    gEmail,
+                    null,
+                    preferredGuardianUsername
+            );
+
+            Guardian createdGuardian = new Guardian(gFirst, gLast, gRelation, gPhone, gEmail);
+            createdGuardian.setStudent(savedStudent);
+            if (guardianAccount != null && guardianAccount.user() != null) {
+                createdGuardian.setUserId(guardianAccount.user().getId());
+                createdGuardian.setUsername(guardianAccount.user().getUsername());
+                createdGuardian.setTemporaryPassword(guardianAccount.rawPassword());
+            }
+            linkedGuardian = guardianRepository.save(createdGuardian);
+        }
+
+        final Guardian finalGuardian = linkedGuardian;
+        if (finalGuardian != null && finalGuardian.getUserId() != null && userRepository != null) {
+            userRepository.findById(finalGuardian.getUserId())
+                    .ifPresent(u -> finalGuardian.setUsername(u.getUsername()));
+        }
+
+        if (finalGuardian != null) {
+            savedStudent.getGuardians().add(finalGuardian);
+        }
+
+        // Register one-time credential disclosure for authenticated applicant application view
+        if (credentialDisclosureService != null) {
+            String sUsername = studentAccount != null && studentAccount.user() != null
+                    ? studentAccount.user().getUsername()
+                    : (savedStudent.getUsername() != null ? savedStudent.getUsername() : savedStudent.getEmail());
+            String sPassword = studentAccount != null ? studentAccount.rawPassword() : null;
+
+            String gUsername = linkedGuardian != null
+                    ? (linkedGuardian.getUsername() != null ? linkedGuardian.getUsername() : linkedGuardian.getEmail())
+                    : null;
+            String gPassword = guardianAccount != null ? guardianAccount.rawPassword() : null;
+
+            credentialDisclosureService.registerDisclosure(
+                    application.getId(),
+                    applicant != null ? applicant.getId() : null,
+                    savedStudent.getId(),
+                    canonicalEnrollmentNumber,
+                    sUsername,
+                    savedStudent.getEmail(),
+                    sPassword,
+                    linkedGuardian != null ? (linkedGuardian.getFirstName() + " " + linkedGuardian.getLastName()).trim() : (gFirst + " " + gLast),
+                    linkedGuardian != null ? linkedGuardian.getRelation() : gRelation,
+                    gUsername,
+                    linkedGuardian != null ? linkedGuardian.getEmail() : gEmail,
+                    gPassword
+            );
         }
 
         StudentEnrollment enrollment = new StudentEnrollment();

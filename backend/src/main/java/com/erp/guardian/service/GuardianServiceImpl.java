@@ -239,7 +239,12 @@ public class GuardianServiceImpl implements GuardianService {
         if (email == null || email.isBlank()) {
             return List.of();
         }
-        return guardianRepository.findByEmail(email).stream()
+        Map<Long, Guardian> distinctWards = new LinkedHashMap<>();
+        for (Guardian g : guardianRepository.findByEmail(email)) {
+            Long studentKey = g.getStudent() != null ? g.getStudent().getId() : -g.getId();
+            distinctWards.putIfAbsent(studentKey, g);
+        }
+        return distinctWards.values().stream()
                 .map(guardianMapper::toDto)
                 .collect(Collectors.toList());
     }
@@ -250,8 +255,26 @@ public class GuardianServiceImpl implements GuardianService {
         if (userId == null) {
             return List.of();
         }
-        return guardianRepository.findByUserId(userId).stream()
+        Map<Long, Guardian> distinctWards = new LinkedHashMap<>();
+        for (Guardian g : guardianRepository.findByUserId(userId)) {
+            Long studentKey = g.getStudent() != null ? g.getStudent().getId() : -g.getId();
+            distinctWards.putIfAbsent(studentKey, g);
+        }
+        return distinctWards.values().stream()
                 .map(guardianMapper::toDto)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public void unlinkGuardianFromStudent(Long studentId, Long guardianId) {
+        Guardian guardian = guardianRepository.findById(guardianId)
+                .orElseThrow(() -> new ResourceNotFoundException("Guardian", "id", guardianId));
+
+        if (guardian.getStudent() != null && !guardian.getStudent().getId().equals(studentId)) {
+            throw new IllegalArgumentException("Guardian relationship does not belong to student " + studentId);
+        }
+
+        guardianRepository.delete(guardian);
     }
 }

@@ -24,4 +24,5 @@ export interface GuardianResponseDto {
   address?: string;
   isEmergencyContact: boolean;
   createdAt: string;
+  userId?: number;
 }

@@ -17,6 +17,7 @@ import Admissions from './pages/Admissions';
 import Academics from './pages/Academics';
 import FacultySections from './pages/FacultySections';
 import PublicAdmissions from './pages/PublicAdmissions';
+import LandingPage from './pages/LandingPage';
 import { ProfileRedirect } from './components/ProfileRedirect';
 import Layout from './components/Layout';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -129,7 +130,7 @@ function App() {
               <Route path="guardians" element={<RoleProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN']}><GuardiansList /></RoleProtectedRoute>} />
               <Route path="admin/users" element={<RoleProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN']}><AdminUsersList /></RoleProtectedRoute>} />
             </Route>
-            <Route path="/" element={<Navigate to="/admissions" replace />} />
+            <Route path="/" element={<LandingPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Router>

@@ -42,6 +42,9 @@ public enum Role {
             Permission.FEES_READ,
             Permission.FEES_CREATE,
             Permission.STUDENT_PROFILE_READ
+    )),
+    APPLICANT("ROLE_APPLICANT", EnumSet.of(
+            Permission.STUDENT_PROFILE_READ
     ));
 
     private final String authority;

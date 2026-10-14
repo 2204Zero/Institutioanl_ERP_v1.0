@@ -219,7 +219,7 @@ public class DevJsonApplicationIntegrationTest {
                 .firstName("David")
                 .lastName("Miller")
                 .email("david.miller." + System.currentTimeMillis() + "@test.com")
-                .phone("+15554321098")
+                .phone("+1555" + (System.currentTimeMillis() % 10000000))
                 .dateOfBirth(LocalDate.of(2004, 3, 15))
                 .gender("MALE")
                 .build();
@@ -255,7 +255,7 @@ public class DevJsonApplicationIntegrationTest {
         guardianDto.setFirstName("Sarah");
         guardianDto.setLastName("Miller");
         guardianDto.setRelation("MOTHER");
-        guardianDto.setPhone("+15559871122");
+        guardianDto.setPhone("+1555" + (System.currentTimeMillis() % 10000000 + 1));
         guardianDto.setEmail("sarah.miller." + System.currentTimeMillis() + "@test.com");
         guardianDto.setOccupation("Engineer");
         guardianDto.setAddress("123 Elm St");

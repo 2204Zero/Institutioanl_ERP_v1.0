@@ -289,12 +289,25 @@ public class StudentServiceImpl implements StudentService {
         return "O";
     }
 
+    private void enrichAcademicPlacement(StudentResponseDto dto, Long studentId) {
+        if (dto == null || studentId == null) return;
+        if (dto.getProgram() == null || dto.getProgram().isBlank()) {
+            studentEnrollmentRepository.findByStudentId(studentId).stream()
+                    .filter(e -> e.getProgramId() != null)
+                    .findFirst()
+                    .flatMap(e -> programRepository.findById(e.getProgramId()))
+                    .ifPresent(p -> dto.setProgram(p.getName()));
+        }
+    }
+
     @Override
     @Transactional(readOnly = true)
     public StudentResponseDto getStudentById(Long id) {
         Student student = studentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Student", "id", id));
-        return studentMapper.toDto(student);
+        StudentResponseDto dto = studentMapper.toDto(student);
+        enrichAcademicPlacement(dto, student.getId());
+        return dto;
     }
 
     @Override
@@ -302,7 +315,9 @@ public class StudentServiceImpl implements StudentService {
     public StudentResponseDto getStudentByRollNumber(String rollNumber) {
         Student student = studentRepository.findByRollNumber(rollNumber)
                 .orElseThrow(() -> new ResourceNotFoundException("Student", "rollNumber", rollNumber));
-        return studentMapper.toDto(student);
+        StudentResponseDto dto = studentMapper.toDto(student);
+        enrichAcademicPlacement(dto, student.getId());
+        return dto;
     }
 
     @Override
@@ -310,7 +325,9 @@ public class StudentServiceImpl implements StudentService {
     public StudentResponseDto getStudentByEnrollmentNumber(String enrollmentNumber) {
         Student student = studentRepository.findByEnrollmentNumber(enrollmentNumber)
                 .orElseThrow(() -> new ResourceNotFoundException("Student", "enrollmentNumber", enrollmentNumber));
-        return studentMapper.toDto(student);
+        StudentResponseDto dto = studentMapper.toDto(student);
+        enrichAcademicPlacement(dto, student.getId());
+        return dto;
     }
 
     @Override
@@ -343,7 +360,11 @@ public class StudentServiceImpl implements StudentService {
         );
 
         List<StudentResponseDto> content = studentPage.getContent().stream()
-                .map(studentMapper::toDto)
+                .map(s -> {
+                    StudentResponseDto dto = studentMapper.toDto(s);
+                    enrichAcademicPlacement(dto, s.getId());
+                    return dto;
+                })
                 .collect(Collectors.toList());
 
         return new PageResponse<>(
