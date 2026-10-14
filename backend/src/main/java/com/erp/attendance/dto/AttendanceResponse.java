@@ -1,6 +1,7 @@
 package com.erp.attendance.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.LocalDate;
 
 public record AttendanceResponse(
@@ -17,6 +18,12 @@ public record AttendanceResponse(
 ) {
     public AttendanceResponse(Long id, Long studentId, String courseCode, LocalDate date, String status, String markedBy, String remarks) {
         this(id, studentId, null, null, courseCode, date, status, markedBy, remarks);
+    }
+
+    @JsonProperty("attendanceDate")
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    public LocalDate attendanceDate() {
+        return date();
     }
 }
 

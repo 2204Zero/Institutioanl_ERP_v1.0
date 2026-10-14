@@ -316,7 +316,7 @@ public class DevJsonApplicationIntegrationTest {
         payReq.setAmount(new BigDecimal("15000.00"));
         payReq.setPaymentDate(LocalDate.now());
         payReq.setPaymentMethod(PaymentMethod.CARD);
-        payReq.setReferenceNumber("CARD-TX-001");
+        payReq.setReferenceNumber("CARD-TX-" + System.currentTimeMillis());
         payReq.setRemarks("Full fee payment");
         payReq.setIdempotencyKey(idemKey);
 

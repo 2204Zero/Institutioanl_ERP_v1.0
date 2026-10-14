@@ -8,6 +8,8 @@ import com.erp.academic.course.entity.Course;
 import com.erp.academic.course.repository.CourseRepository;
 import com.erp.academic.course_offering.entity.CourseOffering;
 import com.erp.academic.course_offering.repository.CourseOfferingRepository;
+import com.erp.academic.course_registration.entity.CourseRegistration;
+import com.erp.academic.course_registration.repository.CourseRegistrationRepository;
 import com.erp.academic.program.entity.Program;
 import com.erp.academic.program.repository.ProgramRepository;
 import com.erp.academic.section.entity.Section;
@@ -87,6 +89,8 @@ public class DevJsonDataHydrator {
     private final com.erp.finance.payment.repository.PaymentRepository paymentRepository;
     private final com.erp.finance.invoice.repository.ReceiptRepository receiptRepository;
     private final com.erp.attendance.repository.StudentAttendanceRecordRepository attendanceRecordRepository;
+    @Autowired(required = false)
+    private CourseRegistrationRepository courseRegistrationRepository;
 
     @Autowired
     public DevJsonDataHydrator(
@@ -526,6 +530,42 @@ public class DevJsonDataHydrator {
                                 .isActive(Boolean.TRUE.equals(ss.getIsActive()))
                                 .build();
                         sectionStudentRepository.save(ssEntity);
+                    }
+                }
+            }
+
+            // 12.3 Hydrate Course Registrations
+            if (courseRegistrationRepository != null) {
+                Path crFile = storageDir.resolve("course_registrations.json");
+                if (Files.exists(crFile)) {
+                    List<com.erp.devjson.model.RegistrationJsonModels.CourseRegistrationRecord> crRecords =
+                            storageEngine.readList(crFile, com.erp.devjson.model.RegistrationJsonModels.CourseRegistrationRecord.class);
+                    for (var cr : crRecords) {
+                        if (cr.getStudentId() != null && cr.getCourseOfferingId() != null) {
+                            if (!courseRegistrationRepository.existsByStudentIdAndCourseOfferingId(cr.getStudentId(), cr.getCourseOfferingId())) {
+                                var studentOpt = studentRepository.findById(cr.getStudentId());
+                                var offeringOpt = offeringRepository.findById(cr.getCourseOfferingId());
+                                if (studentOpt.isPresent() && offeringOpt.isPresent()) {
+                                    Section sec = null;
+                                    if (cr.getSectionId() != null) {
+                                        sec = sectionRepository.findById(cr.getSectionId()).orElse(null);
+                                    }
+                                    com.erp.academic.course_registration.entity.RegistrationStatus regStatus =
+                                            "DROPPED".equalsIgnoreCase(cr.getStatus()) 
+                                                    ? com.erp.academic.course_registration.entity.RegistrationStatus.DROPPED 
+                                                    : com.erp.academic.course_registration.entity.RegistrationStatus.REGISTERED;
+
+                                    var reg = CourseRegistration.builder()
+                                            .id(cr.getId())
+                                            .student(studentOpt.get())
+                                            .courseOffering(offeringOpt.get())
+                                            .section(sec)
+                                            .status(regStatus)
+                                            .build();
+                                    courseRegistrationRepository.save(reg);
+                                }
+                            }
+                        }
                     }
                 }
             }

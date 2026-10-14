@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -132,14 +132,33 @@ export function CreateInvoiceDialog({ initialStudentId, trigger, onSuccess }: Cr
     }
   };
 
-  const filteredStudents = students.filter(st => {
-    if (!studentSearch.trim()) return true;
-    const q = studentSearch.toLowerCase();
-    const fullName = `${st.firstName} ${st.lastName}`.toLowerCase();
-    const roll = (st.rollNumber || '').toLowerCase();
-    const enr = (st.enrollmentNumber || '').toLowerCase();
-    return fullName.includes(q) || roll.includes(q) || enr.includes(q);
-  });
+  const isNumericSearch = /^\d+$/.test(studentSearch.trim());
+  const numericId = isNumericSearch ? parseInt(studentSearch.trim(), 10) : null;
+
+  const filteredStudents = useMemo(() => {
+    if (!studentSearch.trim()) return students.slice(0, 10);
+    const q = studentSearch.trim().toLowerCase();
+
+    return [...students]
+      .filter(st => {
+        if (numericId !== null && st.id === numericId) return true;
+        const fullName = `${st.firstName || ''} ${st.lastName || ''}`.toLowerCase();
+        const roll = (st.rollNumber || '').toLowerCase();
+        const enr = (st.enrollmentNumber || '').toLowerCase();
+        return fullName.includes(q) || roll.includes(q) || enr.includes(q);
+      })
+      .sort((a, b) => {
+        if (numericId !== null) {
+          if (a.id === numericId) return -1;
+          if (b.id === numericId) return 1;
+        }
+        if (a.enrollmentNumber?.toLowerCase() === q) return -1;
+        if (b.enrollmentNumber?.toLowerCase() === q) return 1;
+        if (a.rollNumber?.toLowerCase() === q) return -1;
+        if (b.rollNumber?.toLowerCase() === q) return 1;
+        return 0;
+      });
+  }, [students, studentSearch, numericId]);
 
   const onSubmit = async (data: FormValues) => {
     try {
@@ -192,60 +211,128 @@ export function CreateInvoiceDialog({ initialStudentId, trigger, onSuccess }: Cr
             <FormField
               control={form.control}
               name="studentId"
-              render={({ field }) => (
+              render={() => (
                 <FormItem>
                   <FormLabel className="text-xs font-semibold text-slate-700">Target Student*</FormLabel>
-                  {initialStudentId && selectedStudent ? (
-                    <div className="flex items-center justify-between p-2.5 bg-slate-100 rounded-lg border border-slate-200">
-                      <div className="flex items-center space-x-2">
-                        <UserCheck className="w-4 h-4 text-emerald-600" />
+                  {selectedStudent ? (
+                    <div className="flex items-center justify-between p-3 bg-blue-50/60 rounded-lg border border-blue-200">
+                      <div className="flex items-center space-x-2.5">
+                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs shrink-0">
+                          <UserCheck className="w-4 h-4" />
+                        </div>
                         <div>
-                          <p className="text-xs font-bold text-slate-900">{selectedStudent.firstName} {selectedStudent.lastName}</p>
-                          <p className="text-[11px] text-slate-500">
-                            {selectedStudent.enrollmentNumber || selectedStudent.rollNumber || `ID: #${selectedStudent.id}`}
+                          <div className="flex items-center gap-2">
+                            <p className="text-xs font-bold text-slate-900">{selectedStudent.firstName} {selectedStudent.lastName}</p>
+                            <span className="text-[10px] font-mono bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded font-semibold">
+                              #{selectedStudent.id}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-600 font-mono mt-0.5">
+                            {selectedStudent.enrollmentNumber ? `ENR: ${selectedStudent.enrollmentNumber}` : ''}
+                            {selectedStudent.enrollmentNumber && selectedStudent.rollNumber ? ' • ' : ''}
+                            {selectedStudent.rollNumber ? `Roll: ${selectedStudent.rollNumber}` : ''}
+                            {selectedStudent.department ? ` • ${selectedStudent.department}` : ''}
                           </p>
                         </div>
                       </div>
-                      <span className="text-[10px] font-mono bg-slate-200 px-1.5 py-0.5 rounded text-slate-700">Preselected</span>
+                      {!initialStudentId && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="text-xs text-slate-500 hover:text-slate-800 h-7 px-2"
+                          onClick={() => {
+                            form.setValue('studentId', '', { shouldValidate: true });
+                            setStudentSearch('');
+                          }}
+                        >
+                          Change Student
+                        </Button>
+                      )}
                     </div>
                   ) : (
                     <div className="space-y-2">
                       <div className="relative">
                         <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-slate-400" />
                         <Input
-                          placeholder="Search student by name, roll no, or ENR..."
+                          placeholder="Search by student name, roll number, ENR, or ID..."
                           className="pl-8 text-xs h-8 bg-white border-slate-200"
                           value={studentSearch}
                           onChange={(e) => setStudentSearch(e.target.value)}
+                          autoFocus
                         />
+                        {studentSearch && (
+                          <button
+                            type="button"
+                            onClick={() => setStudentSearch('')}
+                            className="absolute right-2 top-2 text-slate-400 hover:text-slate-600 text-xs px-1"
+                          >
+                            ✕
+                          </button>
+                        )}
                       </div>
-                      <Select
-                        disabled={isLoadingStudents}
-                        value={field.value}
-                        onValueChange={field.onChange}
-                      >
-                        <FormControl>
-                          <SelectTrigger className="text-xs bg-slate-50 border-slate-200">
-                            <SelectValue placeholder={isLoadingStudents ? 'Loading students...' : 'Choose Student from Directory'} />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent className="max-h-52">
-                          {filteredStudents.length > 0 ? (
-                            filteredStudents.map((st: any) => (
-                              <SelectItem key={st.id} value={String(st.id)}>
-                                <div className="flex items-center justify-between gap-4">
-                                  <span className="font-semibold text-slate-900">{st.firstName} {st.lastName}</span>
-                                  <span className="text-[11px] text-slate-500 font-mono">
-                                    {st.enrollmentNumber ? `[${st.enrollmentNumber}]` : st.rollNumber ? `[${st.rollNumber}]` : `[#${st.id}]`}
-                                  </span>
+
+                      <div className="border border-slate-200 rounded-lg max-h-48 overflow-y-auto divide-y divide-slate-100 bg-white">
+                        {isLoadingStudents ? (
+                          <div className="p-4 text-center text-xs text-slate-400 flex items-center justify-center space-x-2">
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            <span>Loading student directory...</span>
+                          </div>
+                        ) : filteredStudents.length === 0 ? (
+                          <div className="p-4 text-center text-xs text-slate-500 space-y-1">
+                            <p className="font-semibold text-slate-700">No matching students found</p>
+                            <p className="text-[11px] text-slate-400">
+                              Try searching by student full name, roll number (e.g. ROLL-WS-001), canonical ENR, or internal ID.
+                            </p>
+                          </div>
+                        ) : (
+                          filteredStudents.map((st: any) => {
+                            const isExactMatch = (numericId !== null && st.id === numericId) ||
+                              st.enrollmentNumber?.toLowerCase() === studentSearch.trim().toLowerCase() ||
+                              st.rollNumber?.toLowerCase() === studentSearch.trim().toLowerCase();
+
+                            return (
+                              <div
+                                key={st.id}
+                                onClick={() => {
+                                  form.setValue('studentId', String(st.id), { shouldValidate: true });
+                                  setStudentSearch('');
+                                }}
+                                className={`p-2.5 flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors ${
+                                  isExactMatch ? 'bg-blue-50/50 border-l-2 border-blue-600' : ''
+                                }`}
+                              >
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-bold text-xs text-slate-900">{st.firstName} {st.lastName}</span>
+                                    <span className="text-[10px] font-mono text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                                      #{st.id}
+                                    </span>
+                                    {isExactMatch && (
+                                      <span className="text-[10px] font-semibold text-blue-700 bg-blue-100 px-1 rounded">
+                                        Exact Match
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-[11px] text-slate-500 font-mono mt-0.5">
+                                    {st.enrollmentNumber ? `[${st.enrollmentNumber}]` : ''} 
+                                    {st.rollNumber ? ` Roll: ${st.rollNumber}` : ''}
+                                    {st.department ? ` • ${st.department}` : ''}
+                                  </p>
                                 </div>
-                              </SelectItem>
-                            ))
-                          ) : (
-                            <div className="p-2 text-center text-xs text-slate-500">No matching students found</div>
-                          )}
-                        </SelectContent>
-                      </Select>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant={isExactMatch ? 'default' : 'outline'}
+                                  className="text-xs h-7 px-2.5"
+                                >
+                                  Select
+                                </Button>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
                     </div>
                   )}
                   <FormMessage className="text-xs text-red-600" />

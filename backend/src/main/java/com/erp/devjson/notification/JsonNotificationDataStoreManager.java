@@ -34,16 +34,33 @@ public class JsonNotificationDataStoreManager {
                 NotificationRecord::getId, NotificationRecord::setId);
     }
 
-    public synchronized NotificationRecord createNotification(Long userId, String title, String message, String type) {
+    public synchronized NotificationRecord createNotification(Long userId, String title, String message, String type, String link) {
+        // Prevent duplicate notifications within 5 minutes for same user, title and message
+        LocalDateTime cutoff = LocalDateTime.now().minusMinutes(5);
+        Optional<NotificationRecord> duplicate = notificationStore.findAll().stream()
+                .filter(n -> userId.equals(n.getUserId()))
+                .filter(n -> title != null && title.equalsIgnoreCase(n.getTitle()))
+                .filter(n -> message != null && message.equalsIgnoreCase(n.getMessage()))
+                .filter(n -> n.getCreatedAt() != null && n.getCreatedAt().isAfter(cutoff))
+                .findFirst();
+        if (duplicate.isPresent()) {
+            return duplicate.get();
+        }
+
         NotificationRecord record = NotificationRecord.builder()
                 .userId(userId)
                 .title(title)
                 .message(message)
                 .type(type != null ? type.toUpperCase() : "INFO")
+                .link(link)
                 .read(false)
                 .createdAt(LocalDateTime.now())
                 .build();
         return notificationStore.save(record);
+    }
+
+    public synchronized NotificationRecord createNotification(Long userId, String title, String message, String type) {
+        return createNotification(userId, title, message, type, null);
     }
 
     public List<NotificationRecord> getNotificationsByUserId(Long userId) {
@@ -59,6 +76,19 @@ public class JsonNotificationDataStoreManager {
                 .orElseThrow(() -> new ResourceNotFoundException("Notification not found with id: " + id));
         n.setRead(true);
         return notificationStore.save(n);
+    }
+
+    public synchronized int markAllAsRead(Long userId) {
+        if (userId == null) return 0;
+        List<NotificationRecord> unread = notificationStore.findAll().stream()
+                .filter(n -> userId.equals(n.getUserId()))
+                .filter(n -> Boolean.FALSE.equals(n.getRead()))
+                .collect(Collectors.toList());
+        for (NotificationRecord n : unread) {
+            n.setRead(true);
+            notificationStore.save(n);
+        }
+        return unread.size();
     }
 
     public long getUnreadCount(Long userId) {

@@ -113,7 +113,7 @@ public class AttendanceService {
                             }
                         } catch (Exception ignored) {}
                     }
-                    if (facultyRepository != null && (markedBy == null || markedBy.equalsIgnoreCase("faculty") || markedBy.isBlank())) {
+                    if (facultyRepository != null && (markedBy == null || markedBy.isBlank())) {
                         Long fid = r.getMarkedByFacultyId() != null ? r.getMarkedByFacultyId() : slot.getFacultyId();
                         if (fid != null) {
                             try {
@@ -447,13 +447,13 @@ public class AttendanceService {
         }
 
         return records.stream()
-                .map(r -> mapToAttendanceResponse(r, "GENERAL", "faculty"))
+                .map(r -> mapToAttendanceResponse(r, "GENERAL", null))
                 .collect(Collectors.toList());
     }
 
     public List<AttendanceResponse> getAllAttendance() {
         return attendanceRepository.findAll().stream()
-                .map(r -> mapToAttendanceResponse(r, "GENERAL", "faculty"))
+                .map(r -> mapToAttendanceResponse(r, "GENERAL", null))
                 .collect(Collectors.toList());
     }
 }

@@ -140,7 +140,7 @@ async function runPrompt7AcceptanceSuite() {
     const roster = Array.isArray(rosterRes.data?.data) ? rosterRes.data.data : (Array.isArray(rosterRes.data) ? rosterRes.data : []);
 
     // 2.9 Faculty Records Bulk Attendance
-    const testDate = new Date(Date.now() + (Math.floor(Math.random() * 10000) + 10) * 86400000).toISOString().split('T')[0];
+    const testDate = new Date().toISOString().split('T')[0];
     const attendanceRecords = roster.length > 0 ? [{
       studentId: roster[0].studentId || roster[0].id,
       status: 'PRESENT',

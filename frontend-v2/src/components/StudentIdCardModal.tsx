@@ -55,7 +55,10 @@ export function StudentIdCardModal({ studentId, open, onOpenChange }: StudentIdC
         ) : data ? (
           <div className="space-y-4">
             {/* Identity Card Front Preview */}
-            <div className="border-2 border-slate-900 rounded-xl overflow-hidden bg-white shadow-lg text-slate-900">
+            <div
+              id="printable-student-id-card"
+              className="border-2 border-slate-900 rounded-xl overflow-hidden bg-white shadow-lg text-slate-900"
+            >
               <div className="bg-slate-900 text-white px-4 py-3 flex items-center justify-between">
                 <div>
                   <h3 className="text-xs font-black tracking-wider uppercase">Institutional ERP</h3>
@@ -113,6 +116,41 @@ export function StudentIdCardModal({ studentId, open, onOpenChange }: StudentIdC
                 <Printer className="w-3.5 h-3.5 mr-1.5" /> Print / Save PDF
               </Button>
             </div>
+
+            <style>{`
+              @media print {
+                /* Exclude backdrop, header, dialog controls, and page */
+                body * {
+                  visibility: hidden !important;
+                }
+                #printable-student-id-card,
+                #printable-student-id-card * {
+                  visibility: visible !important;
+                }
+                #printable-student-id-card {
+                  position: fixed !important;
+                  left: 50% !important;
+                  top: 40px !important;
+                  transform: translateX(-50%) !important;
+                  width: 380px !important;
+                  margin: 0 !important;
+                  padding: 0 !important;
+                  box-shadow: none !important;
+                  border: 2px solid #0f172a !important;
+                  page-break-inside: avoid !important;
+                  break-inside: avoid !important;
+                  -webkit-print-color-adjust: exact !important;
+                  print-color-adjust: exact !important;
+                  z-index: 99999 !important;
+                }
+                /* Hide dialog overlays and wrappers entirely in print */
+                [data-radix-portal], [role="dialog"], [data-state="open"] {
+                  background: transparent !important;
+                  border: none !important;
+                  box-shadow: none !important;
+                }
+              }
+            `}</style>
           </div>
         ) : null}
       </DialogContent>

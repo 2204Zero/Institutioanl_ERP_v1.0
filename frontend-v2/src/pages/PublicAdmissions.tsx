@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
+import { apiClient } from '../config/api';
+import { formatAcademicYearLabel, formatProgramLabel } from '../lib/academicUtils';
 import { 
   GraduationCap, 
   Send, 
@@ -39,8 +40,14 @@ export default function PublicAdmissions() {
   const { data: programs = [], isLoading: loadingPrograms } = useQuery<PublicProgram[]>({
     queryKey: ['public-programs'],
     queryFn: async () => {
-      const res = await axios.get('/api/v1/admissions/public/programs');
-      return res.data || [];
+      try {
+        const res = await apiClient.get('/api/v1/admissions/public/programs');
+        const raw = res.data;
+        return Array.isArray(raw) ? raw : (raw?.data && Array.isArray(raw.data) ? raw.data : []);
+      } catch (err) {
+        console.warn('Failed to fetch public programs:', err);
+        return [];
+      }
     },
   });
 
@@ -48,8 +55,14 @@ export default function PublicAdmissions() {
   const { data: academicYears = [] } = useQuery<PublicAcademicYear[]>({
     queryKey: ['public-academic-years'],
     queryFn: async () => {
-      const res = await axios.get('/api/v1/admissions/public/academic-years');
-      return res.data || [];
+      try {
+        const res = await apiClient.get('/api/v1/admissions/public/academic-years');
+        const raw = res.data;
+        return Array.isArray(raw) ? raw : (raw?.data && Array.isArray(raw.data) ? raw.data : []);
+      } catch (err) {
+        console.warn('Failed to fetch public academic years:', err);
+        return [];
+      }
     },
   });
 
@@ -83,7 +96,7 @@ export default function PublicAdmissions() {
     }
     setInquirySubmitting(true);
     try {
-      const res = await axios.post('/api/v1/admissions/public/inquiries', {
+      const res = await apiClient.post('/api/v1/admissions/public/inquiries', {
         prospectName: inquiryName.trim(),
         email: inquiryEmail.trim(),
         phone: inquiryPhone.trim(),
@@ -113,7 +126,7 @@ export default function PublicAdmissions() {
 
     setAppSubmitting(true);
     try {
-      const res = await axios.post('/api/v1/admissions/public/applications', {
+      const res = await apiClient.post('/api/v1/admissions/public/applications', {
         firstName: appFirstName.trim(),
         lastName: appLastName.trim(),
         email: appEmail.trim(),
@@ -364,7 +377,7 @@ export default function PublicAdmissions() {
                         <option value="">Select a Program (Optional)</option>
                         {programs.map((p) => (
                           <option key={p.id} value={p.name}>
-                            {p.name} ({p.code})
+                            {formatProgramLabel(p)}
                           </option>
                         ))}
                       </select>
@@ -408,7 +421,7 @@ export default function PublicAdmissions() {
                   <p className="text-[11px] text-slate-500">Internal Record #{appSuccessResult.id}</p>
                 </div>
                 <p className="text-xs text-slate-500">
-                  Please retain this application number for correspondence. You will receive email verification upon admissions committee review.
+                  Please retain this application number for correspondence and tracking your admissions status.
                 </p>
                 <div className="pt-2">
                   <Button asChild variant="outline" size="sm">
@@ -442,7 +455,7 @@ export default function PublicAdmissions() {
                             <option value="">Select Degree Program</option>
                             {programs.map((p) => (
                               <option key={p.id} value={p.id}>
-                                {p.name} ({p.code})
+                                {formatProgramLabel(p)}
                               </option>
                             ))}
                           </select>
@@ -458,7 +471,7 @@ export default function PublicAdmissions() {
                             <option value="">Select Academic Year</option>
                             {academicYears.map((ay) => (
                               <option key={ay.id} value={ay.id}>
-                                {ay.name || `AY ${ay.id}`} {ay.isActive ? '(Current Active)' : ''}
+                                {formatAcademicYearLabel(ay)}
                               </option>
                             ))}
                           </select>

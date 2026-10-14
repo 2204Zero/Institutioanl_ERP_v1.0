@@ -253,13 +253,14 @@ export interface Room {
   name: string;
   capacity: number;
   isActive: boolean;
+  timetableSlotCount?: number;
 }
 
-export const useRooms = () => {
+export const useRooms = (includeInactive: boolean = true) => {
   return useQuery({
-    queryKey: ['rooms'],
+    queryKey: ['rooms', includeInactive],
     queryFn: async () => {
-      const response = await apiClient.get<Room[]>('/api/v1/rooms');
+      const response = await apiClient.get<Room[]>(`/api/v1/rooms?includeInactive=${includeInactive}`);
       return response.data;
     },
   });
@@ -271,6 +272,57 @@ export const useCreateRoom = () => {
     mutationFn: async (data: { name: string; capacity: number; isActive?: boolean }) => {
       const response = await apiClient.post<Room>('/api/v1/rooms', data);
       return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
+    },
+  });
+};
+
+export const useUpdateRoom = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: { name: string; capacity: number; isActive?: boolean } }) => {
+      const response = await apiClient.put<Room>(`/api/v1/rooms/${id}`, data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
+    },
+  });
+};
+
+export const useDeactivateRoom = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const response = await apiClient.patch<Room>(`/api/v1/rooms/${id}/deactivate`);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
+    },
+  });
+};
+
+export const useActivateRoom = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const response = await apiClient.patch<Room>(`/api/v1/rooms/${id}/activate`);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
+    },
+  });
+};
+
+export const useDeleteRoom = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      await apiClient.delete(`/api/v1/rooms/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rooms'] });

@@ -9,7 +9,7 @@ import {
   User, Mail, Phone, MapPin, Building2, Calendar, 
   BookOpen, MoreVertical, Edit, Loader2,
   AlertCircle, Download, FileText, CalendarCheck, Wallet, Clock,
-  CreditCard, Copy, Check, Eye, ArrowUpRight
+  CreditCard, Copy, Check, Eye, ArrowUpRight, Pencil
 } from 'lucide-react';
 import { PageFrame } from '../components/ui/PageFrame';
 import { Button } from '../components/ui/button';
@@ -30,6 +30,7 @@ import { ChangeStudentStatusDialog } from '../components/ChangeStudentStatusDial
 import { StudentIdCardModal } from '../components/StudentIdCardModal';
 import { StudentTranscriptModal } from '../components/StudentTranscriptModal';
 import { EditStudentDialog } from '../components/EditStudentDialog';
+import { EditGuardianDialog } from '../components/EditGuardianDialog';
 
 const VALID_TRANSITIONS: Record<StudentStatus, { status: StudentStatus; label: string; className?: string }[]> = {
   ACTIVE: [
@@ -77,6 +78,7 @@ export default function StudentProfile() {
   const [selectedTargetStatus, setSelectedTargetStatus] = useState<StudentStatus | null>(null);
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingGuardian, setEditingGuardian] = useState<any | null>(null);
   const [isIdCardModalOpen, setIsIdCardModalOpen] = useState(false);
   const [isTranscriptModalOpen, setIsTranscriptModalOpen] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
@@ -343,8 +345,21 @@ export default function StudentProfile() {
                             <p className="text-[10px] text-slate-500 font-medium">{g.relation} • {g.email}</p>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className="text-xs font-semibold text-slate-700">{g.phone || 'No phone'}</p>
+                        <div className="flex items-center space-x-2">
+                          <div className="text-right">
+                            <p className="text-xs font-semibold text-slate-700">{g.phone || 'No phone'}</p>
+                            {g.occupation && <p className="text-[10px] text-slate-400">{g.occupation}</p>}
+                          </div>
+                          {canManage && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-xs h-7 px-2 border-slate-200 text-slate-600 hover:text-slate-900 ml-2"
+                              onClick={() => setEditingGuardian(g)}
+                            >
+                              <Pencil className="w-3 h-3 mr-1" /> Edit
+                            </Button>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -453,7 +468,7 @@ export default function StudentProfile() {
                           return (
                             <tr key={rec.id} className="hover:bg-slate-50/70 transition-colors">
                               <td className="px-3 py-2.5 font-mono text-slate-900 font-medium">
-                                {rec.attendanceDate}
+                                {rec.date || rec.attendanceDate || '—'}
                               </td>
                               <td className="px-3 py-2.5 font-medium text-slate-800">
                                 {rec.courseCode || 'General Lecture'}
@@ -616,6 +631,15 @@ export default function StudentProfile() {
         onOpenChange={setIsEditDialogOpen}
         student={student}
       />
+
+      {editingGuardian && (
+        <EditGuardianDialog
+          open={!!editingGuardian}
+          onOpenChange={(open) => { if (!open) setEditingGuardian(null); }}
+          guardian={editingGuardian}
+          studentId={student.id}
+        />
+      )}
     </PageFrame>
   );
 }

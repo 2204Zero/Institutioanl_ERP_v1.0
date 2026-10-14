@@ -15,6 +15,7 @@ import {
   type FeeStructure
 } from '../hooks/queries/useFinance';
 import { usePrograms, useAcademicYears } from '../hooks/queries/useAcademics';
+import { formatAcademicYearLabel, formatProgramLabel } from '../lib/academicUtils';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -229,7 +230,7 @@ export function FeeStructuresTab() {
                       <p className="font-mono text-[10px] text-slate-500">{s.code}</p>
                     </TableCell>
                     <TableCell className="text-xs text-slate-600">
-                      <p className="font-medium text-slate-800">{prog ? `${prog.name} (${prog.code})` : 'All Programs'}</p>
+                      <p className="font-medium text-slate-800">{prog ? formatProgramLabel(prog) : 'All Programs'}</p>
                       <p className="text-[10px] text-slate-500">{ay ? ay.name || ay.code : 'Universal'}</p>
                     </TableCell>
                     <TableCell className="text-xs">
@@ -329,7 +330,7 @@ export function FeeStructuresTab() {
                   <SelectContent>
                     {programs.map((p) => (
                       <SelectItem key={p.id} value={String(p.id)} className="text-xs">
-                        {p.name} ({p.code})
+                        {formatProgramLabel(p)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -345,7 +346,7 @@ export function FeeStructuresTab() {
                   <SelectContent>
                     {academicYears.map((ay) => (
                       <SelectItem key={ay.id} value={String(ay.id)} className="text-xs">
-                        {ay.name || ay.code}
+                        {formatAcademicYearLabel(ay)}
                       </SelectItem>
                     ))}
                   </SelectContent>

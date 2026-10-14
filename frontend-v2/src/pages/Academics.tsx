@@ -43,8 +43,10 @@ import {
   useCreateBatch,
   type Course
 } from '../hooks/queries/useAcademics';
+import { formatAcademicYearLabel, formatProgramLabel } from '../lib/academicUtils';
 import { toast } from 'sonner';
 import { TimetableTab } from '../components/TimetableTab';
+import { RoomsTab } from '../components/academics/RoomsTab';
 import { useAuthStore } from '../store/useAuthStore';
 import { CreateDepartmentDialog } from '../components/academics/CreateDepartmentDialog';
 import { CreateAcademicYearDialog } from '../components/academics/CreateAcademicYearDialog';
@@ -275,7 +277,7 @@ export default function Academics() {
       return programs.map(p => (
         <TableRow key={p.id}>
           <TableCell className="font-semibold px-6 py-4">{p.code}</TableCell>
-          <TableCell className="px-6 py-4">{p.name}</TableCell>
+          <TableCell className="px-6 py-4">{formatProgramLabel(p)}</TableCell>
           <TableCell className="px-6 py-4 text-slate-600">{p.type}</TableCell>
           <TableCell className="px-6 py-4 text-slate-600">{p.durationYears} Years</TableCell>
           <TableCell className="px-6 py-4">
@@ -425,6 +427,18 @@ export default function Academics() {
       });
     }
 
+    if (activeTab === 'rooms') {
+      return (
+        <TableRow>
+          <TableCell colSpan={6} className="p-0 border-0">
+            <div className="p-0">
+              <RoomsTab isAdmin={isAdmin} />
+            </div>
+          </TableCell>
+        </TableRow>
+      );
+    }
+
     if (activeTab === 'timetable') {
       return (
         <TableRow>
@@ -497,7 +511,7 @@ export default function Academics() {
             </>
           )}
 
-          {activeTab !== 'timetable' && !isCreating && isAdmin && (
+          {activeTab !== 'timetable' && activeTab !== 'rooms' && !isCreating && isAdmin && (
             <Button
               onClick={() => setIsCreating(true)}
               className="bg-black text-white hover:bg-black/80 px-6 rounded-full h-10 text-xs font-semibold"
@@ -524,7 +538,8 @@ export default function Academics() {
             { id: 'semesters', label: '4. Semesters', icon: Calendar },
             { id: 'offerings', label: '5. Offerings', icon: LayoutList },
             { id: 'sections', label: '6. Sections', icon: Users },
-            { id: 'timetable', label: '7. Timetable', icon: Calendar }
+            { id: 'rooms', label: '7. Facilities / Rooms', icon: Building2 },
+            { id: 'timetable', label: '8. Timetable', icon: Calendar }
           ].map((tab) => (
             <button
               key={tab.id}
@@ -725,7 +740,7 @@ export default function Academics() {
                 >
                   <option value="">Select Academic Year...</option>
                   {academicYears?.map(ay => (
-                    <option key={ay.id} value={ay.id}>{ay.name}</option>
+                    <option key={ay.id} value={ay.id}>{formatAcademicYearLabel(ay)}</option>
                   ))}
                 </select>
               </div>
@@ -938,7 +953,7 @@ export default function Academics() {
           </Table>
         )}
 
-        {activeTab === 'timetable' && (
+        {(activeTab === 'timetable' || activeTab === 'rooms') && (
           <Table>
             <TableBody>
               {getTableContent()}

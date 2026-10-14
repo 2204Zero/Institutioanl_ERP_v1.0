@@ -17,12 +17,15 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.erp.academic.timetable.repository.TimetableSlotRepository;
+
 @RestController
 @RequestMapping("/api/v1/rooms")
 @RequiredArgsConstructor
 public class RoomController {
 
     private final RoomRepository roomRepository;
+    private final TimetableSlotRepository timetableSlotRepository;
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'FACULTY', 'STUDENT')")
@@ -100,12 +103,27 @@ public class RoomController {
         return ResponseEntity.ok(toResponse(roomRepository.save(room)));
     }
 
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+    public ResponseEntity<Void> deleteRoom(@PathVariable Long id) {
+        Room room = roomRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Room not found with id: " + id));
+        long count = timetableSlotRepository != null ? timetableSlotRepository.countByRoomId(id) : 0L;
+        if (count > 0) {
+            throw new BusinessException("Cannot delete room '" + room.getName() + "' because it is referenced by " + count + " timetable slots. Please deactivate the room instead.");
+        }
+        roomRepository.delete(room);
+        return ResponseEntity.noContent().build();
+    }
+
     private RoomResponse toResponse(Room room) {
+        long count = timetableSlotRepository != null ? timetableSlotRepository.countByRoomId(room.getId()) : 0L;
         return RoomResponse.builder()
                 .id(room.getId())
                 .name(room.getName())
                 .capacity(room.getCapacity())
                 .isActive(room.getIsActive())
+                .timetableSlotCount(count)
                 .build();
     }
 }

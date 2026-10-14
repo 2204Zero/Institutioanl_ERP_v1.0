@@ -27,6 +27,9 @@ import com.erp.academic.semester.repository.SemesterRepository;
 import com.erp.student.entity.StudentEnrollment;
 import com.erp.student.repository.StudentEnrollmentRepository;
 import com.erp.guardian.service.GuardianService;
+import com.erp.auth.repository.UserRepository;
+import com.erp.devjson.notification.JsonNotificationDataStoreManager;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -40,6 +43,12 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 public class StudentServiceImpl implements StudentService {
+
+    @Autowired(required = false)
+    private JsonNotificationDataStoreManager notificationManager;
+
+    @Autowired(required = false)
+    private UserRepository userRepository;
 
     private final StudentRepository studentRepository;
     private final StudentStatusHistoryRepository statusHistoryRepository;
@@ -199,11 +208,12 @@ public class StudentServiceImpl implements StudentService {
         }
 
         // Guardian linkage
+        com.erp.guardian.dto.GuardianResponseDto attachedGuardianDto = null;
         if (requestDto.getGuardianId() != null) {
-            guardianService.linkGuardianToStudent(savedStudent.getId(), requestDto.getGuardianId());
+            attachedGuardianDto = guardianService.linkGuardianToStudent(savedStudent.getId(), requestDto.getGuardianId());
         } else if (requestDto.getGuardian() != null) {
-            GuardianRequestDto gDto = requestDto.getGuardian();
-            guardianService.addGuardianToStudent(savedStudent.getId(), gDto);
+            com.erp.guardian.dto.GuardianRequestDto gDto = requestDto.getGuardian();
+            attachedGuardianDto = guardianService.addGuardianToStudent(savedStudent.getId(), gDto);
         }
 
         // Student Enrollment record
@@ -236,6 +246,16 @@ public class StudentServiceImpl implements StudentService {
         StudentResponseDto responseDto = studentMapper.toDto(savedStudent);
         responseDto.setTemporaryPassword(studentAccount.rawPassword());
         responseDto.setUsername(studentAccount.user().getUsername());
+        if (attachedGuardianDto != null) {
+            responseDto.setGuardians(java.util.List.of(attachedGuardianDto));
+        } else {
+            try {
+                java.util.List<com.erp.guardian.dto.GuardianResponseDto> gList = guardianService.getGuardiansByStudentId(savedStudent.getId());
+                if (gList != null && !gList.isEmpty()) {
+                    responseDto.setGuardians(gList);
+                }
+            } catch (Exception ignored) {}
+        }
         return responseDto;
     }
 
@@ -434,7 +454,67 @@ public class StudentServiceImpl implements StudentService {
         );
         statusHistoryRepository.save(history);
 
+        // Emit notifications to student and linked parent/guardians
+        if (notificationManager != null) {
+            String statusStr = newStatus.name();
+            String formattedStatus = statusStr.length() > 1
+                    ? Character.toUpperCase(statusStr.charAt(0)) + statusStr.substring(1).toLowerCase()
+                    : statusStr;
+            String studentName = (savedStudent.getFirstName() + " " + savedStudent.getLastName()).trim();
+
+            // 1. Student notification
+            Long studentUserId = savedStudent.getUserId();
+            if (studentUserId == null && savedStudent.getEmail() != null && userRepository != null) {
+                userRepository.findByEmailIgnoreCase(savedStudent.getEmail()).ifPresent(u -> {
+                    savedStudent.setUserId(u.getId());
+                    studentRepository.save(savedStudent);
+                });
+                studentUserId = savedStudent.getUserId();
+            }
+
+            if (studentUserId != null) {
+                notificationManager.createNotification(
+                        studentUserId,
+                        "Student Status Update",
+                        "Your student account status has been changed to " + formattedStatus + ".",
+                        "STATUS_CHANGE",
+                        "/dashboard/profile"
+                );
+            }
+
+            // 2. Linked parent/guardian notifications
+            List<Guardian> guardians = guardianRepository.findByStudentId(savedStudent.getId());
+            for (Guardian guardian : guardians) {
+                Long gUserId = guardian.getUserId();
+                if (gUserId == null && guardian.getEmail() != null && userRepository != null) {
+                    var uOpt = userRepository.findByEmailIgnoreCase(guardian.getEmail());
+                    if (uOpt.isPresent()) {
+                        gUserId = uOpt.get().getId();
+                        guardian.setUserId(gUserId);
+                        guardianRepository.save(guardian);
+                    }
+                }
+                if (gUserId != null) {
+                    notificationManager.createNotification(
+                            gUserId,
+                            "Student Status Update",
+                            "The status of " + studentName + " has been changed to " + formattedStatus + ".",
+                            "STATUS_CHANGE",
+                            "/dashboard/students"
+                    );
+                }
+            }
+        }
+
         return studentMapper.toDto(savedStudent);
+    }
+
+    public void setNotificationManager(JsonNotificationDataStoreManager notificationManager) {
+        this.notificationManager = notificationManager;
+    }
+
+    public void setUserRepository(UserRepository userRepository) {
+        this.userRepository = userRepository;
     }
 
     @Override

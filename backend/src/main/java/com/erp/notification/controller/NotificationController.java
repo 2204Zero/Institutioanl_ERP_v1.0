@@ -90,6 +90,20 @@ public class NotificationController {
         return ResponseEntity.ok(updated);
     }
 
+    @PatchMapping("/mark-all-read")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Map<String, Object>> markAllAsRead(Authentication auth) {
+        if (notificationManager == null) {
+            return ResponseEntity.ok(Map.of("marked", 0));
+        }
+        Long userId = getCurrentUserId(auth);
+        if (userId == null) {
+            return ResponseEntity.ok(Map.of("marked", 0));
+        }
+        int count = notificationManager.markAllAsRead(userId);
+        return ResponseEntity.ok(Map.of("marked", count));
+    }
+
     public record CreateNotificationRequest(Long userId, String title, String message, String type) {}
 
     @PostMapping

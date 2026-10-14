@@ -224,9 +224,19 @@ export default function StudentDashboard() {
               <BookOpen className="h-4 w-4 text-slate-400" />
             </div>
             <div className="text-3xl font-extrabold tracking-tight text-slate-900">
-              {loadingCourses ? <Loader2 className="w-6 h-6 animate-spin text-slate-400" /> : registrations.length}
+              {loadingCourses ? (
+                <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
+              ) : (
+                student?.status === 'ACTIVE' 
+                  ? registrations.filter(r => r.status === 'REGISTERED' || r.status === 'ACTIVE').length
+                  : 0
+              )}
             </div>
-            <p className="text-xs text-slate-500 mt-2 font-medium">Active registrations this term</p>
+            <p className="text-xs text-slate-500 mt-2 font-medium">
+              {student?.status === 'ACTIVE'
+                ? 'Active registrations this term'
+                : `${student?.status || 'Non-Active'} status — 0 active enrollments`}
+            </p>
           </div>
 
           {/* Card 2: Attendance Rate */}
@@ -317,31 +327,38 @@ export default function StudentDashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody className="divide-y divide-slate-100">
-                    {registrations.map((reg) => (
-                      <TableRow key={reg.id} className="hover:bg-slate-50/80 transition-colors">
-                        <TableCell className="px-4 py-3 font-semibold text-xs text-slate-900">
-                          {reg.courseCode || `CR-${reg.courseOfferingId}`}
-                        </TableCell>
-                        <TableCell className="px-4 py-3 text-xs text-slate-700">
-                          {reg.courseName || `Course Offering #${reg.courseOfferingId}`}
-                        </TableCell>
-                        <TableCell className="px-4 py-3 text-xs text-center text-slate-600">
-                          {reg.sectionName || '-'}
-                        </TableCell>
-                        <TableCell className="px-4 py-3 text-xs text-center text-slate-600">
-                          {reg.credits ?? '-'}
-                        </TableCell>
-                        <TableCell className="px-4 py-3 text-xs text-right">
-                          <span className={`inline-flex px-2 py-0.5 text-[10px] font-bold uppercase rounded ${
-                            reg.status === 'REGISTERED' || reg.status === 'ACTIVE'
-                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                              : 'bg-slate-100 text-slate-700'
-                          }`}>
-                            {reg.status}
-                          </span>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {registrations.map((reg: any) => {
+                      const code = reg.courseOffering?.course?.code || reg.courseCode || `CR-${reg.courseOfferingId}`;
+                      const title = reg.courseOffering?.course?.name || reg.courseName || `Course Offering #${reg.courseOfferingId}`;
+                      const section = reg.section?.name || reg.sectionName || '-';
+                      const credits = reg.courseOffering?.course?.credits ?? reg.credits ?? '-';
+
+                      return (
+                        <TableRow key={reg.id} className="hover:bg-slate-50/80 transition-colors">
+                          <TableCell className="px-4 py-3 font-semibold text-xs text-slate-900">
+                            {code}
+                          </TableCell>
+                          <TableCell className="px-4 py-3 text-xs text-slate-700">
+                            {title}
+                          </TableCell>
+                          <TableCell className="px-4 py-3 text-xs text-center text-slate-600">
+                            {section}
+                          </TableCell>
+                          <TableCell className="px-4 py-3 text-xs text-center text-slate-600">
+                            {credits}
+                          </TableCell>
+                          <TableCell className="px-4 py-3 text-xs text-right">
+                            <span className={`inline-flex px-2 py-0.5 text-[10px] font-bold uppercase rounded ${
+                              reg.status === 'REGISTERED' || reg.status === 'ACTIVE'
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                : 'bg-slate-100 text-slate-700'
+                            }`}>
+                              {reg.status}
+                            </span>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               )}

@@ -67,6 +67,17 @@ export default function Layout() {
     },
   });
 
+  const markAllReadMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiClient.patch('/api/v1/notifications/mark-all-read');
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications-unread-count'] });
+    },
+  });
+
   const handleLogout = () => {
     logout();
     navigate('/login');
@@ -315,7 +326,17 @@ export default function Layout() {
                           </span>
                         )}
                       </div>
-                      <span className="text-[11px] text-slate-400">EduPulse Alerts</span>
+                      {unreadData && unreadData.unreadCount > 0 ? (
+                        <button
+                          onClick={() => markAllReadMutation.mutate()}
+                          disabled={markAllReadMutation.isPending}
+                          className="text-[11px] text-blue-600 hover:text-blue-800 font-semibold cursor-pointer hover:underline disabled:opacity-50"
+                        >
+                          Mark all as read
+                        </button>
+                      ) : (
+                        <span className="text-[11px] text-slate-400">EduPulse Alerts</span>
+                      )}
                     </div>
 
                     <div className="max-h-80 overflow-y-auto divide-y divide-slate-100">
@@ -348,6 +369,18 @@ export default function Layout() {
                                 <h4 className="text-xs font-bold text-slate-900 truncate">{n.title}</h4>
                               </div>
                               <p className="text-xs text-slate-600 line-clamp-2">{n.message}</p>
+                              {n.link && (
+                                <Link
+                                  to={n.link}
+                                  onClick={() => {
+                                    if (!n.read) markReadMutation.mutate(n.id);
+                                    setIsNotificationsOpen(false);
+                                  }}
+                                  className="inline-flex items-center text-[11px] text-blue-600 hover:text-blue-800 font-semibold mt-1.5 hover:underline"
+                                >
+                                  Open workflow &rarr;
+                                </Link>
+                              )}
                               {n.createdAt && (
                                 <p className="text-[10px] text-slate-400 mt-1">
                                   {new Date(n.createdAt).toLocaleString(undefined, {

@@ -49,8 +49,17 @@ public class AdmissionApplicationService {
         return mapToDto(saved);
     }
 
-    @Transactional
-    public java.util.List<AdmissionApplicationDto> getAllApplications() { return applicationRepository.findAll().stream().map(this::mapToDto).toList(); }
+    @Transactional(readOnly = true)
+    public java.util.List<AdmissionApplicationDto> getAllApplications() {
+        return applicationRepository.findAll().stream().map(this::mapToDto).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public java.util.List<AdmissionApplicationDto> getApplicationsByApplicant(Long applicantId) {
+        return applicationRepository.findByApplicantId(applicantId).stream()
+                .map(this::mapToDto)
+                .toList();
+    }
 
     
 

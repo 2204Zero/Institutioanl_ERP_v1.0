@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "./ui/select";
 import { usePrograms, useAcademicYears } from '../hooks/queries/useAcademics';
+import { formatAcademicYearLabel, formatProgramLabel } from '../lib/academicUtils';
 import { useCreateInquiry } from '../hooks/queries/useAdmissions';
 import { toast } from 'sonner';
 import { Loader2, PlusCircle } from 'lucide-react';
@@ -153,7 +154,7 @@ export function NewApplicationDialog({ isOpen, onClose }: NewApplicationDialogPr
                 <SelectContent>
                   {programs.map((p: any) => (
                     <SelectItem key={p.id} value={String(p.id)} className="text-xs">
-                      {p.name} ({p.code})
+                      {formatProgramLabel(p)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -169,7 +170,7 @@ export function NewApplicationDialog({ isOpen, onClose }: NewApplicationDialogPr
                 <SelectContent>
                   {academicYears.map((ay: any) => (
                     <SelectItem key={ay.id} value={String(ay.id)} className="text-xs">
-                      {ay.name || ay.code || `AY-${ay.id}`}
+                      {formatAcademicYearLabel(ay)}
                     </SelectItem>
                   ))}
                 </SelectContent>

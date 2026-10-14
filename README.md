@@ -27,7 +27,7 @@
 ### 12-Week Team Progress Reports, Research Paper & SRS
 
 - 📄 **Complete Team Progress Reports (Weeks 01–12)**: [Google Drive Folder — Comprehensive Team Weekly Reports](https://drive.google.com/drive/folders/1qEcbbcQ26jBKeXZZCySOKK-qaf-Bnw73?usp=sharing)
-- 📑 **Project Research Paper**: [Google Docs — EduPulse Academic Research Paper](https://docs.google.com/document/d/1RAmW976_6uEVzBNaWRyCj6-VceCNl2DV/edit?usp=sharing&ouid=107702636253744643600&rtpof=true&sd=true)
+- 📑 **Project Research Paper**: [Google Docs — EduPulse Academic Research Paper](https://drive.google.com/file/d/1AAW-zOuC4NHQQw2-xJAAAUX4mWrgBaH9/view?usp=sharing)
 - 📋 **Software Requirements Specification (SRS)**: [Google Docs — EduPulse Software Requirements Specification (SRS)](https://docs.google.com/document/d/1DItdPC9wVLq4hNJcIpa7_gOUHRfnTDBj/edit?usp=sharing&ouid=107702636253744643600&rtpof=true&sd=true)
 
 ## 📑 Table of Contents

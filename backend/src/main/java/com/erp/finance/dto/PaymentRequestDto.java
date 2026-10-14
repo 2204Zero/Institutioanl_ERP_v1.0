@@ -4,13 +4,19 @@ import com.erp.finance.enums.PaymentMethod;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class PaymentRequestDto {
     private Long studentId;
     private Long studentFeeId;
     private BigDecimal amount;
     private LocalDate paymentDate;
     private PaymentMethod paymentMethod;
+    @JsonAlias({"transactionReference", "reference"})
     private String referenceNumber;
+    @JsonAlias({"notes", "note", "comment"})
     private String remarks;
     private String idempotencyKey;
 

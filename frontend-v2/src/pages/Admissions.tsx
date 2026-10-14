@@ -20,6 +20,7 @@ import {
   useOnboardStudent
 } from '../hooks/queries/useAdmissions';
 import { usePrograms } from '../hooks/queries/useAcademics';
+import { formatProgramLabel } from '../lib/academicUtils';
 import { NewApplicationDialog } from '../components/NewApplicationDialog';
 import type { AdmissionApplication } from '../hooks/queries/useAdmissions';
 import {
@@ -47,7 +48,7 @@ export default function Admissions() {
 
   const getProgramName = (programId: number) => {
     const p = programs?.find(item => item.id === programId);
-    return p ? `${p.name} (${p.code})` : `Program #${programId}`;
+    return p ? formatProgramLabel(p) : `Program #${programId}`;
   };
 
   const verifyDocMutation = useVerifyDocument();

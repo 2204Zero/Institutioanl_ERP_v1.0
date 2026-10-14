@@ -155,12 +155,44 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN);
     }
 
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalStateException(IllegalStateException ex, HttpServletRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.CONFLICT.value(),
+                HttpStatus.CONFLICT.getReasonPhrase(),
+                ex.getMessage() != null ? ex.getMessage() : "The requested operation conflicts with current system state",
+                request.getRequestURI()
+        );
+        return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(org.springframework.dao.DataIntegrityViolationException ex, HttpServletRequest request) {
+        String correlationId = java.util.UUID.randomUUID().toString();
+        org.slf4j.LoggerFactory.getLogger(GlobalExceptionHandler.class).error("[{}] Data integrity violation: {}", correlationId, ex.getMessage(), ex);
+        String userMessage = "A database conflict occurred. The submitted information or identifier is already in use.";
+        if (ex.getMessage() != null && ex.getMessage().toUpperCase().contains("PHONE")) {
+            userMessage = "The contact phone number is already registered. Please verify your contact information.";
+        } else if (ex.getMessage() != null && ex.getMessage().toUpperCase().contains("EMAIL")) {
+            userMessage = "The email address is already registered. Please use your existing account or provide another email.";
+        }
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.CONFLICT.value(),
+                HttpStatus.CONFLICT.getReasonPhrase(),
+                userMessage,
+                request.getRequestURI()
+        );
+        return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGlobalException(Exception ex, HttpServletRequest request) {
+        String correlationId = java.util.UUID.randomUUID().toString();
+        org.slf4j.LoggerFactory.getLogger(GlobalExceptionHandler.class).error("[{}] Unexpected server error: {}", correlationId, ex.getMessage(), ex);
         ErrorResponse errorResponse = new ErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
-                ex.getMessage() != null ? ex.getMessage() : "An unexpected server error occurred",
+                "An unexpected server error occurred. Please contact support with reference ID: " + correlationId,
                 request.getRequestURI()
         );
         return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
