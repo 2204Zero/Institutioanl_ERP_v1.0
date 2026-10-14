@@ -20,13 +20,14 @@
 
 | Attribute | Profile & Academic Details |
 | :--- | :--- |
+| **Portrait** | <img src="docs/mentor/ram-babu-buri.jpg" alt="Er. Ram Babu Buri" width="130" style="border-radius: 6px;" /> |
 | **Mentor Name** | **Er. Ram Babu Buri** |
 | **Academic Designation** | Assistant Professor, Department of Computer Science & Engineering (CSE) |
 | **Institutional Affiliation** | Arya College of Engineering & I.T. (ACEIT), Jaipur, Rajasthan, India |
 | **Educational Qualification** | Master of Technology (M.Tech.) in Computer Science & Engineering |
 | **Stated Research Domain** | Machine Learning & Data Science *(Team-provided)* |
 | **Core Technical Stack** | Java, JSP & Servlets, Spring Boot, MySQL, Python *(Team-provided)* |
-| **Professional Profiles** | [![LinkedIn](https://img.shields.io/badge/LinkedIn-Profile-0A66C2?logo=linkedin&logoColor=white)](https://www.linkedin.com/in/er-ram-babu-buri-85654b67/) |
+| **Professional Profiles** | [![LinkedIn](https://img.shields.io/badge/LinkedIn-Profile-0A66C2?logo=linkedin&logoColor=white)](https://www.linkedin.com/in/er-ram-babu-buri-85654b67/) [![ResearchGate](https://img.shields.io/badge/ResearchGate-Profile-00CCBB?logo=researchgate&logoColor=white)](https://www.researchgate.net/profile/Ram-Babu-Buri) |
 
 ### Areas of Technical Expertise
 
@@ -60,6 +61,7 @@ Technical guidance and advisement for the project encompass enterprise backend f
 ### Connect & Profiles
 
 - **LinkedIn**: [https://www.linkedin.com/in/er-ram-babu-buri-85654b67/](https://www.linkedin.com/in/er-ram-babu-buri-85654b67/)
+- **ResearchGate**: [https://www.researchgate.net/profile/Ram-Babu-Buri](https://www.researchgate.net/profile/Ram-Babu-Buri)
 - **YouTube**: `[Add YouTube Channel URL]` *(Channel link pending team update)*
 - **Instagram**: `[Add Instagram Profile URL]` *(Profile link pending team update)*
 
@@ -84,7 +86,7 @@ Technical guidance and advisement for the project encompass enterprise backend f
 ## 📑 Table of Contents
 
 1. [Project Introduction & Identity](#1-project-introduction--identity)
-   - [Project Mentor](#project-mentor)
+   - [Project Mentor](#er-ram-babu-buri---project-mentor)
    - [Core Team Members & Project Contributors](#core-team-members--project-contributors)
    - [12-Week Team Progress Reports, Research Paper & SRS](#12-week-team-progress-reports-research-paper--srs)
    - [Application Screenshots](#application-screenshots)
