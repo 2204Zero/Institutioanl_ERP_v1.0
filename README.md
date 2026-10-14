@@ -14,7 +14,7 @@
 
 ---
 
-## Project Mentor
+## Er. RAM BABU BURI - Project Mentor
 
 **Er. Ram Babu Buri** serves as the **Project Mentor and Technical Advisor** for EduPulse ERP. As an academician and engineering educator, he provided foundational project guidance, technical direction, and architectural oversight throughout the design and realization of this enterprise institutional management system.
 
