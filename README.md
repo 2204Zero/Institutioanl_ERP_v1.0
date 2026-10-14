@@ -14,6 +14,57 @@
 
 ---
 
+## Project Mentor
+
+**Er. Ram Babu Buri** serves as the **Project Mentor and Technical Advisor** for EduPulse ERP. As an academician and engineering educator, he provided foundational project guidance, technical direction, and architectural oversight throughout the design and realization of this enterprise institutional management system.
+
+| Attribute | Profile & Academic Details |
+| :--- | :--- |
+| **Mentor Name** | **Er. Ram Babu Buri** |
+| **Academic Designation** | Assistant Professor, Department of Computer Science & Engineering (CSE) |
+| **Institutional Affiliation** | Arya College of Engineering & I.T. (ACEIT), Jaipur, Rajasthan, India |
+| **Educational Qualification** | Master of Technology (M.Tech.) in Computer Science & Engineering |
+| **Stated Research Domain** | Machine Learning & Data Science *(Team-provided)* |
+| **Core Technical Stack** | Java, JSP & Servlets, Spring Boot, MySQL, Python *(Team-provided)* |
+| **Professional Profiles** | [![LinkedIn](https://img.shields.io/badge/LinkedIn-Profile-0A66C2?logo=linkedin&logoColor=white)](https://www.linkedin.com/in/er-ram-babu-buri-85654b67/) |
+
+### Areas of Technical Expertise
+
+Technical guidance and advisement for the project encompass enterprise backend frameworks, relational persistence, and data-driven systems:
+
+[![Java](https://img.shields.io/badge/Java-Enterprise-007396?logo=openjdk&logoColor=white)](https://www.oracle.com/java/)
+[![JSP & Servlets](https://img.shields.io/badge/JSP%20%26%20Servlets-Jakarta_EE-ED8B00?logo=java&logoColor=white)](https://jakarta.ee/)
+[![Spring Boot](https://img.shields.io/badge/Spring_Boot-Enterprise_Framework-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![MySQL](https://img.shields.io/badge/MySQL-Relational_DB-4479A1?logo=mysql&logoColor=white)](https://www.mysql.com/)
+[![Python](https://img.shields.io/badge/Python-Data_Science-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Machine Learning](https://img.shields.io/badge/Research-Machine_Learning-FF6F00?logo=scikitlearn&logoColor=white)](https://scikit-learn.org/)
+
+- **Enterprise Java & Frameworks**: Java, JSP–Servlet web architectures, Spring Boot modular backend engineering, and clean API design.
+- **Data Persistence & Relational Design**: Schema normalization, transaction management, and persistence patterns using MySQL.
+- **Python & Data Engineering**: Scientific computing, data analysis pipelines, and machine learning implementations in Python.
+- **Research Stated Focus**: Machine Learning and Data Science applied to intelligent automation, predictive modeling, and institutional systems.
+
+### Verified Academic & Research Profile
+
+- **Designation & Institutional Role**: Assistant Professor in the Department of Computer Science & Engineering at **Arya College of Engineering & I.T. (ACEIT)**, Jaipur, Rajasthan, India.
+- **Academic Qualifications**: Holds a Master of Technology (**M.Tech.**) in Computer Science & Engineering.
+- **Selected Scholarly Contributions & Publications**:
+  - Co-author, *"A Review on Different Machine Learning Algorithms to Breast Cancer Risk Prediction"*, published in the **IIP Series** ([Publisher Link](https://www.iipseries.org/)).
+  - Co-author, *"Early-Stage Breast Cancer Diagnosis: A Deep Learning-Based Image Processing Approach"*, published in **IET Conference Proceedings** ([IET Digital Library](https://digital-library.theiet.org/)).
+  - Scholarly works and publications spanning automated institutional setups, kiosk-based reception workflows, and predictive analytics.
+
+### Mentorship Acknowledgment
+
+> *"The EduPulse project team extends its sincere appreciation to **Er. Ram Babu Buri** for his valuable technical mentorship, architectural guidance, and academic direction. His feedback on enterprise software standards, robust design patterns, and engineering discipline has been instrumental in shaping the EduPulse ERP platform."*
+
+### Connect & Profiles
+
+- **LinkedIn**: [https://www.linkedin.com/in/er-ram-babu-buri-85654b67/](https://www.linkedin.com/in/er-ram-babu-buri-85654b67/)
+- **YouTube**: `[Add YouTube Channel URL]` *(Channel link pending team update)*
+- **Instagram**: `[Add Instagram Profile URL]` *(Profile link pending team update)*
+
+---
+
 ### Core Team Members & Project Contributors
 
 | Member Name | Project Role | Git Author / Profile | Key Responsibilities & Contributions |
@@ -33,6 +84,7 @@
 ## 📑 Table of Contents
 
 1. [Project Introduction & Identity](#1-project-introduction--identity)
+   - [Project Mentor](#project-mentor)
    - [Core Team Members & Project Contributors](#core-team-members--project-contributors)
    - [12-Week Team Progress Reports, Research Paper & SRS](#12-week-team-progress-reports-research-paper--srs)
    - [Application Screenshots](#application-screenshots)
