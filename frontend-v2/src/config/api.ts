@@ -50,8 +50,7 @@ apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    
-    // Safe error logging (no sensitive data)
+
     console.error('API_ERROR:', {
       status: error.response?.status,
       url: originalRequest?.url,
@@ -96,16 +95,15 @@ apiClient.interceptors.response.use(
         const { data } = await axios.post(`${BASE_URL}/auth/refresh`, {
           refreshToken: refreshToken
         });
-        
+
         const newAccessToken = data.accessToken;
         const newRefreshToken = data.refreshToken;
-        
-        // Use set to update tokens natively in store
+
         useAuthStore.setState({ token: newAccessToken, refreshToken: newRefreshToken });
-        
+
         originalRequest.headers.Authorization = 'Bearer ' + newAccessToken;
         processQueue(null, newAccessToken);
-        
+
         return apiClient(originalRequest);
       } catch (err) {
         processQueue(err, null);
@@ -118,7 +116,7 @@ apiClient.interceptors.response.use(
         isRefreshing = false;
       }
     }
-    
+
     return Promise.reject(error);
   }
 );
