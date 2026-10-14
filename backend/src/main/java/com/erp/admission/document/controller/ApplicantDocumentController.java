@@ -38,4 +38,21 @@ public class ApplicantDocumentController {
     public ResponseEntity<List<ApplicantDocument>> getApplicantDocuments(@PathVariable Long applicantId) {
         return ResponseEntity.ok(documentService.getApplicantDocuments(applicantId));
     }
+
+    @GetMapping("/file/{filename:.+}")
+    public ResponseEntity<org.springframework.core.io.Resource> downloadFile(@PathVariable String filename) {
+        org.springframework.core.io.Resource resource = documentService.loadFileAsResource(filename);
+        String contentType = "application/octet-stream";
+        if (filename.toLowerCase().endsWith(".pdf")) {
+            contentType = "application/pdf";
+        } else if (filename.toLowerCase().endsWith(".jpg") || filename.toLowerCase().endsWith(".jpeg")) {
+            contentType = "image/jpeg";
+        } else if (filename.toLowerCase().endsWith(".png")) {
+            contentType = "image/png";
+        }
+        return ResponseEntity.ok()
+                .contentType(org.springframework.http.MediaType.parseMediaType(contentType))
+                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + filename + "\"")
+                .body(resource);
+    }
 }

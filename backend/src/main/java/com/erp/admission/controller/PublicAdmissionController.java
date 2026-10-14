@@ -40,6 +40,7 @@ public class PublicAdmissionController {
     private final AcademicYearRepository academicYearRepository;
     private final UserRepository userRepository;
     private final JsonNotificationDataStoreManager notificationManager;
+    private final com.erp.admission.document.service.DocumentVerificationService documentVerificationService;
 
     @Autowired
     public PublicAdmissionController(
@@ -49,7 +50,8 @@ public class PublicAdmissionController {
             ProgramRepository programRepository,
             AcademicYearRepository academicYearRepository,
             UserRepository userRepository,
-            @Autowired(required = false) JsonNotificationDataStoreManager notificationManager) {
+            @Autowired(required = false) JsonNotificationDataStoreManager notificationManager,
+            com.erp.admission.document.service.DocumentVerificationService documentVerificationService) {
         this.applicantService = applicantService;
         this.applicantRepository = applicantRepository;
         this.applicationService = applicationService;
@@ -57,6 +59,7 @@ public class PublicAdmissionController {
         this.academicYearRepository = academicYearRepository;
         this.userRepository = userRepository;
         this.notificationManager = notificationManager;
+        this.documentVerificationService = documentVerificationService;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -205,7 +208,7 @@ public class PublicAdmissionController {
         notifyAdmins(
                 "New Admissions Inquiry",
                 "Prospective applicant " + fullName + " submitted an inquiry" + (request.programOfInterest() != null ? " for " + request.programOfInterest() : "") + ".",
-                "/dashboard/admissions"
+                "/dashboard/admissions?tab=inquiries"
         );
 
         return ResponseEntity.status(HttpStatus.CREATED).body(registered);
@@ -245,9 +248,22 @@ public class PublicAdmissionController {
         notifyAdmins(
                 "New Application: " + submitted.getApplicationNumber(),
                 "Formal application submitted by " + applicant.getFirstName() + " " + applicant.getLastName() + ".",
-                "/dashboard/admissions"
+                "/dashboard/admissions?tab=applications"
         );
 
         return ResponseEntity.status(HttpStatus.CREATED).body(submitted);
+    }
+
+    @PostMapping(value = "/applications/{applicationId}/documents", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> uploadApplicationDocument(
+            @PathVariable Long applicationId,
+            @RequestParam("documentType") String documentType,
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        AdmissionApplicationDto app = applicationService.getApplication(applicationId);
+        if (app == null) {
+            throw new com.erp.common.exception.ResourceNotFoundException("Application not found with id: " + applicationId);
+        }
+        var doc = documentVerificationService.uploadDocumentFile(app.getApplicantId(), documentType, file);
+        return ResponseEntity.status(HttpStatus.CREATED).body(doc);
     }
 }

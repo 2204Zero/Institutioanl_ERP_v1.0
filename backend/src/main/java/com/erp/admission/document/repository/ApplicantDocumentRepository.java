@@ -8,5 +8,6 @@ import java.util.List;
 
 @Repository
 public interface ApplicantDocumentRepository extends JpaRepository<ApplicantDocument, Long> {
-    List<ApplicantDocument> findByApplicantId(Long applicantId);
+    @org.springframework.data.jpa.repository.Query("SELECT d FROM ApplicantDocument d WHERE d.applicant.id = :applicantId")
+    List<ApplicantDocument> findByApplicantId(@org.springframework.data.repository.query.Param("applicantId") Long applicantId);
 }

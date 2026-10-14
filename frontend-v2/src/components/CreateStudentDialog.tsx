@@ -5,7 +5,7 @@ import * as z from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../config/api';
 import { toast } from 'sonner';
-import { Loader2, PlusCircle, Users, GraduationCap, Building2 } from 'lucide-react';
+import { Loader2, PlusCircle, Users, GraduationCap, Building2, CheckCircle, Copy, Info } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -69,6 +69,14 @@ type FormValues = z.infer<typeof studentSchema>;
 
 export function CreateStudentDialog() {
   const [open, setOpen] = useState(false);
+  const [createdCredentials, setCreatedCredentials] = useState<{
+    enrollmentNumber: string;
+    username: string;
+    email: string;
+    temporaryPassword?: string;
+    firstName: string;
+    lastName: string;
+  } | null>(null);
   const queryClient = useQueryClient();
 
   const form = useForm<FormValues>({
@@ -240,14 +248,21 @@ export function CreateStudentDialog() {
       const res = await apiClient.post('/api/v1/students', payload);
       return res.data;
     },
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['students'] });
       queryClient.invalidateQueries({ queryKey: ['guardians'] });
-      const enr = data?.data?.enrollmentNumber || data?.enrollmentNumber;
-      toast.success(
-        enr ? `Student enrolled successfully! Enrollment Number: ${enr}` : 'Student enrolled successfully!'
-      );
-      setOpen(false);
+      const studentData = data?.data || data;
+      const enr = studentData?.enrollmentNumber || 'Assigned';
+      toast.success(`Student enrolled successfully! Enrollment Number: ${enr}`);
+      setCreatedCredentials({
+        enrollmentNumber: enr,
+        username: studentData?.username || variables.email.split('@')[0],
+        email: studentData?.email || variables.email,
+        temporaryPassword: studentData?.temporaryPassword || 'EduPulse@123',
+        firstName: studentData?.firstName || variables.firstName,
+        lastName: studentData?.lastName || variables.lastName,
+      });
+      form.reset();
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || error.message || 'Failed to enroll student');
@@ -261,7 +276,10 @@ export function CreateStudentDialog() {
   const availableCities = selectedState ? INDIAN_STATES_CITIES[selectedState] || [] : [];
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(val) => {
+      setOpen(val);
+      if (!val) setCreatedCredentials(null);
+    }}>
       <DialogTrigger asChild>
         <Button className="flex items-center space-x-2 bg-slate-900 text-white hover:bg-slate-800 rounded-xl" aria-label="Add New Student">
           <PlusCircle className="w-4 h-4 mr-1.5" />
@@ -279,8 +297,101 @@ export function CreateStudentDialog() {
           </DialogDescription>
         </DialogHeader>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 pt-2">
+        {createdCredentials ? (
+          <div className="py-4 space-y-5">
+            <div className="text-center">
+              <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                <CheckCircle className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-bold text-slate-900">Student Enrolled Successfully</h3>
+              <p className="text-xs text-slate-500 mt-1">
+                Account provisioned for <span className="font-semibold text-slate-800">{createdCredentials.firstName} {createdCredentials.lastName}</span>
+              </p>
+            </div>
+
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
+              <div className="flex items-center justify-between py-1 border-b border-slate-200/60 pb-2">
+                <div>
+                  <span className="text-[11px] font-medium text-slate-400 block uppercase tracking-wider">Enrollment Number (Canonical ENR)</span>
+                  <span className="font-mono font-bold text-sm text-slate-900">{createdCredentials.enrollmentNumber}</span>
+                </div>
+                <Button variant="ghost" size="sm" className="h-7 text-xs text-slate-600 hover:text-black" onClick={() => {
+                  navigator.clipboard.writeText(createdCredentials.enrollmentNumber);
+                  toast.success('Enrollment number copied!');
+                }}>
+                  <Copy className="w-3.5 h-3.5 mr-1" /> Copy
+                </Button>
+              </div>
+
+              <div className="flex items-center justify-between py-1 border-b border-slate-200/60 pb-2">
+                <div>
+                  <span className="text-[11px] font-medium text-slate-400 block uppercase tracking-wider">Login Username</span>
+                  <span className="font-mono font-semibold text-sm text-slate-900">{createdCredentials.username}</span>
+                </div>
+                <Button variant="ghost" size="sm" className="h-7 text-xs text-slate-600 hover:text-black" onClick={() => {
+                  navigator.clipboard.writeText(createdCredentials.username);
+                  toast.success('Username copied!');
+                }}>
+                  <Copy className="w-3.5 h-3.5 mr-1" /> Copy
+                </Button>
+              </div>
+
+              <div className="flex items-center justify-between py-1 border-b border-slate-200/60 pb-2">
+                <div>
+                  <span className="text-[11px] font-medium text-slate-400 block uppercase tracking-wider">Official Email</span>
+                  <span className="font-medium text-sm text-slate-900">{createdCredentials.email}</span>
+                </div>
+                <Button variant="ghost" size="sm" className="h-7 text-xs text-slate-600 hover:text-black" onClick={() => {
+                  navigator.clipboard.writeText(createdCredentials.email);
+                  toast.success('Email copied!');
+                }}>
+                  <Copy className="w-3.5 h-3.5 mr-1" /> Copy
+                </Button>
+              </div>
+
+              <div className="flex items-center justify-between py-1">
+                <div>
+                  <span className="text-[11px] font-medium text-slate-400 block uppercase tracking-wider">Temporary Password</span>
+                  <span className="font-mono font-bold text-sm text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded border border-indigo-100">
+                    {createdCredentials.temporaryPassword}
+                  </span>
+                </div>
+                <Button variant="ghost" size="sm" className="h-7 text-xs text-slate-600 hover:text-black" onClick={() => {
+                  navigator.clipboard.writeText(createdCredentials.temporaryPassword || '');
+                  toast.success('Password copied!');
+                }}>
+                  <Copy className="w-3.5 h-3.5 mr-1" /> Copy
+                </Button>
+              </div>
+            </div>
+
+            <div className="bg-amber-50/60 border border-amber-200/80 rounded-xl p-3.5 text-xs text-amber-900 space-y-1.5">
+              <div className="font-bold flex items-center gap-1.5 text-amber-950">
+                <Info className="w-4 h-4 text-amber-600 shrink-0" />
+                Next Steps for Student:
+              </div>
+              <ul className="list-disc list-inside space-y-0.5 text-[11px] text-amber-800 pl-1">
+                <li>Student can log in to the portal at <span className="font-semibold underline">/login</span>.</li>
+                <li>Use either canonical enrollment number or username with the temporary password.</li>
+                <li>Student will be prompted to update password and verify profile details upon first sign-in.</li>
+              </ul>
+            </div>
+
+            <div className="pt-2 flex justify-end">
+              <Button
+                className="bg-black text-white hover:bg-slate-800 text-xs px-6"
+                onClick={() => {
+                  setCreatedCredentials(null);
+                  setOpen(false);
+                }}
+              >
+                Done & Close
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 pt-2">
             {/* Personal Details */}
             <div className="border border-slate-200 rounded-lg p-4 bg-slate-50/50 space-y-3">
               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">1. Personal Details</h4>
@@ -693,6 +804,7 @@ export function CreateStudentDialog() {
             </div>
           </form>
         </Form>
+        )}
       </DialogContent>
     </Dialog>
   );

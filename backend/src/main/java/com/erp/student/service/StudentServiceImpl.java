@@ -478,7 +478,7 @@ public class StudentServiceImpl implements StudentService {
                         "Student Status Update",
                         "Your student account status has been changed to " + formattedStatus + ".",
                         "STATUS_CHANGE",
-                        "/dashboard/profile"
+                        "/dashboard/students/" + savedStudent.getId()
                 );
             }
 
@@ -500,7 +500,7 @@ public class StudentServiceImpl implements StudentService {
                             "Student Status Update",
                             "The status of " + studentName + " has been changed to " + formattedStatus + ".",
                             "STATUS_CHANGE",
-                            "/dashboard/students"
+                            "/dashboard/students/" + savedStudent.getId()
                     );
                 }
             }

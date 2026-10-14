@@ -160,4 +160,17 @@ public class StudentDocumentServiceImpl implements StudentDocumentService {
 
         documentRepository.delete(document);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.Optional<StudentDocumentResponseDto> getStudentPhoto(Long studentId) {
+        return documentRepository.findByStudentIdAndDocumentType(studentId, DocumentType.PHOTOGRAPH)
+                .map(studentMapper::toDocumentDto);
+    }
+
+    @Override
+    public void deleteStudentPhoto(Long studentId) {
+        documentRepository.findByStudentIdAndDocumentType(studentId, DocumentType.PHOTOGRAPH)
+                .ifPresent(doc -> deleteDocument(doc.getId()));
+    }
 }

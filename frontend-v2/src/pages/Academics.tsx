@@ -427,17 +427,6 @@ export default function Academics() {
       });
     }
 
-    if (activeTab === 'rooms') {
-      return (
-        <TableRow>
-          <TableCell colSpan={6} className="p-0 border-0">
-            <div className="p-0">
-              <RoomsTab isAdmin={isAdmin} />
-            </div>
-          </TableCell>
-        </TableRow>
-      );
-    }
 
     if (activeTab === 'timetable') {
       return (
@@ -886,7 +875,7 @@ export default function Academics() {
           </div>
         )}
 
-        {!isCreating && activeTab !== 'timetable' && (
+        {!isCreating && activeTab !== 'timetable' && activeTab !== 'rooms' && (
           <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50/50">
             <div className="relative">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -899,7 +888,7 @@ export default function Academics() {
           </div>
         )}
 
-        {!isCreating && activeTab !== 'timetable' && (
+        {!isCreating && activeTab !== 'timetable' && activeTab !== 'rooms' && (
           <Table>
             <TableHeader className="bg-slate-50">
               <TableRow>
@@ -953,7 +942,11 @@ export default function Academics() {
           </Table>
         )}
 
-        {(activeTab === 'timetable' || activeTab === 'rooms') && (
+        {activeTab === 'rooms' && (
+          <RoomsTab isAdmin={isAdmin} />
+        )}
+
+        {activeTab === 'timetable' && (
           <Table>
             <TableBody>
               {getTableContent()}

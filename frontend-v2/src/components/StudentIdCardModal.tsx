@@ -72,8 +72,16 @@ export function StudentIdCardModal({ studentId, open, onOpenChange }: StudentIdC
 
               <div className="p-4 space-y-3">
                 <div className="flex items-start space-x-3">
-                  <div className="w-16 h-20 rounded bg-slate-200 border border-slate-300 flex items-center justify-center text-slate-500 font-bold text-sm shrink-0">
-                    {data.fullName?.split(' ').map((n: string) => n[0]).join('') || 'PHOTO'}
+                  <div className="w-16 h-20 rounded bg-slate-200 border border-slate-300 flex items-center justify-center text-slate-500 font-bold text-sm shrink-0 overflow-hidden relative">
+                    <img
+                      src={`/api/v1/students/${data.studentId}/photo`}
+                      alt={data.fullName}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLElement).style.display = 'none';
+                      }}
+                    />
+                    <span className="only:block">{data.fullName?.split(' ').map((n: string) => n[0]).join('') || 'PHOTO'}</span>
                   </div>
                   <div className="space-y-1 text-xs">
                     <p className="font-bold text-sm text-slate-900 leading-tight">{data.fullName}</p>

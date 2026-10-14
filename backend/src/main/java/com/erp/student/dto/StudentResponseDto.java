@@ -38,6 +38,7 @@ public class StudentResponseDto {
     private String temporaryPassword;
     @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
     private String username;
+    private String photoUrl;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -258,5 +259,13 @@ public class StudentResponseDto {
 
     public void setUsername(String username) {
         this.username = username;
+    }
+
+    public String getPhotoUrl() {
+        return photoUrl;
+    }
+
+    public void setPhotoUrl(String photoUrl) {
+        this.photoUrl = photoUrl;
     }
 }

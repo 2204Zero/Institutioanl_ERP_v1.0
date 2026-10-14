@@ -17,6 +17,7 @@ import Admissions from './pages/Admissions';
 import Academics from './pages/Academics';
 import FacultySections from './pages/FacultySections';
 import PublicAdmissions from './pages/PublicAdmissions';
+import { ProfileRedirect } from './components/ProfileRedirect';
 import Layout from './components/Layout';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from './components/ui/sonner';
@@ -114,7 +115,8 @@ function App() {
               }
             >
               <Route index element={<Dashboard />} />
-              <Route path="students" element={<RoleProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN', 'FACULTY', 'FINANCE']}><StudentsList /></RoleProtectedRoute>} />
+              <Route path="profile" element={<RoleProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN', 'FACULTY', 'STUDENT', 'PARENT', 'FINANCE']}><ProfileRedirect /></RoleProtectedRoute>} />
+              <Route path="students" element={<RoleProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN', 'FACULTY', 'STUDENT', 'PARENT', 'FINANCE']}><StudentsList /></RoleProtectedRoute>} />
               <Route path="students/:id" element={<RoleProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN', 'FACULTY', 'STUDENT', 'PARENT', 'FINANCE']}><StudentProfile /></RoleProtectedRoute>} />
               <Route path="departments" element={<RoleProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN']}><DepartmentsList /></RoleProtectedRoute>} />
               <Route path="attendance" element={<RoleProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN', 'FACULTY', 'STUDENT', 'PARENT']}><Attendance /></RoleProtectedRoute>} />

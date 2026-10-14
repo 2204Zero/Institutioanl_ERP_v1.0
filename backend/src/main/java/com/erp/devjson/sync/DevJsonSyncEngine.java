@@ -431,6 +431,7 @@ public class DevJsonSyncEngine implements PostInsertEventListener, PostUpdateEve
                         .dateOfBirth(a.getDateOfBirth())
                         .gender(a.getGender())
                         .address(a.getAddress())
+                        .createdAt(a.getCreatedAt())
                         .build());
             } else if (entity instanceof AdmissionApplication aa) {
                 applicationStore.save(AdmissionApplicationRecord.builder()

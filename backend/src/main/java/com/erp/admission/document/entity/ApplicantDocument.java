@@ -21,9 +21,14 @@ public class ApplicantDocument {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @com.fasterxml.jackson.annotation.JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "applicant_id", nullable = false)
     private Applicant applicant;
+
+    public Long getApplicantId() {
+        return applicant != null ? applicant.getId() : null;
+    }
 
     @Column(name = "document_type", nullable = false)
     private String documentType; // e.g. 10TH_MARKSHEET, 12TH_MARKSHEET, GOVT_ID

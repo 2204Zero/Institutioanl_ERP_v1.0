@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { UserCheck, Search, FileText, CheckCircle, XCircle, Eye, AlertCircle, Loader2 } from 'lucide-react';
 import {
   Table,
@@ -16,12 +17,12 @@ import {
   useApplications,
   useApplicantDocuments,
   useVerifyDocument,
-  useUpdateApplicationStatus,
-  useOnboardStudent
+  useUpdateApplicationStatus
 } from '../hooks/queries/useAdmissions';
 import { usePrograms } from '../hooks/queries/useAcademics';
 import { formatProgramLabel } from '../lib/academicUtils';
 import { NewApplicationDialog } from '../components/NewApplicationDialog';
+import { OnboardStudentDialog } from '../components/OnboardStudentDialog';
 import type { AdmissionApplication } from '../hooks/queries/useAdmissions';
 import {
   Dialog,
@@ -33,9 +34,18 @@ import {
 import { toast } from 'sonner';
 
 export default function Admissions() {
-  const [activeTab, setActiveTab] = useState('inquiries');
+  const [searchParams] = useSearchParams();
+  const queryTab = searchParams.get('tab');
+  const validTabs = ['inquiries', 'applications', 'verification', 'decisions', 'onboarding'];
+  const [activeTab, setActiveTab] = useState(queryTab && validTabs.includes(queryTab) ? queryTab : 'inquiries');
   const [search, setSearch] = useState('');
   const [isNewInquiryOpen, setIsNewInquiryOpen] = useState(false);
+
+  useEffect(() => {
+    if (queryTab && validTabs.includes(queryTab) && queryTab !== activeTab) {
+      setActiveTab(queryTab);
+    }
+  }, [queryTab]);
 
   const { data: applicants, isLoading: isLoadingInquiries } = useApplicants();
   const { data: applications, isLoading: isLoadingApplications } = useApplications();
@@ -53,16 +63,30 @@ export default function Admissions() {
 
   const verifyDocMutation = useVerifyDocument();
   const updateStatusMutation = useUpdateApplicationStatus();
-  const onboardStudentMutation = useOnboardStudent();
 
   const [selectedVerificationApp, setSelectedVerificationApp] = useState<AdmissionApplication | null>(null);
+  const [selectedOnboardingApp, setSelectedOnboardingApp] = useState<AdmissionApplication | null>(null);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
 
   // Fetch documents for the selected applicant
   const { data: documents, isLoading: isLoadingDocs } = useApplicantDocuments(
     selectedVerificationApp ? selectedVerificationApp.applicantId : null
   );
 
-  const filteredApplicants = applicants?.filter(app =>
+  // Sort inquiries by creation time descending (newest first, secondary by ID desc)
+  const sortedApplicants = useMemo(() => {
+    if (!applicants) return [];
+    return [...applicants].sort((a, b) => {
+      const timeA = (a as any).createdAt ? new Date((a as any).createdAt).getTime() : (a.inquiryDate ? new Date(a.inquiryDate).getTime() : 0);
+      const timeB = (b as any).createdAt ? new Date((b as any).createdAt).getTime() : (b.inquiryDate ? new Date(b.inquiryDate).getTime() : 0);
+      if (timeB !== timeA) {
+        return timeB - timeA;
+      }
+      return (b.id || 0) - (a.id || 0);
+    });
+  }, [applicants]);
+
+  const filteredApplicants = sortedApplicants.filter(app =>
     app.firstName.toLowerCase().includes(search.toLowerCase()) ||
     app.lastName.toLowerCase().includes(search.toLowerCase()) ||
     app.email.toLowerCase().includes(search.toLowerCase())
@@ -92,17 +116,6 @@ export default function Admissions() {
         }
       },
       onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to update application')
-    });
-  };
-
-  const handleOnboard = (appId: number) => {
-    if (!window.confirm(`Are you sure you want to onboard this applicant as a student?`)) return;
-
-    onboardStudentMutation.mutate(appId, {
-      onSuccess: () => {
-        toast.success(`Student onboarded successfully!`);
-      },
-      onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to onboard student')
     });
   };
 
@@ -228,8 +241,10 @@ export default function Admissions() {
             <Button
               className="bg-black text-white hover:bg-black/80"
               size="sm"
-              disabled={onboardStudentMutation.isPending}
-              onClick={() => handleOnboard(app.id)}
+              onClick={() => {
+                setSelectedOnboardingApp(app);
+                setIsOnboardingOpen(true);
+              }}
             >
               <UserCheck className="w-4 h-4 mr-2" /> Onboard Student
             </Button>
@@ -440,6 +455,13 @@ export default function Admissions() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <OnboardStudentDialog
+        application={selectedOnboardingApp}
+        applicant={applicants?.find(a => a.id === selectedOnboardingApp?.applicantId) || null}
+        open={isOnboardingOpen}
+        onOpenChange={setIsOnboardingOpen}
+      />
 
       <NewApplicationDialog
         isOpen={isNewInquiryOpen}

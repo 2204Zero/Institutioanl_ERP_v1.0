@@ -23,7 +23,24 @@ public class DepartmentService {
     }
 
     public DepartmentResponse create(DepartmentCreateRequest request) {
-        Department entity = mapper.toEntity(request);
+        if (request.name() == null || request.name().trim().isEmpty()) {
+            throw new com.erp.common.exception.BusinessException("Department name is required");
+        }
+        if (request.code() == null || request.code().trim().isEmpty()) {
+            throw new com.erp.common.exception.BusinessException("Department code is required");
+        }
+        String name = request.name().trim();
+        String code = request.code().trim().toUpperCase();
+        if (repository.existsByNameIgnoreCase(name)) {
+            throw new com.erp.common.exception.BusinessException("A department with name '" + name + "' already exists");
+        }
+        if (repository.existsByCodeIgnoreCase(code)) {
+            throw new com.erp.common.exception.BusinessException("A department with code '" + code + "' already exists");
+        }
+        Department entity = new Department();
+        entity.setName(name);
+        entity.setCode(code);
+        entity.setCampusId(request.campusId());
         return mapper.toResponse(repository.save(entity));
     }
 

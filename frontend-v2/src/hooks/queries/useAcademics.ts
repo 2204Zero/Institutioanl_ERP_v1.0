@@ -189,6 +189,9 @@ export interface FacultySummary {
   lastName: string;
   email: string;
   username: string;
+  departmentId?: number | null;
+  departmentName?: string | null;
+  isActive?: boolean;
 }
 
 export const useFacultyList = (options?: { enabled?: boolean }) => {
@@ -199,6 +202,44 @@ export const useFacultyList = (options?: { enabled?: boolean }) => {
       return response.data;
     },
     enabled: options?.enabled !== undefined ? options.enabled : true,
+  });
+};
+
+export const useDepartmentFaculty = (departmentId: number | null) => {
+  return useQuery({
+    queryKey: ['departments', departmentId, 'faculty'],
+    queryFn: async () => {
+      if (!departmentId) return [];
+      const response = await apiClient.get<FacultySummary[]>(`/api/v1/departments/${departmentId}/faculty`);
+      return response.data;
+    },
+    enabled: !!departmentId,
+  });
+};
+
+export const useUnassignedFaculty = () => {
+  return useQuery({
+    queryKey: ['admin-faculty', 'unassigned'],
+    queryFn: async () => {
+      const response = await apiClient.get<FacultySummary[]>('/api/v1/admin/faculty/unassigned');
+      return response.data;
+    },
+  });
+};
+
+export const useAssignFacultyDepartment = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ facultyId, departmentId }: { facultyId: number; departmentId: number | null }) => {
+      const response = await apiClient.patch<FacultySummary>(`/api/v1/admin/faculty/${facultyId}/department`, {
+        departmentId,
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-faculty'] });
+      queryClient.invalidateQueries({ queryKey: ['departments'] });
+    },
   });
 };
 

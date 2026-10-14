@@ -23,6 +23,7 @@ public class AdmissionJsonModels {
         private LocalDate dateOfBirth;
         private String gender;
         private String address;
+        private Instant createdAt;
     }
 
     @Data

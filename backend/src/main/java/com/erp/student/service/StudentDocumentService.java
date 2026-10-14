@@ -20,4 +20,8 @@ public interface StudentDocumentService {
     String getDocumentContentType(Long documentId);
 
     void deleteDocument(Long documentId);
+
+    java.util.Optional<StudentDocumentResponseDto> getStudentPhoto(Long studentId);
+
+    void deleteStudentPhoto(Long studentId);
 }

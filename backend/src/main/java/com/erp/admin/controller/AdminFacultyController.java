@@ -81,6 +81,16 @@ public class AdminFacultyController {
         return ResponseEntity.ok(faculty);
     }
 
+    @GetMapping("/unassigned")
+    @Operation(summary = "List unassigned faculty members", description = "Restricted to Administrators")
+    @PreAuthorize("hasAuthority('USER_MANAGE') or hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+    public ResponseEntity<List<FacultySummary>> listUnassignedFaculty() {
+        List<FacultySummary> faculty = facultyRepository.findByDepartmentIdIsNull().stream()
+                .map(this::mapToSummary)
+                .toList();
+        return ResponseEntity.ok(faculty);
+    }
+
     @GetMapping("/{id}")
     @Operation(summary = "Get faculty details by ID", description = "Restricted to Administrators")
     @PreAuthorize("hasAuthority('USER_MANAGE') or hasRole('ADMIN') or hasRole('SUPER_ADMIN')")

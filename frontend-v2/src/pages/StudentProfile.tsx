@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../store/useAuthStore';
 import { apiClient } from '../config/api';
 import type { Student, StudentStatus } from '../types/student';
@@ -9,10 +9,12 @@ import {
   User, Mail, Phone, MapPin, Building2, Calendar, 
   BookOpen, MoreVertical, Edit, Loader2,
   AlertCircle, Download, FileText, CalendarCheck, Wallet, Clock,
-  CreditCard, Copy, Check, Eye, ArrowUpRight, Pencil
+  CreditCard, Copy, Check, Eye, ArrowUpRight, Pencil,
+  Camera, Upload, Trash2, Plus
 } from 'lucide-react';
 import { PageFrame } from '../components/ui/PageFrame';
 import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { toast } from 'sonner';
 import {
@@ -23,6 +25,21 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "../components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
 import { StudentAcademicTab } from '../components/StudentAcademicTab';
 import { StudentFeesTab } from '../components/StudentFeesTab';
 import { StudentStatusHistoryTab } from '../components/StudentStatusHistoryTab';
@@ -121,11 +138,102 @@ export default function StudentProfile() {
   const guardians: GuardianResponseDto[] = guardiansResponse?.data || [];
   const documents: any[] = documentsResponse || [];
 
+  const queryClient = useQueryClient();
+  const [photoTimestamp, setPhotoTimestamp] = useState<number>(Date.now());
+  const [photoError, setPhotoError] = useState(false);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+
+  // Document upload state
+  const [isUploadDocOpen, setIsUploadDocOpen] = useState(false);
+  const [uploadDocType, setUploadDocType] = useState('TENTH_MARKSHEET');
+  const [uploadDocFile, setUploadDocFile] = useState<File | null>(null);
+  const [isUploadingDoc, setIsUploadingDoc] = useState(false);
+
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
     setCopiedKey(label);
     toast.success(`Copied ${label} to clipboard!`);
     setTimeout(() => setCopiedKey(null), 2000);
+  };
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Only image files (JPEG, PNG, WebP) are allowed');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Photo size exceeds 5MB limit');
+      return;
+    }
+
+    setIsUploadingPhoto(true);
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      await apiClient.post(`/api/v1/students/${id}/photo`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      toast.success('Profile photo updated successfully!');
+      setPhotoTimestamp(Date.now());
+      setPhotoError(false);
+      queryClient.invalidateQueries({ queryKey: ['student', id] });
+      queryClient.invalidateQueries({ queryKey: ['student-documents', id] });
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to upload photo');
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
+
+  const handlePhotoDelete = async () => {
+    if (!window.confirm('Are you sure you want to remove the profile photograph?')) return;
+    try {
+      await apiClient.delete(`/api/v1/students/${id}/photo`);
+      toast.success('Profile photograph removed');
+      setPhotoError(true);
+      setPhotoTimestamp(Date.now());
+      queryClient.invalidateQueries({ queryKey: ['student', id] });
+      queryClient.invalidateQueries({ queryKey: ['student-documents', id] });
+    } catch (err: any) {
+      toast.error('Failed to remove photo');
+    }
+  };
+
+  const handleUploadDocument = async () => {
+    if (!uploadDocFile) {
+      toast.error('Please choose a file to upload');
+      return;
+    }
+    setIsUploadingDoc(true);
+    const formData = new FormData();
+    formData.append('documentType', uploadDocType);
+    formData.append('file', uploadDocFile);
+    try {
+      await apiClient.post(`/api/v1/students/${id}/documents`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      toast.success('Document uploaded successfully!');
+      setIsUploadDocOpen(false);
+      setUploadDocFile(null);
+      queryClient.invalidateQueries({ queryKey: ['student-documents', id] });
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to upload document');
+    } finally {
+      setIsUploadingDoc(false);
+    }
+  };
+
+  const handleDeleteDocument = async (docId: number) => {
+    if (!window.confirm('Are you sure you want to delete this document?')) return;
+    try {
+      await apiClient.delete(`/api/v1/documents/${docId}`);
+      toast.success('Document deleted successfully');
+      queryClient.invalidateQueries({ queryKey: ['student-documents', id] });
+    } catch (err: any) {
+      toast.error('Failed to delete document');
+    }
   };
 
   if (isLoading) {
@@ -498,8 +606,19 @@ export default function StudentProfile() {
           {activeTab === 'documents' && (
             <div className="border border-slate-200 bg-white">
               <div className="px-4 py-3 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">Persisted Student Documents</h3>
-                <span className="text-[10px] font-semibold text-slate-500">{documents.length} Records</span>
+                <div>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">Persisted Student Documents</h3>
+                  <span className="text-[10px] font-semibold text-slate-500">{documents.length} Records</span>
+                </div>
+                {canManage && (
+                  <Button
+                    size="sm"
+                    className="h-7 text-xs bg-black text-white hover:bg-slate-800"
+                    onClick={() => setIsUploadDocOpen(true)}
+                  >
+                    <Plus className="w-3.5 h-3.5 mr-1" /> Upload Document
+                  </Button>
+                )}
               </div>
               <div className="p-4">
                 {isLoadingDocs ? (
@@ -532,6 +651,16 @@ export default function StudentProfile() {
                           >
                             <Download className="w-3 h-3 mr-1" /> Download
                           </a>
+                          {canManage && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 px-2 text-[11px] text-red-600 hover:text-red-700 hover:bg-red-50"
+                              onClick={() => handleDeleteDocument(doc.id)}
+                            >
+                              <Trash2 className="w-3 h-3 mr-1" /> Delete
+                            </Button>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -547,6 +676,69 @@ export default function StudentProfile() {
         </div>
 
         <div className="space-y-6">
+          {/* Profile Photo Card */}
+          <div className="border border-slate-200 bg-white p-5 flex flex-col items-center text-center">
+            <div className="relative group w-32 h-32 rounded-2xl overflow-hidden border-2 border-slate-200 bg-slate-100 flex items-center justify-center shadow-xs">
+              {!photoError ? (
+                <img
+                  src={`/api/v1/students/${student.id}/photo?t=${photoTimestamp}`}
+                  alt={`${student.firstName} ${student.lastName}`}
+                  className="w-full h-full object-cover"
+                  onError={() => setPhotoError(true)}
+                />
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900 text-white font-bold text-2xl uppercase tracking-wider">
+                  <span>{student.firstName[0]}{student.lastName[0]}</span>
+                </div>
+              )}
+
+              {canManage && (
+                <label className="absolute inset-0 bg-black/50 text-white flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                  <Camera className="w-6 h-6 mb-1" />
+                  <span className="text-[10px] font-semibold">Change Photo</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoUpload}
+                    disabled={isUploadingPhoto}
+                    className="hidden"
+                  />
+                </label>
+              )}
+            </div>
+
+            <div className="mt-3">
+              <h3 className="font-bold text-sm text-slate-900">{student.firstName} {student.lastName}</h3>
+              <p className="text-xs text-slate-500 font-mono mt-0.5">{student.enrollmentNumber || 'ENR Pending'}</p>
+            </div>
+
+            {canManage && (
+              <div className="flex items-center gap-2 mt-4">
+                <label className="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 cursor-pointer">
+                  <Upload className="w-3 h-3 mr-1" />
+                  {isUploadingPhoto ? 'Uploading...' : 'Upload'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoUpload}
+                    disabled={isUploadingPhoto}
+                    className="hidden"
+                  />
+                </label>
+                {!photoError && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                    onClick={handlePhotoDelete}
+                  >
+                    <Trash2 className="w-3 h-3 mr-1" /> Remove
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+
           <div className="border border-slate-200 bg-white">
             <div className="px-4 py-3 border-b border-slate-200 bg-slate-50">
               <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Academic Placement</h3>
@@ -640,6 +832,72 @@ export default function StudentProfile() {
           studentId={student.id}
         />
       )}
+
+      {/* Upload Document Dialog */}
+      <Dialog open={isUploadDocOpen} onOpenChange={setIsUploadDocOpen}>
+        <DialogContent className="sm:max-w-[450px]">
+          <DialogHeader>
+            <DialogTitle>Upload Student Document</DialogTitle>
+            <DialogDescription>
+              Select the document type and attach a PDF or image file (max 10MB).
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-3">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Document Category</label>
+              <Select value={uploadDocType} onValueChange={setUploadDocType}>
+                <SelectTrigger className="text-xs">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="TENTH_MARKSHEET">10th Marksheet / Certificate</SelectItem>
+                  <SelectItem value="TWELFTH_MARKSHEET">12th Marksheet / Diploma</SelectItem>
+                  <SelectItem value="TRANSFER_CERTIFICATE">Transfer Certificate (TC)</SelectItem>
+                  <SelectItem value="MIGRATION_CERTIFICATE">Migration Certificate</SelectItem>
+                  <SelectItem value="AADHAAR_CARD">Aadhaar / Government ID</SelectItem>
+                  <SelectItem value="PHOTOGRAPH">Profile Photograph</SelectItem>
+                  <SelectItem value="OTHER">Other Institutional Document</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Choose File</label>
+              <Input
+                type="file"
+                onChange={(e) => setUploadDocFile(e.target.files?.[0] || null)}
+                className="text-xs cursor-pointer"
+              />
+              {uploadDocFile && (
+                <p className="text-[11px] text-emerald-600 mt-1 font-medium">
+                  Selected: {uploadDocFile.name} ({Math.round(uploadDocFile.size / 1024)} KB)
+                </p>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsUploadDocOpen(false)}
+              className="text-xs"
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              className="bg-black text-white hover:bg-slate-800 text-xs"
+              disabled={!uploadDocFile || isUploadingDoc}
+              onClick={handleUploadDocument}
+            >
+              {isUploadingDoc && <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />}
+              {isUploadingDoc ? 'Uploading...' : 'Upload File'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </PageFrame>
   );
 }

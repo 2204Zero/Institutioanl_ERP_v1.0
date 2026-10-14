@@ -183,8 +183,16 @@ export default function StudentDashboard() {
         {/* Student Identity Card Banner */}
         <div className="bg-white border border-slate-200 p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-start md:items-center space-x-4">
-            <div className="w-14 h-14 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-xl uppercase shrink-0">
-              {student.firstName?.[0] || 'S'}{student.lastName?.[0] || ''}
+            <div className="w-14 h-14 rounded-full overflow-hidden relative bg-slate-900 text-white flex items-center justify-center font-bold text-xl uppercase shrink-0">
+              <img
+                src={`/api/v1/students/${student.id}/photo`}
+                alt=""
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = 'none';
+                }}
+              />
+              <span className="only:block">{student.firstName?.[0] || 'S'}{student.lastName?.[0] || ''}</span>
             </div>
             <div>
               <div className="flex items-center space-x-3">

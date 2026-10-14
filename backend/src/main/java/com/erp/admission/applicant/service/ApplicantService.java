@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+
 @Service
 @RequiredArgsConstructor
 public class ApplicantService {
@@ -37,14 +39,19 @@ public class ApplicantService {
     }
 
     @Transactional(readOnly = true)
-    public java.util.List<ApplicantDto> getAllApplicants() { return applicantRepository.findAll().stream().map(this::mapToDto).toList(); }
+    public java.util.List<ApplicantDto> getAllApplicants() {
+        return applicantRepository.findAll().stream()
+                .sorted(java.util.Comparator.comparing((Applicant a) -> a.getCreatedAt() != null ? a.getCreatedAt() : java.time.Instant.EPOCH)
+                        .thenComparing(Applicant::getId, java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder()))
+                        .reversed())
+                .map(this::mapToDto)
+                .toList();
+    }
 
-    private ApplicantDto mapToDto(Applicant applicant) { return ApplicantDto.builder().id(applicant.getId()).firstName(applicant.getFirstName()).lastName(applicant.getLastName()).email(applicant.getEmail()).phone(applicant.getPhone()).dateOfBirth(applicant.getDateOfBirth()).gender(applicant.getGender()).address(applicant.getAddress()).build(); }
-
-    public ApplicantDto getApplicant(Long id) {
-        Applicant applicant = applicantRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Applicant not found"));
-
+    private ApplicantDto mapToDto(Applicant applicant) {
+        LocalDate inqDate = applicant.getCreatedAt() != null
+                ? LocalDate.ofInstant(applicant.getCreatedAt(), java.time.ZoneId.systemDefault())
+                : null;
         return ApplicantDto.builder()
                 .id(applicant.getId())
                 .firstName(applicant.getFirstName())
@@ -54,7 +61,16 @@ public class ApplicantService {
                 .dateOfBirth(applicant.getDateOfBirth())
                 .gender(applicant.getGender())
                 .address(applicant.getAddress())
+                .createdAt(applicant.getCreatedAt())
+                .inquiryDate(inqDate)
                 .build();
+    }
+
+    public ApplicantDto getApplicant(Long id) {
+        Applicant applicant = applicantRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Applicant not found"));
+
+        return mapToDto(applicant);
     }
 }
 

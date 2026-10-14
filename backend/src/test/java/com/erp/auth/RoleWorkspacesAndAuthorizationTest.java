@@ -125,6 +125,9 @@ public class RoleWorkspacesAndAuthorizationTest {
     private TimetableSlotRepository timetableSlotRepository;
 
     @Autowired
+    private com.erp.attendance.repository.StudentAttendanceRecordRepository studentAttendanceRecordRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Autowired
@@ -397,6 +400,12 @@ public class RoleWorkspacesAndAuthorizationTest {
 
         // 7. Faculty records bulk attendance for assignedSection
         LocalDate attendanceDate = LocalDate.now();
+        List<com.erp.attendance.entity.StudentAttendanceRecord> existingAtt =
+                studentAttendanceRecordRepository.findByScheduleIdAndAttendanceDate(testSlot.getId(), attendanceDate);
+        if (!existingAtt.isEmpty()) {
+            studentAttendanceRecordRepository.deleteAll(existingAtt);
+        }
+
         BulkAttendanceRequest bulkReq = new BulkAttendanceRequest(
                 assignedSection.getId(),
                 testSlot.getId(),

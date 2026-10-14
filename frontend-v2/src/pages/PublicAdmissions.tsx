@@ -88,6 +88,12 @@ export default function PublicAdmissions() {
   const [appSubmitting, setAppSubmitting] = useState(false);
   const [appSuccessResult, setAppSuccessResult] = useState<{ id: number; applicationNumber?: string } | null>(null);
 
+  // Document Uploads State
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [tenthMarksheetFile, setTenthMarksheetFile] = useState<File | null>(null);
+  const [twelfthMarksheetFile, setTwelfthMarksheetFile] = useState<File | null>(null);
+  const [govtIdFile, setGovtIdFile] = useState<File | null>(null);
+
   const handleInquirySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inquiryName.trim() || !inquiryEmail.trim() || !inquiryPhone.trim()) {
@@ -137,11 +143,33 @@ export default function PublicAdmissions() {
         programId: Number(appProgramId),
         academicYearId: Number(appAcademicYearId),
       });
+      const createdApp = res.data;
+      const appId = createdApp.id;
+
+      // Upload selected applicant documents
+      const uploadDoc = async (type: string, file: File) => {
+        try {
+          const fd = new FormData();
+          fd.append('documentType', type);
+          fd.append('file', file);
+          await apiClient.post(`/api/v1/admissions/public/applications/${appId}/documents`, fd, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+          });
+        } catch (uploadErr) {
+          console.warn(`Failed to upload ${type}:`, uploadErr);
+        }
+      };
+
+      if (photoFile) await uploadDoc('PHOTOGRAPH', photoFile);
+      if (tenthMarksheetFile) await uploadDoc('TENTH_MARKSHEET', tenthMarksheetFile);
+      if (twelfthMarksheetFile) await uploadDoc('TWELFTH_MARKSHEET', twelfthMarksheetFile);
+      if (govtIdFile) await uploadDoc('GOVERNMENT_ID', govtIdFile);
+
       setAppSuccessResult({
-        id: res.data.id,
-        applicationNumber: res.data.applicationNumber || `APP-${res.data.id}`,
+        id: createdApp.id,
+        applicationNumber: createdApp.applicationNumber || `APP-${createdApp.id}`,
       });
-      toast.success('Application registered and submitted for review!');
+      toast.success('Application and documents registered and submitted for review!');
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to submit application. Please verify details.');
     } finally {
@@ -561,6 +589,68 @@ export default function PublicAdmissions() {
                           onChange={(e) => setAppAddress(e.target.value)}
                           className="bg-slate-50 text-xs"
                         />
+                      </div>
+                    </div>
+
+                    {/* Document Uploads */}
+                    <div className="space-y-3 pt-2 border-t border-slate-200">
+                      <div>
+                        <p className="font-bold text-slate-800 text-xs">Required & Supporting Documents</p>
+                        <p className="text-[11px] text-slate-500">Upload clear scans or photos (PDF, JPEG, PNG, max 5MB each).</p>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                          <label className="block font-semibold text-slate-700 text-xs mb-1">
+                            Passport Photograph (JPEG/PNG)
+                          </label>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => setPhotoFile(e.target.files?.[0] || null)}
+                            className="text-[11px] text-slate-600 file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+                          />
+                          {photoFile && <span className="text-[10px] text-emerald-600 font-semibold block mt-1">✓ {photoFile.name}</span>}
+                        </div>
+
+                        <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                          <label className="block font-semibold text-slate-700 text-xs mb-1">
+                            Government ID / Aadhaar Card
+                          </label>
+                          <input
+                            type="file"
+                            accept="application/pdf,image/*"
+                            onChange={(e) => setGovtIdFile(e.target.files?.[0] || null)}
+                            className="text-[11px] text-slate-600 file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+                          />
+                          {govtIdFile && <span className="text-[10px] text-emerald-600 font-semibold block mt-1">✓ {govtIdFile.name}</span>}
+                        </div>
+
+                        <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                          <label className="block font-semibold text-slate-700 text-xs mb-1">
+                            10th Standard Marksheet / Certificate
+                          </label>
+                          <input
+                            type="file"
+                            accept="application/pdf,image/*"
+                            onChange={(e) => setTenthMarksheetFile(e.target.files?.[0] || null)}
+                            className="text-[11px] text-slate-600 file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+                          />
+                          {tenthMarksheetFile && <span className="text-[10px] text-emerald-600 font-semibold block mt-1">✓ {tenthMarksheetFile.name}</span>}
+                        </div>
+
+                        <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                          <label className="block font-semibold text-slate-700 text-xs mb-1">
+                            12th Standard Marksheet / Diploma
+                          </label>
+                          <input
+                            type="file"
+                            accept="application/pdf,image/*"
+                            onChange={(e) => setTwelfthMarksheetFile(e.target.files?.[0] || null)}
+                            className="text-[11px] text-slate-600 file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+                          />
+                          {twelfthMarksheetFile && <span className="text-[10px] text-emerald-600 font-semibold block mt-1">✓ {twelfthMarksheetFile.name}</span>}
+                        </div>
                       </div>
                     </div>
 

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '../config/api';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { PageFrame } from '../components/ui/PageFrame';
 import { Input } from '../components/ui/input';
 import { Search, Loader2, Filter, ChevronLeft, ChevronRight, Eye } from 'lucide-react';
@@ -22,7 +22,14 @@ function formatDateDisplay(val: any): string {
 
 export default function StudentsList() {
   const { user } = useAuthStore();
+  const navigate = useNavigate();
   const isAdmin = user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN';
+
+  React.useEffect(() => {
+    if (user?.role === 'STUDENT' || user?.role === 'PARENT') {
+      navigate('/dashboard/profile', { replace: true });
+    }
+  }, [user, navigate]);
 
   const [page, setPage] = useState(0);
   const [size] = useState(10);
@@ -134,8 +141,16 @@ export default function StudentsList() {
                   <tr key={student.id} className="hover:bg-slate-50 transition-colors group">
                     <td className="px-3 py-2 border-r border-slate-100/50">
                       <div className="flex items-center space-x-2">
-                        <div className="h-7 w-7 rounded bg-slate-900 flex items-center justify-center text-white font-bold shrink-0 text-[10px]">
-                          {student.firstName.charAt(0)}{student.lastName.charAt(0)}
+                        <div className="h-7 w-7 rounded overflow-hidden relative bg-slate-900 flex items-center justify-center text-white font-bold shrink-0 text-[10px]">
+                          <img
+                            src={`/api/v1/students/${student.id}/photo`}
+                            alt=""
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLElement).style.display = 'none';
+                            }}
+                          />
+                          <span className="only:block">{student.firstName.charAt(0)}{student.lastName.charAt(0)}</span>
                         </div>
                         <div>
                           <div className="flex items-center space-x-1.5">

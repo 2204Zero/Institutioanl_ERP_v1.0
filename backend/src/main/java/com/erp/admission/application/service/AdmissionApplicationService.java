@@ -61,6 +61,13 @@ public class AdmissionApplicationService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public AdmissionApplicationDto getApplication(Long id) {
+        return applicationRepository.findById(id)
+                .map(this::mapToDto)
+                .orElseThrow(() -> new ResourceNotFoundException("Application not found with id: " + id));
+    }
+
     
 
     public AdmissionApplicationDto submitApplication(Long applicationId) {
