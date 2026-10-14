@@ -29,8 +29,16 @@ public class CourseOfferingController {
         Long courseId = ((Number) payload.get("courseId")).longValue();
         Long semesterId = ((Number) payload.get("semesterId")).longValue();
         Integer maxCapacity = ((Number) payload.get("maxCapacity")).intValue();
-        CourseOffering created = service.createCourseOffering(courseId, semesterId, maxCapacity);
+        Boolean isPublished = payload.get("isPublished") != null ? (Boolean) payload.get("isPublished") : false;
+        CourseOffering created = service.createCourseOffering(courseId, semesterId, maxCapacity, isPublished);
         return ResponseEntity.ok(mapper.toResponse(created));
+    }
+
+    @PatchMapping("/{id}/publish")
+    @PreAuthorize("hasAuthority('COURSE_OFFERING_UPDATE') or hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+    public ResponseEntity<CourseOfferingResponse> publish(@PathVariable Long id) {
+        CourseOffering published = service.publishCourseOffering(id);
+        return ResponseEntity.ok(mapper.toResponse(published));
     }
 
     @GetMapping

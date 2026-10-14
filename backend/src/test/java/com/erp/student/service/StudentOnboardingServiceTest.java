@@ -47,6 +47,9 @@ public class StudentOnboardingServiceTest {
     @Mock
     private SemesterRepository semesterRepository;
 
+    @Mock
+    private com.erp.auth.service.UserAccountProvisioningService userAccountProvisioningService;
+
     @InjectMocks
     private StudentOnboardingService onboardingService;
 

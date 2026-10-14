@@ -20,4 +20,6 @@ public class ApplicantDto {
     private LocalDate dateOfBirth;
     private String gender;
     private String address;
+    private java.time.Instant createdAt;
+    private LocalDate inquiryDate;
 }

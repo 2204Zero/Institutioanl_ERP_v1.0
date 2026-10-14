@@ -6,8 +6,11 @@ import jakarta.validation.constraints.*;
 
 import java.time.LocalDate;
 
+@com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
 @Schema(description = "Request payload for creating or updating a student")
 public class StudentRequestDto {
+
+    private Long userId;
 
     @Schema(description = "Unique roll number (system generated if left blank)", example = "2026-CS-101")
     @Size(max = 50, message = "Roll number cannot exceed 50 characters")
@@ -75,6 +78,33 @@ public class StudentRequestDto {
 
     @Schema(description = "Initial status (defaults to ACTIVE)", example = "ACTIVE")
     private StudentStatus status = StudentStatus.ACTIVE;
+
+    @Schema(description = "Optional initial guardian details")
+    private com.erp.guardian.dto.GuardianRequestDto guardian;
+
+    @Schema(description = "Optional custom password for student user account")
+    private String password;
+
+    @Schema(description = "Canonical enrollment number (system generated if omitted)")
+    private String enrollmentNumber;
+
+    @Schema(description = "Department ID reference")
+    private Long departmentId;
+
+    @Schema(description = "Program ID reference")
+    private Long programId;
+
+    @Schema(description = "Batch ID reference")
+    private Long batchId;
+
+    @Schema(description = "Academic Year ID reference")
+    private Long academicYearId;
+
+    @Schema(description = "Starting Semester ID reference")
+    private Long semesterId;
+
+    @Schema(description = "Existing Guardian ID to link")
+    private Long guardianId;
 
     public StudentRequestDto() {
     }
@@ -213,5 +243,85 @@ public class StudentRequestDto {
 
     public void setStatus(StudentStatus status) {
         this.status = status;
+    }
+
+    public com.erp.guardian.dto.GuardianRequestDto getGuardian() {
+        return guardian;
+    }
+
+    public void setGuardian(com.erp.guardian.dto.GuardianRequestDto guardian) {
+        this.guardian = guardian;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public String getEnrollmentNumber() {
+        return enrollmentNumber;
+    }
+
+    public void setEnrollmentNumber(String enrollmentNumber) {
+        this.enrollmentNumber = enrollmentNumber;
+    }
+
+    public Long getDepartmentId() {
+        return departmentId;
+    }
+
+    public void setDepartmentId(Long departmentId) {
+        this.departmentId = departmentId;
+    }
+
+    public Long getProgramId() {
+        return programId;
+    }
+
+    public void setProgramId(Long programId) {
+        this.programId = programId;
+    }
+
+    public Long getBatchId() {
+        return batchId;
+    }
+
+    public void setBatchId(Long batchId) {
+        this.batchId = batchId;
+    }
+
+    public Long getAcademicYearId() {
+        return academicYearId;
+    }
+
+    public void setAcademicYearId(Long academicYearId) {
+        this.academicYearId = academicYearId;
+    }
+
+    public Long getSemesterId() {
+        return semesterId;
+    }
+
+    public void setSemesterId(Long semesterId) {
+        this.semesterId = semesterId;
+    }
+
+    public Long getGuardianId() {
+        return guardianId;
+    }
+
+    public void setGuardianId(Long guardianId) {
+        this.guardianId = guardianId;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 }

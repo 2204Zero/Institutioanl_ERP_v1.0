@@ -74,7 +74,10 @@ public class AcademicYearService {
         if (startDate != null && endDate != null) {
             List<AcademicYear> overlaps = repository.findOverlapping(startDate, endDate, excludeId);
             if (!overlaps.isEmpty()) {
-                throw new IllegalArgumentException("Academic year dates cannot overlap with existing years");
+                AcademicYear conflict = overlaps.get(0);
+                throw new IllegalArgumentException(String.format(
+                        "Academic year dates cannot overlap with existing year '%s' (%s to %s)",
+                        conflict.getName(), conflict.getStartDate(), conflict.getEndDate()));
             }
         }
     }

@@ -18,6 +18,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 
 import java.util.List;
 
@@ -83,6 +84,14 @@ public class StudentController {
         return ResponseEntity.ok(ApiResponse.success(student));
     }
 
+    @GetMapping("/enrollment/{enrollmentNumber}")
+    @PreAuthorize("@securityOwnershipService.canAccessStudentDataByEnrollmentNumber(authentication, #enrollmentNumber) or hasAnyRole('ADMIN', 'FACULTY', 'FINANCE', 'SUPER_ADMIN')")
+    @Operation(summary = "View Student by Enrollment Number", description = "Fetches student profile by their canonical enrollment number")
+    public ResponseEntity<ApiResponse<StudentResponseDto>> getStudentByEnrollmentNumber(@PathVariable String enrollmentNumber) {
+        StudentResponseDto student = studentService.getStudentByEnrollmentNumber(enrollmentNumber);
+        return ResponseEntity.ok(ApiResponse.success(student));
+    }
+
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @Operation(summary = "Edit Student", description = "Updates an existing student profile")
@@ -106,7 +115,11 @@ public class StudentController {
     @Operation(summary = "Update Student Status", description = "Updates student enrollment status (ACTIVE, INACTIVE, SUSPENDED, GRADUATED, ALUMNI) with audit remarks")
     public ResponseEntity<ApiResponse<StudentResponseDto>> updateStudentStatus(
             @PathVariable Long id,
-            @Valid @RequestBody StudentStatusUpdateDto statusUpdateDto) {
+            @Valid @RequestBody StudentStatusUpdateDto statusUpdateDto,
+            Authentication authentication) {
+        if ((statusUpdateDto.getChangedBy() == null || statusUpdateDto.getChangedBy().isBlank()) && authentication != null) {
+            statusUpdateDto.setChangedBy(authentication.getName());
+        }
         StudentResponseDto updated = studentService.updateStudentStatus(id, statusUpdateDto);
         return ResponseEntity.ok(ApiResponse.success("Student status updated successfully", updated));
     }

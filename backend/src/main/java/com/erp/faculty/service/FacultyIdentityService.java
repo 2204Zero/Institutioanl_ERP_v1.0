@@ -38,7 +38,7 @@ public class FacultyIdentityService {
                 .orElseThrow(() -> new ResourceNotFoundException("No faculty record found for user id: " + userId));
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public Long getCurrentFacultyId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
@@ -54,7 +54,26 @@ public class FacultyIdentityService {
             }
             // Explicit backward-compatible fallback for unlinked legacy accounts
             if (principal.getEmail() != null) {
-                return getFacultyIdForEmail(principal.getEmail());
+                Optional<Faculty> facultyOpt = facultyRepository.findByOfficialEmailIgnoreCase(principal.getEmail());
+                if (facultyOpt.isPresent()) {
+                    Faculty f = facultyOpt.get();
+                    if (f.getUserId() == null && principal.getId() != null) {
+                        f.setUserId(principal.getId());
+                        facultyRepository.save(f);
+                    }
+                    return f.getId();
+                }
+            }
+            // Auto-provision if authenticated with FACULTY role
+            if (principal.getRole() == com.erp.auth.model.Role.FACULTY) {
+                Faculty newFaculty = Faculty.builder()
+                        .firstName("Faculty")
+                        .lastName("Member")
+                        .officialEmail(principal.getEmail() != null ? principal.getEmail() : principal.getUsername() + "@erp.com")
+                        .userId(principal.getId())
+                        .isActive(true)
+                        .build();
+                return facultyRepository.save(newFaculty).getId();
             }
         }
 

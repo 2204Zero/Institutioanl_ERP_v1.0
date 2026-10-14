@@ -89,5 +89,10 @@ public class StudentFeeService {
     public List<StudentFee> getStudentFees(Long studentId) {
         return studentFeeRepository.findByStudentId(studentId);
     }
+
+    public StudentFee getById(Long id) {
+        return studentFeeRepository.findById(id)
+                .orElseThrow(() -> new com.erp.common.exception.ResourceNotFoundException("StudentFee", "id", id));
+    }
 }
 

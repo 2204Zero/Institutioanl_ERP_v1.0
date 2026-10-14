@@ -24,9 +24,61 @@ import java.util.List;
 public class StudentDocumentController {
 
     private final StudentDocumentService documentService;
+    private final com.erp.student.service.StudentDocumentGenerationService documentGenerationService;
+    private final com.erp.student.repository.StudentDocumentRepository documentRepository;
 
-    public StudentDocumentController(StudentDocumentService documentService) {
+    public StudentDocumentController(StudentDocumentService documentService,
+                                     com.erp.student.service.StudentDocumentGenerationService documentGenerationService,
+                                     com.erp.student.repository.StudentDocumentRepository documentRepository) {
         this.documentService = documentService;
+        this.documentGenerationService = documentGenerationService;
+        this.documentRepository = documentRepository;
+    }
+
+    @GetMapping("/api/v1/students/{studentId}/photo")
+    @Operation(summary = "Get Student Photo", description = "Streams student profile photograph or returns 404")
+    public ResponseEntity<Resource> getStudentPhoto(@PathVariable Long studentId) {
+        var photoOpt = documentRepository.findByStudentIdAndDocumentType(studentId, DocumentType.PHOTOGRAPH);
+        if (photoOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        Long docId = photoOpt.get().getId();
+        Resource resource = documentService.loadDocumentAsResource(docId);
+        String contentType = documentService.getDocumentContentType(docId);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType != null ? contentType : "image/jpeg"))
+                .body(resource);
+    }
+
+    @PostMapping(value = "/api/v1/students/{studentId}/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("@securityOwnershipService.canAccessStudentData(authentication, #studentId) or hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @Operation(summary = "Upload Student Photo", description = "Uploads student profile photograph (max 5MB, JPEG/PNG/WebP)")
+    public ResponseEntity<ApiResponse<StudentDocumentResponseDto>> uploadPhoto(
+            @PathVariable Long studentId,
+            @RequestParam("file") MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new com.erp.common.exception.BusinessException("Photo file cannot be empty");
+        }
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new com.erp.common.exception.BusinessException("Only image files (JPEG, PNG, WebP) are accepted for student photo");
+        }
+        if (file.getSize() > 5 * 1024 * 1024) {
+            throw new com.erp.common.exception.BusinessException("Photo size exceeds maximum allowed size of 5MB");
+        }
+        StudentDocumentResponseDto uploaded = documentService.uploadDocument(studentId, DocumentType.PHOTOGRAPH, file);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("Photo uploaded successfully", uploaded));
+    }
+
+    @DeleteMapping("/api/v1/students/{studentId}/photo")
+    @PreAuthorize("@securityOwnershipService.canAccessStudentData(authentication, #studentId) or hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @Operation(summary = "Delete Student Photo", description = "Deletes student profile photograph")
+    public ResponseEntity<ApiResponse<Void>> deletePhoto(@PathVariable Long studentId) {
+        var photoOpt = documentRepository.findByStudentIdAndDocumentType(studentId, DocumentType.PHOTOGRAPH);
+        if (photoOpt.isPresent()) {
+            documentService.deleteDocument(photoOpt.get().getId());
+        }
+        return ResponseEntity.ok(ApiResponse.success("Photo removed successfully", null));
     }
 
     @PostMapping(value = "/api/v1/students/{studentId}/documents", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -92,5 +144,21 @@ public class StudentDocumentController {
     public ResponseEntity<ApiResponse<Void>> deleteDocument(@PathVariable Long id) {
         documentService.deleteDocument(id);
         return ResponseEntity.ok(ApiResponse.success("Document deleted successfully", null));
+    }
+
+    @GetMapping("/api/v1/students/{studentId}/id-card")
+    @PreAuthorize("@securityOwnershipService.canAccessStudentData(authentication, #studentId) or hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @Operation(summary = "Generate Student ID Card", description = "Generates official student ID card from persisted student and academic data")
+    public ResponseEntity<ApiResponse<com.erp.student.dto.StudentIdCardDto>> getIdCard(@PathVariable Long studentId) {
+        com.erp.student.dto.StudentIdCardDto idCard = documentGenerationService.generateIdCard(studentId);
+        return ResponseEntity.ok(ApiResponse.success(idCard));
+    }
+
+    @GetMapping("/api/v1/students/{studentId}/transcript")
+    @PreAuthorize("@securityOwnershipService.canAccessStudentData(authentication, #studentId) or hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @Operation(summary = "Generate Academic Transcript", description = "Generates official academic transcript from persisted student course registration data")
+    public ResponseEntity<ApiResponse<com.erp.student.dto.StudentTranscriptDto>> getTranscript(@PathVariable Long studentId) {
+        com.erp.student.dto.StudentTranscriptDto transcript = documentGenerationService.generateTranscript(studentId);
+        return ResponseEntity.ok(ApiResponse.success(transcript));
     }
 }

@@ -20,10 +20,13 @@ build/
 frontend-v2/node_modules/
 frontend-v2/dist/
 
-# Java & Backend build outputs
+# Java & Backend build outputs & local storage
 **/target/
 **/*.jar
 **/*.war
+**/data/dev-json/
+backend/data/
+backend/uploads/
 
 # Database dumps & backups
 backups/

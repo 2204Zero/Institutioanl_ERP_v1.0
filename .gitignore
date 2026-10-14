@@ -67,6 +67,10 @@ dist/
 uploads/
 backend/uploads/
 
+# Local development JSON data storage
+data/
+backend/data/
+
 # Local environment files and secrets
 .env
 .env.*

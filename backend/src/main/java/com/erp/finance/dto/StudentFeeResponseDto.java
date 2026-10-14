@@ -82,6 +82,8 @@ public class StudentFeeResponseDto {
     public BigDecimal getOutstandingAmount() { return outstandingAmount; }
     public void setOutstandingAmount(BigDecimal outstandingAmount) { this.outstandingAmount = outstandingAmount; }
 
+    public BigDecimal getTotalAmount() { return netPayable != null ? netPayable : grossAmount; }
+
     public StudentFeeStatus getStatus() { return status; }
     public void setStatus(StudentFeeStatus status) { this.status = status; }
 

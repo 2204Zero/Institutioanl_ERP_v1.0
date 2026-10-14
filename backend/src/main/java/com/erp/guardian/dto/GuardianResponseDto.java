@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 public class GuardianResponseDto {
 
     private Long id;
+    private Long userId;
     private Long studentId;
     private String studentName;
     private String firstName;
@@ -19,6 +20,10 @@ public class GuardianResponseDto {
     private String occupation;
     private String address;
     private Boolean isEmergencyContact;
+    @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+    private String temporaryPassword;
+    @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+    private String username;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -31,6 +36,30 @@ public class GuardianResponseDto {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
+
+    public String getTemporaryPassword() {
+        return temporaryPassword;
+    }
+
+    public void setTemporaryPassword(String temporaryPassword) {
+        this.temporaryPassword = temporaryPassword;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     public Long getStudentId() {

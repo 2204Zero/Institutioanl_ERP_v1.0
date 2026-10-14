@@ -16,6 +16,8 @@ public interface SectionStudentRepository extends JpaRepository<SectionStudent, 
 
     Optional<SectionStudent> findBySectionIdAndStudentId(Long sectionId, Long studentId);
 
+    boolean existsBySectionIdAndStudentId(Long sectionId, Long studentId);
+
     boolean existsBySectionIdAndStudentIdAndIsActiveTrue(Long sectionId, Long studentId);
 
     int countBySectionIdAndIsActiveTrue(Long sectionId);

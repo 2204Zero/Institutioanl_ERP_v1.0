@@ -28,6 +28,9 @@ public class Student {
     @Column(nullable = false, unique = true, length = 50)
     private String rollNumber;
 
+    @Column(name = "enrollment_number", length = 50)
+    private String enrollmentNumber;
+
     @Column(nullable = false, length = 100)
     private String firstName;
 
@@ -80,6 +83,14 @@ public class Student {
     @Column(name = "user_id", unique = true)
     private Long userId;
 
+    @Transient
+    @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+    private String temporaryPassword;
+
+    @Transient
+    @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+    private String username;
+
     @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Guardian> guardians = new ArrayList<>();
 
@@ -129,6 +140,14 @@ public class Student {
 
     public void setRollNumber(String rollNumber) {
         this.rollNumber = rollNumber;
+    }
+
+    public String getEnrollmentNumber() {
+        return enrollmentNumber;
+    }
+
+    public void setEnrollmentNumber(String enrollmentNumber) {
+        this.enrollmentNumber = enrollmentNumber;
     }
 
     public String getFirstName() {
@@ -305,5 +324,21 @@ public class Student {
 
     public void setUserId(Long userId) {
         this.userId = userId;
+    }
+
+    public String getTemporaryPassword() {
+        return temporaryPassword;
+    }
+
+    public void setTemporaryPassword(String temporaryPassword) {
+        this.temporaryPassword = temporaryPassword;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
     }
 }

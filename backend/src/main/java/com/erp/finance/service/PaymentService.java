@@ -22,10 +22,13 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import org.springframework.transaction.annotation.Transactional;
+
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -310,5 +313,32 @@ public class PaymentService {
             current = current.getCause();
         }
         return false;
+    }
+
+    @Transactional(readOnly = true)
+    public Receipt getReceiptById(Long id) {
+        return receiptRepository.findById(id)
+                .orElseThrow(() -> new com.erp.common.exception.ResourceNotFoundException("Receipt", "id", id));
+    }
+
+    @Transactional(readOnly = true)
+    public Receipt getReceiptByNumber(String receiptNumber) {
+        return receiptRepository.findByReceiptNumber(receiptNumber)
+                .orElseThrow(() -> new com.erp.common.exception.ResourceNotFoundException("Receipt", "receiptNumber", receiptNumber));
+    }
+
+    @Transactional(readOnly = true)
+    public List<Receipt> getReceiptsByStudentId(Long studentId) {
+        return receiptRepository.findByStudentId(studentId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Receipt> getReceiptsByStudentFeeId(Long studentFeeId) {
+        List<Payment> payments = paymentRepository.findByStudentFeeId(studentFeeId);
+        List<Receipt> receipts = new java.util.ArrayList<>();
+        for (Payment p : payments) {
+            receiptRepository.findByPaymentId(p.getId()).ifPresent(receipts::add);
+        }
+        return receipts;
     }
 }

@@ -4,12 +4,14 @@ import com.erp.common.response.ApiResponse;
 import com.erp.guardian.dto.GuardianRequestDto;
 import com.erp.guardian.dto.GuardianResponseDto;
 import com.erp.guardian.service.GuardianService;
+import com.erp.auth.model.UserPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,6 +24,22 @@ public class GuardianController {
 
     public GuardianController(GuardianService guardianService) {
         this.guardianService = guardianService;
+    }
+
+    @GetMapping({"/guardians/me", "/api/v1/guardians/me"})
+    @PreAuthorize("hasRole('PARENT') or hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @Operation(summary = "Get My Guardian Profiles", description = "Retrieves guardian profiles linked to authenticated user")
+    public ResponseEntity<ApiResponse<List<GuardianResponseDto>>> getMyGuardians(Authentication authentication) {
+        if (authentication != null && authentication.getPrincipal() instanceof UserPrincipal principal && principal.getId() != null) {
+            List<GuardianResponseDto> list = guardianService.getGuardiansByUserId(principal.getId());
+            return ResponseEntity.ok(ApiResponse.success(list));
+        }
+        String email = authentication != null ? authentication.getName() : null;
+        if (authentication != null && authentication.getPrincipal() instanceof UserPrincipal principal && principal.getEmail() != null) {
+            email = principal.getEmail();
+        }
+        List<GuardianResponseDto> list = guardianService.getGuardiansByEmail(email);
+        return ResponseEntity.ok(ApiResponse.success(list));
     }
 
     @GetMapping({"/guardians", "/api/v1/guardians"})
@@ -92,5 +110,31 @@ public class GuardianController {
             @PathVariable Long guardianId) {
         GuardianResponseDto updated = guardianService.linkGuardianToStudent(studentId, guardianId);
         return ResponseEntity.ok(ApiResponse.success("Guardian successfully linked to student", updated));
+    }
+
+    @PostMapping({"/guardians/{id}/students/{studentId}", "/api/v1/guardians/{id}/students/{studentId}"})
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @Operation(summary = "Link Student to Guardian", description = "Links a student to an existing guardian")
+    public ResponseEntity<ApiResponse<GuardianResponseDto>> linkStudentToGuardian(
+            @PathVariable Long id,
+            @PathVariable Long studentId) {
+        GuardianResponseDto updated = guardianService.linkGuardianToStudent(studentId, id);
+        return ResponseEntity.ok(ApiResponse.success("Guardian successfully linked to student", updated));
+    }
+
+    @GetMapping({"/guardians/{id}/students", "/api/v1/guardians/{id}/students"})
+    @PreAuthorize("@securityOwnershipService.canAccessGuardianData(authentication, #id) or hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @Operation(summary = "Get Linked Wards for Guardian", description = "Retrieves all students linked to this guardian account")
+    public ResponseEntity<ApiResponse<List<GuardianResponseDto>>> getGuardianWards(@PathVariable Long id) {
+        GuardianResponseDto current = guardianService.getGuardianById(id);
+        List<GuardianResponseDto> allProfiles;
+        if (current.getUserId() != null) {
+            allProfiles = guardianService.getGuardiansByUserId(current.getUserId());
+        } else if (current.getEmail() != null && !current.getEmail().isBlank()) {
+            allProfiles = guardianService.getGuardiansByEmail(current.getEmail());
+        } else {
+            allProfiles = List.of(current);
+        }
+        return ResponseEntity.ok(ApiResponse.success(allProfiles));
     }
 }

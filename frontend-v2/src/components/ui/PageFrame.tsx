@@ -11,7 +11,7 @@ interface BreadcrumbItem {
 interface PageFrameProps {
   breadcrumbs?: BreadcrumbItem[];
   title: string;
-  description?: string;
+  description?: React.ReactNode;
   actions?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
@@ -58,7 +58,7 @@ export function PageFrame({
               {title}
             </h1>
             {description && (
-              <p className="text-sm text-slate-500 mt-1">{description}</p>
+              <div className="text-sm text-slate-500 mt-1">{description}</div>
             )}
           </div>
         </div>

@@ -44,6 +44,15 @@ public class Guardian {
     @Column(nullable = false)
     private Boolean isEmergencyContact = false;
 
+    @Column(name = "user_id")
+    private Long userId;
+
+    @Transient
+    private String temporaryPassword;
+
+    @Transient
+    private String username;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "student_id")
     @JsonIgnore
@@ -145,6 +154,30 @@ public class Guardian {
 
     public void setStudent(Student student) {
         this.student = student;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
+
+    public String getTemporaryPassword() {
+        return temporaryPassword;
+    }
+
+    public void setTemporaryPassword(String temporaryPassword) {
+        this.temporaryPassword = temporaryPassword;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     public LocalDateTime getCreatedAt() {

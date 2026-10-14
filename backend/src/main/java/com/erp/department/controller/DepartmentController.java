@@ -9,13 +9,23 @@ import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 
+import com.erp.faculty.repository.FacultyRepository;
+import com.erp.auth.repository.UserRepository;
+import com.erp.admin.controller.AdminFacultyController;
+
 @RestController
 @RequestMapping("/api/v1/departments")
 public class DepartmentController {
     private final DepartmentService service;
+    private final FacultyRepository facultyRepository;
+    private final UserRepository userRepository;
 
-    public DepartmentController(DepartmentService service) {
+    public DepartmentController(DepartmentService service,
+                                FacultyRepository facultyRepository,
+                                UserRepository userRepository) {
         this.service = service;
+        this.facultyRepository = facultyRepository;
+        this.userRepository = userRepository;
     }
 
     @PostMapping
@@ -34,6 +44,31 @@ public class DepartmentController {
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'FACULTY', 'STUDENT')")
     public ResponseEntity<DepartmentResponse> getById(@PathVariable Long id) {
         return ResponseEntity.ok(service.getById(id));
+    }
+
+    @GetMapping("/{id}/faculty")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'FACULTY')")
+    public ResponseEntity<List<AdminFacultyController.FacultySummary>> getDepartmentFaculty(@PathVariable Long id) {
+        DepartmentResponse dept = service.getById(id);
+        List<com.erp.faculty.entity.Faculty> facultyList = facultyRepository.findByDepartmentId(id);
+        List<AdminFacultyController.FacultySummary> summaries = facultyList.stream()
+                .map(f -> {
+                    String username = userRepository.findByEmailIgnoreCase(f.getOfficialEmail())
+                            .map(com.erp.auth.entity.AppUser::getUsername)
+                            .orElse(f.getFirstName() + " " + f.getLastName());
+                    return new AdminFacultyController.FacultySummary(
+                            f.getId(),
+                            f.getFirstName(),
+                            f.getLastName(),
+                            f.getOfficialEmail(),
+                            username,
+                            f.getDepartmentId(),
+                            dept.name(),
+                            f.getIsActive()
+                    );
+                })
+                .toList();
+        return ResponseEntity.ok(summaries);
     }
 
     @PutMapping("/{id}")

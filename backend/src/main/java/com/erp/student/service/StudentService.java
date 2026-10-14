@@ -17,6 +17,8 @@ public interface StudentService {
 
     StudentResponseDto getStudentByRollNumber(String rollNumber);
 
+    StudentResponseDto getStudentByEnrollmentNumber(String enrollmentNumber);
+
     PageResponse<StudentResponseDto> getAllStudents(int page, int size, String query,
                                                    StudentStatus status, String department,
                                                    String sortBy, String sortDir);

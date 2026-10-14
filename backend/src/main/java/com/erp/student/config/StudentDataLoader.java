@@ -76,6 +76,13 @@ public class StudentDataLoader implements CommandLineRunner {
         g2.setStudent(s1);
         guardianRepository.save(g2);
 
+        Guardian gParent = new Guardian("Parent", "Sharma", "MOTHER", "+919811223366", "parent@erp.com");
+        gParent.setOccupation("Architect");
+        gParent.setAddress("Flat 402, Sunshine Heights, New Delhi");
+        gParent.setIsEmergencyContact(false);
+        gParent.setStudent(s1);
+        guardianRepository.save(gParent);
+
         // Create sample dummy document on disk
         String docPath1 = "uploads/documents/1_AADHAAR_sample.pdf";
         try (FileOutputStream fos = new FileOutputStream(new File(docPath1))) {

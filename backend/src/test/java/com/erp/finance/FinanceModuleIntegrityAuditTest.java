@@ -29,6 +29,8 @@ import com.erp.finance.service.StudentFeeService;
 import com.erp.finance.student_fee.entity.StudentFee;
 import com.erp.finance.student_fee.entity.StudentFeeComponent;
 import com.erp.finance.student_fee.repository.StudentFeeRepository;
+import com.erp.guardian.entity.Guardian;
+import com.erp.guardian.repository.GuardianRepository;
 import com.erp.security.SecurityOwnershipService;
 import com.erp.student.entity.Student;
 import com.erp.student.repository.StudentRepository;
@@ -95,6 +97,9 @@ public class FinanceModuleIntegrityAuditTest {
     private StudentRepository studentRepository;
 
     @Autowired
+    private GuardianRepository guardianRepository;
+
+    @Autowired
     private AcademicYearRepository academicYearRepository;
 
     @Autowired
@@ -130,6 +135,7 @@ public class FinanceModuleIntegrityAuditTest {
     void setupTestData() {
         TransactionTemplate tx = new TransactionTemplate(transactionManager);
         tx.execute(status -> {
+            guardianRepository.deleteAll();
             receiptRepository.deleteAll();
             paymentRepository.deleteAll();
             studentFeeRepository.deleteAll();
@@ -298,6 +304,78 @@ public class FinanceModuleIntegrityAuditTest {
         mockMvc.perform(get("/api/v1/finance/student-fees/student/" + testStudent2.getId())
                         .with(authentication(student1Auth)))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("Parent can view their authorized ward's fee record but CANNOT view another student's fee record")
+    void parentFeeOwnershipAndIdorCheck() throws Exception {
+        // Create verified parent user and guardian linked to testStudent1
+        AppUser parentUser = new AppUser();
+        parentUser.setUsername("parent_" + UUID.randomUUID());
+        parentUser.setEmail("parent_" + UUID.randomUUID() + "@university.edu");
+        parentUser.setPassword("Secret123!");
+        parentUser.setRole(Role.PARENT);
+        parentUser = userRepository.save(parentUser);
+
+        Guardian guardian = new Guardian("Parent", "Test", "MOTHER", "+919876543299", parentUser.getEmail());
+        guardian.setUserId(parentUser.getId());
+        guardian.setStudent(testStudent1);
+        guardianRepository.save(guardian);
+
+        // Assign fee to testStudent1 and testStudent2
+        studentFeeService.assignFeeStructure(testStudent1.getId(), testStructure.getId(), testAcademicYear.getId());
+        studentFeeService.assignFeeStructure(testStudent2.getId(), testStructure.getId(), testAcademicYear.getId());
+
+        UsernamePasswordAuthenticationToken parentAuth = createAuthToken(parentUser, "ROLE_PARENT");
+
+        // Verified parent accessing Ward (testStudent1) -> 200 OK
+        mockMvc.perform(get("/api/v1/finance/student-fees/student/" + testStudent1.getId())
+                        .with(authentication(parentAuth)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].studentId").value(testStudent1.getId()))
+                .andExpect(jsonPath("$[0].grossAmount").value(50000.00));
+
+        // Verified parent accessing testStudent2 (not their ward) -> 403 Forbidden (IDOR prevented)
+        mockMvc.perform(get("/api/v1/finance/student-fees/student/" + testStudent2.getId())
+                        .with(authentication(parentAuth)))
+                .andExpect(status().isForbidden());
+
+        // Unverified parent (not guardian of testStudent1) -> 403 Forbidden
+        AppUser strangerParent = new AppUser();
+        strangerParent.setUsername("stranger_" + UUID.randomUUID());
+        strangerParent.setEmail("stranger_" + UUID.randomUUID() + "@university.edu");
+        strangerParent.setPassword("Secret123!");
+        strangerParent.setRole(Role.PARENT);
+        strangerParent = userRepository.save(strangerParent);
+        UsernamePasswordAuthenticationToken strangerAuth = createAuthToken(strangerParent, "ROLE_PARENT");
+
+        mockMvc.perform(get("/api/v1/finance/student-fees/student/" + testStudent1.getId())
+                        .with(authentication(strangerAuth)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("Parent can access their own guardian profile via /api/v1/guardians/me")
+    void parentCanAccessGuardiansMe() throws Exception {
+        AppUser parentUser = new AppUser();
+        parentUser.setUsername("parent_me_" + UUID.randomUUID());
+        parentUser.setEmail("parent_me_" + UUID.randomUUID() + "@university.edu");
+        parentUser.setPassword("Secret123!");
+        parentUser.setRole(Role.PARENT);
+        parentUser = userRepository.save(parentUser);
+
+        Guardian guardian = new Guardian("ParentMe", "Test", "FATHER", "+919876543288", parentUser.getEmail());
+        guardian.setUserId(parentUser.getId());
+        guardian.setStudent(testStudent1);
+        guardianRepository.save(guardian);
+
+        UsernamePasswordAuthenticationToken parentAuth = createAuthToken(parentUser, "ROLE_PARENT");
+
+        mockMvc.perform(get("/api/v1/guardians/me")
+                        .with(authentication(parentAuth)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].email").value(parentUser.getEmail()))
+                .andExpect(jsonPath("$.data[0].studentId").value(testStudent1.getId()));
     }
 
     @Test

@@ -56,11 +56,31 @@ interface AttendanceState {
   remarks: string;
 }
 
+const getTodayDateString = () => new Date().toISOString().split('T')[0];
+
+function formatTime(timeData: string | number[] | undefined | null): string {
+  if (!timeData) return '';
+  let h = 0;
+  let m = 0;
+  if (Array.isArray(timeData)) {
+    h = timeData[0] || 0;
+    m = timeData[1] || 0;
+  } else {
+    const parts = String(timeData).split(':');
+    h = parseInt(parts[0], 10) || 0;
+    m = parseInt(parts[1], 10) || 0;
+  }
+  const period = h >= 12 ? 'PM' : 'AM';
+  const displayHour = h % 12 === 0 ? 12 : h % 12;
+  const displayMinute = m < 10 ? `0${m}` : `${m}`;
+  return `${displayHour}:${displayMinute} ${period}`;
+}
+
 export default function FacultyAttendance() {
   const queryClient = useQueryClient();
   const [selectedSectionId, setSelectedSectionId] = useState<number | ''>('');
   const [selectedScheduleId, setSelectedScheduleId] = useState<number | ''>('');
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState<string>(getTodayDateString);
 
   const [localAttendance, setLocalAttendance] = useState<Record<number, AttendanceState>>({});
   const [isDirty, setIsDirty] = useState(false);
@@ -91,11 +111,6 @@ export default function FacultyAttendance() {
     return timetable.filter(t => t.sectionId === selectedSectionId && t.isActive);
   }, [timetable, selectedSectionId]);
 
-  // Reset dependent states when section changes
-  useEffect(() => {
-    setSelectedScheduleId('');
-    setSubmitError(null);
-  }, [selectedSectionId]);
 
   // 3. Fetch Roster
   const { data: roster, isLoading: loadingRoster } = useQuery<SectionStudent[]>({
@@ -201,20 +216,6 @@ export default function FacultyAttendance() {
   };
 
   const activeRoster = roster?.filter(s => s.isActive) || [];
-  const formatTime = (timeData: string | number[]) => {
-    let h, m;
-    if (Array.isArray(timeData)) {
-      h = timeData[0];
-      m = timeData[1] || 0;
-    } else {
-      const parts = timeData.split(':');
-      h = parseInt(parts[0], 10);
-      m = parseInt(parts[1], 10);
-    }
-    const d = new Date();
-    d.setHours(h, m);
-    return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-  };
 
   return (
     <PageFrame
@@ -238,7 +239,11 @@ export default function FacultyAttendance() {
             <select
               className="w-full text-sm border-slate-200 rounded-none focus:ring-black focus:border-black"
               value={selectedSectionId}
-              onChange={(e) => setSelectedSectionId(e.target.value ? Number(e.target.value) : '')}
+              onChange={(e) => {
+                setSelectedSectionId(e.target.value ? Number(e.target.value) : '');
+                setSelectedScheduleId('');
+                setSubmitError(null);
+              }}
             >
               <option value="">-- Select Section --</option>
               {sections?.map(s => (

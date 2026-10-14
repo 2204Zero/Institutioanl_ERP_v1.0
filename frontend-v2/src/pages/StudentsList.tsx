@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '../config/api';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { PageFrame } from '../components/ui/PageFrame';
 import { Input } from '../components/ui/input';
 import { Search, Loader2, Filter, ChevronLeft, ChevronRight, Eye } from 'lucide-react';
@@ -10,9 +10,26 @@ import { CreateStudentDialog } from '../components/CreateStudentDialog';
 import type { PaginatedResponse, Student } from '../types/student';
 import { useAuthStore } from '../store/useAuthStore';
 
+function formatDateDisplay(val: any): string {
+  if (!val) return 'N/A';
+  if (Array.isArray(val) && val.length >= 3) {
+    const [y, m, d] = val;
+    return `${String(y).padStart(4, '0')}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  }
+  const d = new Date(val);
+  return isNaN(d.getTime()) ? String(val) : d.toLocaleDateString();
+}
+
 export default function StudentsList() {
   const { user } = useAuthStore();
+  const navigate = useNavigate();
   const isAdmin = user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN';
+
+  React.useEffect(() => {
+    if (user?.role === 'STUDENT' || user?.role === 'PARENT') {
+      navigate('/dashboard/profile', { replace: true });
+    }
+  }, [user, navigate]);
 
   const [page, setPage] = useState(0);
   const [size] = useState(10);
@@ -97,9 +114,10 @@ export default function StudentsList() {
           <table className="w-full text-left whitespace-nowrap">
             <thead className="bg-slate-100 text-slate-600 border-b border-slate-200 uppercase text-[10px] font-bold tracking-wider sticky top-0">
               <tr>
-                <th className="px-3 py-2 border-r border-slate-200/50">Student</th>
-                <th className="px-3 py-2 border-r border-slate-200/50">Enrollment ID</th>
-                <th className="px-3 py-2 border-r border-slate-200/50">Contact</th>
+                <th className="px-3 py-2 border-r border-slate-200/50">Student (Internal ID)</th>
+                <th className="px-3 py-2 border-r border-slate-200/50">Canonical Enrollment No</th>
+                <th className="px-3 py-2 border-r border-slate-200/50">Roll Number</th>
+                <th className="px-3 py-2 border-r border-slate-200/50">Department / Contact</th>
                 <th className="px-3 py-2 border-r border-slate-200/50">Status</th>
                 <th className="px-3 py-2 text-right">Action</th>
               </tr>
@@ -107,14 +125,14 @@ export default function StudentsList() {
             <tbody className="divide-y divide-slate-100 text-[13px]">
               {isLoading ? (
                 <tr>
-                  <td colSpan={5} className="px-3 py-12 text-center">
+                  <td colSpan={6} className="px-3 py-12 text-center">
                     <Loader2 className="w-5 h-5 animate-spin text-slate-400 mx-auto mb-2" />
                     <p className="text-slate-500 text-xs">Loading directory...</p>
                   </td>
                 </tr>
               ) : isError ? (
                 <tr>
-                  <td colSpan={5} className="px-3 py-12 text-center text-red-500 text-xs">
+                  <td colSpan={6} className="px-3 py-12 text-center text-red-500 text-xs">
                     Failed to load students. Please try again later.
                   </td>
                 </tr>
@@ -123,27 +141,47 @@ export default function StudentsList() {
                   <tr key={student.id} className="hover:bg-slate-50 transition-colors group">
                     <td className="px-3 py-2 border-r border-slate-100/50">
                       <div className="flex items-center space-x-2">
-                        <div className="h-6 w-6 rounded-sm bg-slate-900 flex items-center justify-center text-white font-bold shrink-0 text-[10px]">
-                          {student.firstName.charAt(0)}{student.lastName.charAt(0)}
+                        <div className="h-7 w-7 rounded overflow-hidden relative bg-slate-900 flex items-center justify-center text-white font-bold shrink-0 text-[10px]">
+                          <img
+                            src={`/api/v1/students/${student.id}/photo`}
+                            alt=""
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLElement).style.display = 'none';
+                            }}
+                          />
+                          <span className="only:block">{student.firstName.charAt(0)}{student.lastName.charAt(0)}</span>
                         </div>
                         <div>
-                          <p className="font-semibold text-slate-900">{student.firstName} {student.lastName}</p>
-                          <p className="text-[10px] text-slate-500">Joined {new Date(student.enrollmentDate || student.createdAt || new Date()).toLocaleDateString()}</p>
+                          <div className="flex items-center space-x-1.5">
+                            <p className="font-semibold text-slate-900">{student.firstName} {student.lastName}</p>
+                            <span className="text-[10px] font-mono px-1.5 py-0.2 bg-slate-100 text-slate-600 rounded">
+                              #{student.id}
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-slate-500">Joined {formatDateDisplay(student.enrollmentDate || student.createdAt)}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-3 py-2 text-slate-600 font-medium border-r border-slate-100/50">
-                      {student.rollNumber || 'Pending Allocation'}
+                    <td className="px-3 py-2 font-mono text-xs font-semibold text-slate-800 border-r border-slate-100/50">
+                      {student.enrollmentNumber ? (
+                        <span>{student.enrollmentNumber}</span>
+                      ) : (
+                        <span className="text-slate-400 italic">Pending Allocation</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 font-mono text-xs text-slate-600 border-r border-slate-100/50">
+                      {student.rollNumber || <span className="text-slate-400 italic">None</span>}
                     </td>
                     <td className="px-3 py-2 border-r border-slate-100/50">
-                      <p className="text-slate-700 leading-tight">{student.email}</p>
-                      <p className="text-[11px] text-slate-500">{student.phone || 'No phone'}</p>
+                      <p className="text-slate-800 text-xs font-medium">{student.department || 'General'}</p>
+                      <p className="text-[11px] text-slate-500">{student.email}</p>
                     </td>
                     <td className="px-3 py-2 border-r border-slate-100/50">
                       <StatusBadge status={student.status} />
                     </td>
                     <td className="px-3 py-2 text-right">
-                      <Link to={`/dashboard/students/${student.id}`} className="text-[11px] font-semibold text-slate-500 hover:text-slate-900 inline-flex items-center">
+                      <Link to={`/dashboard/students/${student.id}`} className="text-[11px] font-semibold text-slate-600 hover:text-slate-900 inline-flex items-center">
                         <Eye className="w-3.5 h-3.5 mr-1" />
                         View
                       </Link>
@@ -152,7 +190,7 @@ export default function StudentsList() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="px-3 py-16 text-center">
+                  <td colSpan={6} className="px-3 py-16 text-center">
                     <div className="w-10 h-10 bg-slate-100 flex items-center justify-center mx-auto mb-2">
                       <Search className="w-5 h-5 text-slate-400" />
                     </div>

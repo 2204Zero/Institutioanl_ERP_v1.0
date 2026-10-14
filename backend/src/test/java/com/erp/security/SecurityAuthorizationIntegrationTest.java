@@ -252,4 +252,177 @@ public class SecurityAuthorizationIntegrationTest {
         mockMvc.perform(get("/api/v1/finance/reports/summary"))
                 .andExpect(status().isForbidden());
     }
+
+    // ==========================================
+    // 6. Campus & Institution Authorization Drift Fix
+    // ==========================================
+
+    @Test
+    @DisplayName("SEC-18: Anonymous requests to campus/institution endpoints are unauthorized (HTTP 401)")
+    void testAnonymousAccessRejectedForCampusesAndInstitutions() throws Exception {
+        mockMvc.perform(get("/api/v1/campuses"))
+                .andExpect(status().isUnauthorized());
+
+        mockMvc.perform(post("/api/v1/campuses")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("name", "Anon Campus", "address", "Road", "institutionId", 1L))))
+                .andExpect(status().isUnauthorized());
+
+        mockMvc.perform(get("/api/v1/institutions"))
+                .andExpect(status().isUnauthorized());
+
+        mockMvc.perform(post("/api/v1/institutions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("name", "Anon Inst", "code", "ANON"))))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("SEC-19: ADMIN attempting to create, update, or delete campus is forbidden (HTTP 403)")
+    @WithMockUser(username = "academic_admin", roles = {"ADMIN"})
+    void testAdminCannotMutateCampuses() throws Exception {
+        mockMvc.perform(post("/api/v1/campuses")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("name", "New Campus", "address", "Campus Road", "institutionId", 1L))))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(put("/api/v1/campuses/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("name", "Updated Campus", "address", "New Road", "institutionId", 1L))))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(delete("/api/v1/campuses/1"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("SEC-20: ADMIN attempting to create, update, or delete institution is forbidden (HTTP 403)")
+    @WithMockUser(username = "academic_admin", roles = {"ADMIN"})
+    void testAdminCannotMutateInstitutions() throws Exception {
+        mockMvc.perform(post("/api/v1/institutions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("name", "Admin Inst", "code", "ADM"))))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(put("/api/v1/institutions/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("name", "Updated Inst", "code", "ADM2"))))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(delete("/api/v1/institutions/1"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("SEC-21: ADMIN can read campus and institution directories (HTTP 200)")
+    @WithMockUser(username = "academic_admin", roles = {"ADMIN"})
+    void testAdminCanReadCampusesAndInstitutions() throws Exception {
+        mockMvc.perform(get("/api/v1/campuses"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/v1/institutions"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("SEC-22: FACULTY attempting to mutate campus or institution is forbidden (HTTP 403)")
+    @WithMockUser(username = "faculty@college.edu", roles = {"FACULTY"})
+    void testFacultyCannotMutateCampusesOrInstitutions() throws Exception {
+        mockMvc.perform(post("/api/v1/campuses")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("name", "Fac Campus", "address", "Road", "institutionId", 1L))))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(post("/api/v1/institutions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("name", "Fac Inst", "code", "FAC"))))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("SEC-23: FINANCE attempting to mutate or read campuses is forbidden (HTTP 403)")
+    @WithMockUser(username = "finance_officer", roles = {"FINANCE"})
+    void testFinanceCannotAccessCampuses() throws Exception {
+        mockMvc.perform(get("/api/v1/campuses"))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(post("/api/v1/campuses")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("name", "Fin Campus", "address", "Road", "institutionId", 1L))))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("SEC-24: PARENT attempting to mutate or read campuses is forbidden (HTTP 403)")
+    @WithMockUser(username = "parent1@college.edu", roles = {"PARENT"})
+    void testParentCannotAccessCampuses() throws Exception {
+        mockMvc.perform(get("/api/v1/campuses"))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(post("/api/v1/campuses")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("name", "Par Campus", "address", "Road", "institutionId", 1L))))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("SEC-25: SUPER_ADMIN can create, read, and manage institutions (HTTP 200)")
+    @WithMockUser(username = "superadmin", roles = {"SUPER_ADMIN"})
+    void testSuperAdminCanManageInstitutions() throws Exception {
+        var res = mockMvc.perform(post("/api/v1/institutions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("name", "Apex Global University", "code", "AGU"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is("AGU")))
+                .andReturn();
+
+        Long instId = objectMapper.readTree(res.getResponse().getContentAsString()).get("id").asLong();
+
+        mockMvc.perform(get("/api/v1/institutions/" + instId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name", is("Apex Global University")));
+
+        mockMvc.perform(put("/api/v1/institutions/" + instId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("name", "Apex International University", "code", "AIU"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code", is("AIU")));
+
+        mockMvc.perform(delete("/api/v1/institutions/" + instId))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("SEC-26: SUPER_ADMIN can create, read, and manage campuses (HTTP 200)")
+    @WithMockUser(username = "superadmin", roles = {"SUPER_ADMIN"})
+    void testSuperAdminCanManageCampuses() throws Exception {
+        var instRes = mockMvc.perform(post("/api/v1/institutions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("name", "Campus Parent Inst", "code", "CPI"))))
+                .andExpect(status().isOk())
+                .andReturn();
+        Long instId = objectMapper.readTree(instRes.getResponse().getContentAsString()).get("id").asLong();
+
+        var res = mockMvc.perform(post("/api/v1/campuses")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("name", "North Campus", "address", "North Highway", "institutionId", instId))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name", is("North Campus")))
+                .andReturn();
+
+        Long campusId = objectMapper.readTree(res.getResponse().getContentAsString()).get("id").asLong();
+
+        mockMvc.perform(get("/api/v1/campuses/" + campusId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.address", is("North Highway")));
+
+        mockMvc.perform(put("/api/v1/campuses/" + campusId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("name", "North Tech Campus", "address", "Updated Highway", "institutionId", instId))))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(delete("/api/v1/campuses/" + campusId))
+                .andExpect(status().isOk());
+    }
 }
+

@@ -23,6 +23,8 @@ export interface Course {
 export interface Batch {
   id: number;
   code: string;
+  name?: string;
+  programId?: number;
   admissionYear: number;
   graduationYear: number;
   isActive: boolean;
@@ -31,6 +33,7 @@ export interface Batch {
 export interface AcademicYear {
   id: number;
   name: string;
+  code?: string;
   startDate: string;
   endDate: string;
   isActive: boolean;
@@ -186,6 +189,9 @@ export interface FacultySummary {
   lastName: string;
   email: string;
   username: string;
+  departmentId?: number | null;
+  departmentName?: string | null;
+  isActive?: boolean;
 }
 
 export const useFacultyList = (options?: { enabled?: boolean }) => {
@@ -196,6 +202,44 @@ export const useFacultyList = (options?: { enabled?: boolean }) => {
       return response.data;
     },
     enabled: options?.enabled !== undefined ? options.enabled : true,
+  });
+};
+
+export const useDepartmentFaculty = (departmentId: number | null) => {
+  return useQuery({
+    queryKey: ['departments', departmentId, 'faculty'],
+    queryFn: async () => {
+      if (!departmentId) return [];
+      const response = await apiClient.get<FacultySummary[]>(`/api/v1/departments/${departmentId}/faculty`);
+      return response.data;
+    },
+    enabled: !!departmentId,
+  });
+};
+
+export const useUnassignedFaculty = () => {
+  return useQuery({
+    queryKey: ['admin-faculty', 'unassigned'],
+    queryFn: async () => {
+      const response = await apiClient.get<FacultySummary[]>('/api/v1/admin/faculty/unassigned');
+      return response.data;
+    },
+  });
+};
+
+export const useAssignFacultyDepartment = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ facultyId, departmentId }: { facultyId: number; departmentId: number | null }) => {
+      const response = await apiClient.patch<FacultySummary>(`/api/v1/admin/faculty/${facultyId}/department`, {
+        departmentId,
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-faculty'] });
+      queryClient.invalidateQueries({ queryKey: ['departments'] });
+    },
   });
 };
 
@@ -250,14 +294,79 @@ export interface Room {
   name: string;
   capacity: number;
   isActive: boolean;
+  timetableSlotCount?: number;
 }
 
-export const useRooms = () => {
+export const useRooms = (includeInactive: boolean = true) => {
   return useQuery({
-    queryKey: ['rooms'],
+    queryKey: ['rooms', includeInactive],
     queryFn: async () => {
-      const response = await apiClient.get<Room[]>('/api/v1/rooms');
+      const response = await apiClient.get<Room[]>(`/api/v1/rooms?includeInactive=${includeInactive}`);
       return response.data;
+    },
+  });
+};
+
+export const useCreateRoom = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: { name: string; capacity: number; isActive?: boolean }) => {
+      const response = await apiClient.post<Room>('/api/v1/rooms', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
+    },
+  });
+};
+
+export const useUpdateRoom = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: { name: string; capacity: number; isActive?: boolean } }) => {
+      const response = await apiClient.put<Room>(`/api/v1/rooms/${id}`, data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
+    },
+  });
+};
+
+export const useDeactivateRoom = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const response = await apiClient.patch<Room>(`/api/v1/rooms/${id}/deactivate`);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
+    },
+  });
+};
+
+export const useActivateRoom = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const response = await apiClient.patch<Room>(`/api/v1/rooms/${id}/activate`);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
+    },
+  });
+};
+
+export const useDeleteRoom = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      await apiClient.delete(`/api/v1/rooms/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
     },
   });
 };
@@ -285,3 +394,133 @@ export const useAllocateSlot = () => {
     },
   });
 };
+
+export interface Department {
+  id: number;
+  name: string;
+  code: string;
+  campusId?: number;
+}
+
+export const useDepartments = () => {
+  return useQuery({
+    queryKey: ['departments'],
+    queryFn: async () => {
+      const response = await apiClient.get<Department[]>('/api/v1/departments');
+      return response.data;
+    },
+  });
+};
+
+export const useCreateDepartment = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: { name: string; code: string; campusId?: number }) => {
+      const response = await apiClient.post<Department>('/api/v1/departments', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['departments'] });
+    },
+  });
+};
+
+export const useCreateAcademicYear = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: { name: string; startDate: string; endDate: string; isActive?: boolean }) => {
+      const response = await apiClient.post<AcademicYear>('/api/v1/academic-years', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['academic-years'] });
+    },
+  });
+};
+
+export const useCreateProgram = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: { code: string; name: string; degree: string; departmentId: number; duration: number; isActive?: boolean }) => {
+      const response = await apiClient.post<Program>('/api/v1/programs', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['programs'] });
+    },
+  });
+};
+
+export const useCreateCourse = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: { code: string; name: string; courseType: string; credits: number; departmentId: number; programId?: number; isActive?: boolean }) => {
+      const response = await apiClient.post<Course>('/api/v1/courses', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['courses'] });
+    },
+  });
+};
+
+export const useCreateBatch = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: { name: string; code: string; programId: number; admissionYear: number; graduationYear: number; academicYearId?: number; isActive?: boolean }) => {
+      const response = await apiClient.post<Batch>('/api/v1/batches', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['batches'] });
+    },
+  });
+};
+
+export interface CoursePrerequisiteItem {
+  id: number;
+  courseId: number;
+  courseCode: string;
+  courseName: string;
+  prerequisiteCourseId: number;
+  prerequisiteCourseCode: string;
+  prerequisiteCourseName: string;
+}
+
+export const useCoursePrerequisites = (courseId: number | null) => {
+  return useQuery({
+    queryKey: ['courses', courseId, 'prerequisites'],
+    queryFn: async () => {
+      if (!courseId) return [];
+      const response = await apiClient.get<CoursePrerequisiteItem[]>(`/api/v1/courses/${courseId}/prerequisites`);
+      return response.data;
+    },
+    enabled: !!courseId,
+  });
+};
+
+export const useAddCoursePrerequisite = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ courseId, prerequisiteCourseId }: { courseId: number; prerequisiteCourseId: number }) => {
+      const response = await apiClient.post<CoursePrerequisiteItem>(`/api/v1/courses/${courseId}/prerequisites/${prerequisiteCourseId}`);
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['courses', variables.courseId, 'prerequisites'] });
+    },
+  });
+};
+
+export const useRemoveCoursePrerequisite = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ courseId, prerequisiteCourseId }: { courseId: number; prerequisiteCourseId: number }) => {
+      await apiClient.delete(`/api/v1/courses/${courseId}/prerequisites/${prerequisiteCourseId}`);
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['courses', variables.courseId, 'prerequisites'] });
+    },
+  });
+};
+

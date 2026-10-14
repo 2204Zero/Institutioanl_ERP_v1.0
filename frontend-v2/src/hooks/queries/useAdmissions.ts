@@ -95,6 +95,21 @@ export const useOnboardStudent = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admission-applications'] });
+      queryClient.invalidateQueries({ queryKey: ['students'] });
+    }
+  });
+};
+
+export const useCreateInquiry = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: { firstName: string; lastName: string; email: string; phone: string; programId?: number; academicYearId?: number; remarks?: string }) => {
+      const response = await apiClient.post('/api/v1/admissions/public/applications', data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['applicants'] });
+      queryClient.invalidateQueries({ queryKey: ['admission-applications'] });
     }
   });
 };

@@ -24,6 +24,13 @@ public class FacultyController {
         this.facultyService = facultyService;
     }
 
+    @GetMapping("/me")
+    @PreAuthorize("hasRole('FACULTY')")
+    @Operation(summary = "Get my profile", description = "Returns the profile of the currently authenticated faculty member")
+    public ResponseEntity<com.erp.faculty.dto.FacultyProfileResponse> getMyProfile() {
+        return ResponseEntity.ok(facultyService.getMyProfile());
+    }
+
     @GetMapping("/me/sections")
     @PreAuthorize("hasRole('FACULTY')")
     @Operation(summary = "Get my sections", description = "Returns the sections assigned to the currently authenticated faculty member")

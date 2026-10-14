@@ -18,8 +18,23 @@ public class StudentFeeController {
 
     @PostMapping("/assign")
     @PreAuthorize("hasAuthority('FEE_ASSIGNMENT_CREATE') or hasAnyRole('FINANCE', 'ADMIN', 'SUPER_ADMIN')")
-    public ResponseEntity<StudentFeeResponseDto> assignFee(@RequestParam Long studentId, @RequestParam Long feeStructureId, @RequestParam Long academicYearId) {
-        return ResponseEntity.ok(StudentFeeResponseDto.fromEntity(studentFeeService.assignFeeStructure(studentId, feeStructureId, academicYearId)));
+    public ResponseEntity<StudentFeeResponseDto> assignFee(
+            @RequestParam(required = false) Long studentId,
+            @RequestParam(required = false) Long feeStructureId,
+            @RequestParam(required = false) Long academicYearId,
+            @RequestBody(required = false) com.erp.finance.dto.FeeAssignRequestDto body) {
+        Long targetStudentId = studentId != null ? studentId : (body != null ? body.getStudentId() : null);
+        Long targetFeeStructureId = feeStructureId != null ? feeStructureId : (body != null ? body.getFeeStructureId() : null);
+        Long targetAcademicYearId = academicYearId != null ? academicYearId : (body != null ? body.getAcademicYearId() : null);
+
+        return ResponseEntity.ok(StudentFeeResponseDto.fromEntity(
+                studentFeeService.assignFeeStructure(targetStudentId, targetFeeStructureId, targetAcademicYearId)));
+    }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('FINANCE', 'ADMIN', 'SUPER_ADMIN') or @securityOwnershipService.canAccessStudentFeeFinance(authentication, #id)")
+    public ResponseEntity<StudentFeeResponseDto> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(StudentFeeResponseDto.fromEntity(studentFeeService.getById(id)));
     }
 
     @GetMapping

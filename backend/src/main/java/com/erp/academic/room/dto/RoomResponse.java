@@ -14,4 +14,5 @@ public class RoomResponse {
     private String name;
     private Integer capacity;
     private Boolean isActive;
+    private Long timetableSlotCount;
 }

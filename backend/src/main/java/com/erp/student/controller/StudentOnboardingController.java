@@ -16,8 +16,12 @@ public class StudentOnboardingController {
 
     @PostMapping("/applications/{id}/onboard")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
-    public ResponseEntity<Student> onboardStudent(@PathVariable Long id) {
-        Student student = onboardingService.onboardStudent(id);
+    public ResponseEntity<Student> onboardStudent(
+            @PathVariable Long id,
+            @RequestBody(required = false) StudentOnboardingService.OnboardingReviewRequest reviewRequest) {
+        Student student = reviewRequest != null
+                ? onboardingService.onboardStudent(id, reviewRequest)
+                : onboardingService.onboardStudent(id);
         return ResponseEntity.ok(student);
     }
 }

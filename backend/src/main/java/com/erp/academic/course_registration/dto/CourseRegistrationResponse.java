@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -25,6 +27,38 @@ public class CourseRegistrationResponse {
 
     private CourseOfferingSummary courseOffering;
     private SectionSummary section;
+
+    @JsonProperty("courseCode")
+    public String getCourseCode() {
+        if (courseOffering != null && courseOffering.getCourse() != null) {
+            return courseOffering.getCourse().getCode();
+        }
+        return "CR-" + (courseOfferingId != null ? courseOfferingId : id);
+    }
+
+    @JsonProperty("courseName")
+    public String getCourseName() {
+        if (courseOffering != null && courseOffering.getCourse() != null) {
+            return courseOffering.getCourse().getName();
+        }
+        return "Course Offering #" + (courseOfferingId != null ? courseOfferingId : id);
+    }
+
+    @JsonProperty("sectionName")
+    public String getSectionName() {
+        if (section != null) {
+            return section.getName();
+        }
+        return null;
+    }
+
+    @JsonProperty("credits")
+    public Integer getCredits() {
+        if (courseOffering != null && courseOffering.getCourse() != null) {
+            return courseOffering.getCourse().getCredits();
+        }
+        return null;
+    }
 
     @Data
     @Builder

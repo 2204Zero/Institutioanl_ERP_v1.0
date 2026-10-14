@@ -10,4 +10,7 @@ import java.util.Optional;
 public interface ApplicantRepository extends JpaRepository<Applicant, Long> {
     Optional<Applicant> findByEmail(String email);
     boolean existsByEmail(String email);
+    Optional<Applicant> findByPhone(String phone);
+    boolean existsByPhone(String phone);
+    java.util.List<Applicant> findAllByOrderByCreatedAtDescIdDesc();
 }

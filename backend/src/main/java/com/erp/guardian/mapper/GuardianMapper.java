@@ -40,6 +40,7 @@ public class GuardianMapper {
         if (entity == null) return null;
         GuardianResponseDto dto = new GuardianResponseDto();
         dto.setId(entity.getId());
+        dto.setUserId(entity.getUserId());
         if (entity.getStudent() != null) {
             dto.setStudentId(entity.getStudent().getId());
             dto.setStudentName(entity.getStudent().getFirstName() + " " + entity.getStudent().getLastName());

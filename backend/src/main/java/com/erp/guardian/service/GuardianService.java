@@ -22,4 +22,8 @@ public interface GuardianService {
     GuardianResponseDto addGuardianToStudent(Long studentId, GuardianRequestDto requestDto);
 
     GuardianResponseDto linkGuardianToStudent(Long studentId, Long guardianId);
+
+    List<GuardianResponseDto> getGuardiansByEmail(String email);
+ 
+    List<GuardianResponseDto> getGuardiansByUserId(Long userId);
 }

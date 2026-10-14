@@ -16,6 +16,8 @@ import AdminUsersList from './pages/AdminUsersList';
 import Admissions from './pages/Admissions';
 import Academics from './pages/Academics';
 import FacultySections from './pages/FacultySections';
+import PublicAdmissions from './pages/PublicAdmissions';
+import { ProfileRedirect } from './components/ProfileRedirect';
 import Layout from './components/Layout';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from './components/ui/sonner';
@@ -102,6 +104,7 @@ function App() {
                 <Login />
               </PublicOnlyRoute>
             } />
+            <Route path="/admissions" element={<PublicAdmissions />} />
             <Route path="/403" element={<Forbidden />} />
             <Route
               path="/dashboard"
@@ -112,7 +115,8 @@ function App() {
               }
             >
               <Route index element={<Dashboard />} />
-              <Route path="students" element={<RoleProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN', 'FACULTY', 'FINANCE']}><StudentsList /></RoleProtectedRoute>} />
+              <Route path="profile" element={<RoleProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN', 'FACULTY', 'STUDENT', 'PARENT', 'FINANCE']}><ProfileRedirect /></RoleProtectedRoute>} />
+              <Route path="students" element={<RoleProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN', 'FACULTY', 'STUDENT', 'PARENT', 'FINANCE']}><StudentsList /></RoleProtectedRoute>} />
               <Route path="students/:id" element={<RoleProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN', 'FACULTY', 'STUDENT', 'PARENT', 'FINANCE']}><StudentProfile /></RoleProtectedRoute>} />
               <Route path="departments" element={<RoleProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN']}><DepartmentsList /></RoleProtectedRoute>} />
               <Route path="attendance" element={<RoleProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN', 'FACULTY', 'STUDENT', 'PARENT']}><Attendance /></RoleProtectedRoute>} />
@@ -125,7 +129,7 @@ function App() {
               <Route path="guardians" element={<RoleProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN']}><GuardiansList /></RoleProtectedRoute>} />
               <Route path="admin/users" element={<RoleProtectedRoute allowedRoles={['SUPER_ADMIN', 'ADMIN']}><AdminUsersList /></RoleProtectedRoute>} />
             </Route>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/" element={<Navigate to="/admissions" replace />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Router>

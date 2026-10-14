@@ -1,5 +1,5 @@
 
-import { Search, Loader2, UserSquare2, Phone, MoreHorizontal, Trash, Edit, Mail } from 'lucide-react';
+import { Search, Loader2, UserSquare2, Phone, MoreHorizontal, Trash, Mail } from 'lucide-react';
 import { apiClient } from '../config/api';
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
@@ -153,9 +153,6 @@ export default function GuardiansList() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem className="cursor-pointer" onClick={() => toast.info('Edit mode not fully implemented yet')}>
-                          <Edit className="w-4 h-4 mr-2" /> Edit
-                        </DropdownMenuItem>
                         <DropdownMenuItem className="text-destructive focus:text-destructive cursor-pointer" onClick={() => {
                           if(window.confirm('Are you sure you want to delete this guardian?')) deleteMutation.mutate(guardian.id);
                         }}>

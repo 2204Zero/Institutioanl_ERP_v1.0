@@ -1,5 +1,6 @@
 package com.erp.academic.course.service;
 
+import com.erp.academic.course.dto.CoursePrerequisiteResponse;
 import com.erp.academic.course.entity.Course;
 import com.erp.academic.course.entity.CoursePrerequisite;
 import com.erp.academic.course.repository.CoursePrerequisiteRepository;
@@ -22,6 +23,42 @@ public class CoursePrerequisiteService {
 
     private final CoursePrerequisiteRepository prerequisiteRepository;
     private final CourseRepository courseRepository;
+
+    @Transactional(readOnly = true)
+    public List<CoursePrerequisiteResponse> getPrerequisites(Long courseId) {
+        if (!courseRepository.existsById(courseId)) {
+            throw new ResourceNotFoundException("Course not found: " + courseId);
+        }
+        return prerequisiteRepository.findByCourseId(courseId).stream()
+                .map(this::toResponseDto)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public CoursePrerequisiteResponse addPrerequisiteDto(Long courseId, Long prereqCourseId) {
+        CoursePrerequisite saved = addPrerequisite(courseId, prereqCourseId);
+        return toResponseDto(saved);
+    }
+
+    @Transactional
+    public void removePrerequisite(Long courseId, Long prereqCourseId) {
+        CoursePrerequisite mapping = prerequisiteRepository
+                .findByCourseIdAndPrerequisiteCourseId(courseId, prereqCourseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Prerequisite mapping not found for course " + courseId + " and prerequisite " + prereqCourseId));
+        prerequisiteRepository.delete(mapping);
+    }
+
+    private CoursePrerequisiteResponse toResponseDto(CoursePrerequisite cp) {
+        return CoursePrerequisiteResponse.builder()
+                .id(cp.getId())
+                .courseId(cp.getCourse().getId())
+                .courseCode(cp.getCourse().getCode())
+                .courseName(cp.getCourse().getName())
+                .prerequisiteCourseId(cp.getPrerequisiteCourse().getId())
+                .prerequisiteCourseCode(cp.getPrerequisiteCourse().getCode())
+                .prerequisiteCourseName(cp.getPrerequisiteCourse().getName())
+                .build();
+    }
 
     @Transactional
     public CoursePrerequisite addPrerequisite(Long courseId, Long prereqCourseId) {

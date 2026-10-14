@@ -11,6 +11,7 @@ import java.util.Optional;
 public interface AdmissionApplicationRepository extends JpaRepository<AdmissionApplication, Long> {
     Optional<AdmissionApplication> findByApplicationNumber(String applicationNumber);
     List<AdmissionApplication> findByApplicantId(Long applicantId);
+    List<AdmissionApplication> findByApplicantIdAndProgramIdAndAcademicYearId(Long applicantId, Long programId, Long academicYearId);
     List<AdmissionApplication> findByProgramIdAndAcademicYearId(Long programId, Long academicYearId);
 
     @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)

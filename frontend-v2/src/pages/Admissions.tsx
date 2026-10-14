@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { UserCheck, Search, MoreHorizontal, FileText, CheckCircle, XCircle, Eye, AlertCircle, Loader2 } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { UserCheck, Search, FileText, CheckCircle, XCircle, Eye, AlertCircle, Loader2 } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -16,9 +17,12 @@ import {
   useApplications,
   useApplicantDocuments,
   useVerifyDocument,
-  useUpdateApplicationStatus,
-  useOnboardStudent
+  useUpdateApplicationStatus
 } from '../hooks/queries/useAdmissions';
+import { usePrograms } from '../hooks/queries/useAcademics';
+import { formatProgramLabel } from '../lib/academicUtils';
+import { NewApplicationDialog } from '../components/NewApplicationDialog';
+import { OnboardStudentDialog } from '../components/OnboardStudentDialog';
 import type { AdmissionApplication } from '../hooks/queries/useAdmissions';
 import {
   Dialog,
@@ -30,31 +34,68 @@ import {
 import { toast } from 'sonner';
 
 export default function Admissions() {
-  const [activeTab, setActiveTab] = useState('inquiries');
+  const [searchParams] = useSearchParams();
+  const queryTab = searchParams.get('tab');
+  const validTabs = ['inquiries', 'applications', 'verification', 'decisions', 'onboarding'];
+  const [activeTab, setActiveTab] = useState(queryTab && validTabs.includes(queryTab) ? queryTab : 'inquiries');
   const [search, setSearch] = useState('');
+  const [isNewInquiryOpen, setIsNewInquiryOpen] = useState(false);
+
+  useEffect(() => {
+    if (queryTab && validTabs.includes(queryTab) && queryTab !== activeTab) {
+      setActiveTab(queryTab);
+    }
+  }, [queryTab]);
 
   const { data: applicants, isLoading: isLoadingInquiries } = useApplicants();
   const { data: applications, isLoading: isLoadingApplications } = useApplications();
+  const { data: programs = [] } = usePrograms();
+
+  const getApplicantName = (applicantId: number) => {
+    const a = applicants?.find(item => item.id === applicantId);
+    return a ? `${a.firstName} ${a.lastName}` : `Applicant #${applicantId}`;
+  };
+
+  const getProgramName = (programId: number) => {
+    const p = programs?.find(item => item.id === programId);
+    return p ? formatProgramLabel(p) : `Program #${programId}`;
+  };
 
   const verifyDocMutation = useVerifyDocument();
   const updateStatusMutation = useUpdateApplicationStatus();
-  const onboardStudentMutation = useOnboardStudent();
 
   const [selectedVerificationApp, setSelectedVerificationApp] = useState<AdmissionApplication | null>(null);
+  const [selectedOnboardingApp, setSelectedOnboardingApp] = useState<AdmissionApplication | null>(null);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
 
   // Fetch documents for the selected applicant
   const { data: documents, isLoading: isLoadingDocs } = useApplicantDocuments(
     selectedVerificationApp ? selectedVerificationApp.applicantId : null
   );
 
-  const filteredApplicants = applicants?.filter(app =>
+  // Sort inquiries by creation time descending (newest first, secondary by ID desc)
+  const sortedApplicants = useMemo(() => {
+    if (!applicants) return [];
+    return [...applicants].sort((a, b) => {
+      const timeA = (a as any).createdAt ? new Date((a as any).createdAt).getTime() : (a.inquiryDate ? new Date(a.inquiryDate).getTime() : 0);
+      const timeB = (b as any).createdAt ? new Date((b as any).createdAt).getTime() : (b.inquiryDate ? new Date(b.inquiryDate).getTime() : 0);
+      if (timeB !== timeA) {
+        return timeB - timeA;
+      }
+      return (b.id || 0) - (a.id || 0);
+    });
+  }, [applicants]);
+
+  const filteredApplicants = sortedApplicants.filter(app =>
     app.firstName.toLowerCase().includes(search.toLowerCase()) ||
     app.lastName.toLowerCase().includes(search.toLowerCase()) ||
     app.email.toLowerCase().includes(search.toLowerCase())
   );
 
   const filteredApplications = applications?.filter(app =>
-    `APP-${app.id}`.toLowerCase().includes(search.toLowerCase())
+    `APP-${app.id}`.toLowerCase().includes(search.toLowerCase()) ||
+    getApplicantName(app.applicantId).toLowerCase().includes(search.toLowerCase()) ||
+    getProgramName(app.programId).toLowerCase().includes(search.toLowerCase())
   );
 
   const handleVerify = (docId: number, status: string) => {
@@ -78,17 +119,6 @@ export default function Admissions() {
     });
   };
 
-  const handleOnboard = (appId: number) => {
-    if (!window.confirm(`Are you sure you want to onboard this applicant as a student?`)) return;
-
-    onboardStudentMutation.mutate(appId, {
-      onSuccess: () => {
-        toast.success(`Student onboarded successfully!`);
-      },
-      onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to onboard student')
-    });
-  };
-
   const getTableContent = () => {
     if (activeTab === 'inquiries') {
       if (isLoadingInquiries) return <SkeletonTable />;
@@ -99,8 +129,10 @@ export default function Admissions() {
           <TableCell className="text-slate-600 px-6 py-4">{app.email}</TableCell>
           <TableCell className="text-slate-600 px-6 py-4">{app.phone}</TableCell>
           <TableCell className="text-slate-600 px-6 py-4">{app.inquiryDate ? new Date(app.inquiryDate).toLocaleDateString() : 'N/A'}</TableCell>
-          <TableCell className="px-6 py-4"><span className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-bold">NEW</span></TableCell>
-          <TableCell className="text-right px-6 py-4"><Button variant="ghost" size="icon"><MoreHorizontal className="w-4 h-4" /></Button></TableCell>
+          <TableCell className="px-6 py-4"><span className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-bold">INQUIRY</span></TableCell>
+          <TableCell className="text-right px-6 py-4">
+            <span className="text-xs text-slate-400">ID #{app.id}</span>
+          </TableCell>
         </TableRow>
       ));
     }
@@ -111,15 +143,17 @@ export default function Admissions() {
       return filteredApplications.map(app => (
         <TableRow key={app.id}>
           <TableCell className="font-semibold px-6 py-4">APP-{app.id}</TableCell>
-          <TableCell className="text-slate-600 px-6 py-4">Applicant #{app.applicantId}</TableCell>
-          <TableCell className="text-slate-600 px-6 py-4">Program #{app.programId}</TableCell>
+          <TableCell className="text-slate-800 font-medium px-6 py-4">{getApplicantName(app.applicantId)}</TableCell>
+          <TableCell className="text-slate-600 px-6 py-4">{getProgramName(app.programId)}</TableCell>
           <TableCell className="text-slate-600 px-6 py-4">{app.applicationDate ? new Date(app.applicationDate).toLocaleDateString() : 'N/A'}</TableCell>
           <TableCell className="px-6 py-4">
             <span className={`px-2 py-1 rounded text-xs font-bold ${app.status === 'DRAFT' ? 'bg-slate-100 text-slate-700' : app.status === 'SUBMITTED' ? 'bg-blue-100 text-blue-700' : app.status === 'UNDER_REVIEW' ? 'bg-yellow-100 text-yellow-800' : 'bg-slate-100 text-slate-700'}`}>
               {app.status}
             </span>
           </TableCell>
-          <TableCell className="text-right px-6 py-4"><Button variant="ghost" size="icon"><MoreHorizontal className="w-4 h-4" /></Button></TableCell>
+          <TableCell className="text-right px-6 py-4">
+            <span className="text-xs text-slate-400">AY #{app.academicYearId}</span>
+          </TableCell>
         </TableRow>
       ));
     }
@@ -132,7 +166,7 @@ export default function Admissions() {
       return verificationApps.map(app => (
         <TableRow key={app.id}>
           <TableCell className="font-semibold px-6 py-4">APP-{app.id}</TableCell>
-          <TableCell className="text-slate-600 px-6 py-4">Applicant #{app.applicantId}</TableCell>
+          <TableCell className="text-slate-800 font-medium px-6 py-4">{getApplicantName(app.applicantId)}</TableCell>
           <TableCell className="px-6 py-4">
             <span className={`px-2 py-1 rounded text-xs font-bold ${app.status === 'SUBMITTED' ? 'bg-blue-100 text-blue-700' : app.status === 'UNDER_REVIEW' ? 'bg-yellow-100 text-yellow-800' : 'bg-amber-100 text-amber-700'}`}>
               {app.status}
@@ -155,8 +189,8 @@ export default function Admissions() {
       return decisionApps.map(app => (
         <TableRow key={app.id}>
           <TableCell className="font-semibold px-6 py-4">APP-{app.id}</TableCell>
-          <TableCell className="text-slate-600 px-6 py-4">Applicant #{app.applicantId}</TableCell>
-          <TableCell className="text-slate-600 px-6 py-4">Program #{app.programId}</TableCell>
+          <TableCell className="text-slate-800 font-medium px-6 py-4">{getApplicantName(app.applicantId)}</TableCell>
+          <TableCell className="text-slate-600 px-6 py-4">{getProgramName(app.programId)}</TableCell>
           <TableCell className="px-6 py-4">
             <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs font-bold">
               {app.status}
@@ -196,8 +230,8 @@ export default function Admissions() {
       return onboardingApps.map(app => (
         <TableRow key={app.id}>
           <TableCell className="font-semibold px-6 py-4">APP-{app.id}</TableCell>
-          <TableCell className="text-slate-600 px-6 py-4">Applicant #{app.applicantId}</TableCell>
-          <TableCell className="text-slate-600 px-6 py-4">Program #{app.programId}</TableCell>
+          <TableCell className="text-slate-800 font-medium px-6 py-4">{getApplicantName(app.applicantId)}</TableCell>
+          <TableCell className="text-slate-600 px-6 py-4">{getProgramName(app.programId)}</TableCell>
           <TableCell className="px-6 py-4">
             <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-bold">
               {app.status}
@@ -207,8 +241,10 @@ export default function Admissions() {
             <Button
               className="bg-black text-white hover:bg-black/80"
               size="sm"
-              disabled={onboardStudentMutation.isPending}
-              onClick={() => handleOnboard(app.id)}
+              onClick={() => {
+                setSelectedOnboardingApp(app);
+                setIsOnboardingOpen(true);
+              }}
             >
               <UserCheck className="w-4 h-4 mr-2" /> Onboard Student
             </Button>
@@ -253,7 +289,10 @@ export default function Admissions() {
           <h1 className="text-3xl font-bold text-slate-900 mb-1">Admissions</h1>
           <p className="text-slate-500 text-sm">Manage new inquiries, applications, document verification, and final enrollment decisions.</p>
         </div>
-        <Button className="bg-black text-white hover:bg-black/80 px-6 rounded-full h-11">
+        <Button 
+          className="bg-black text-white hover:bg-black/80 px-6 rounded-full h-11"
+          onClick={() => setIsNewInquiryOpen(true)}
+        >
           <UserCheck className="w-4 h-4 mr-2" />
           New Inquiry
         </Button>
@@ -416,6 +455,18 @@ export default function Admissions() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <OnboardStudentDialog
+        application={selectedOnboardingApp}
+        applicant={applicants?.find(a => a.id === selectedOnboardingApp?.applicantId) || null}
+        open={isOnboardingOpen}
+        onOpenChange={setIsOnboardingOpen}
+      />
+
+      <NewApplicationDialog
+        isOpen={isNewInquiryOpen}
+        onClose={() => setIsNewInquiryOpen(false)}
+      />
     </div>
   );
 }

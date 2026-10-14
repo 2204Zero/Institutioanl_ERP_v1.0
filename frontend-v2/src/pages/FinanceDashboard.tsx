@@ -1,13 +1,15 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { 
   Search, 
   DollarSign, 
   ArrowUpRight, 
   ArrowDownRight, 
   Wallet, 
+  Loader2, 
   TrendingDown, 
   ShieldAlert, 
-  ExternalLink 
+  ExternalLink,
+  RefreshCw
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Input } from '../components/ui/input';
@@ -19,10 +21,13 @@ import {
   type StudentFee 
 } from '../hooks/queries/useFinance';
 import { useAuthStore } from '../store/useAuthStore';
+import { useMyStudentId } from '../hooks/useMyStudentId';
+import { StudentFeesTab } from '../components/StudentFeesTab';
 import { Skeleton } from '../components/ui/skeleton';
 import { Button } from '../components/ui/button';
 import { CreateInvoiceDialog } from '../components/CreateInvoiceDialog';
 import { RecordPaymentDialog } from '../components/RecordPaymentDialog';
+import { FeeStructuresTab } from '../components/FeeStructuresTab';
 import {
   Table,
   TableBody,
@@ -35,36 +40,80 @@ import {
 export default function FinanceDashboard() {
   const { user } = useAuthStore();
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeTab, setActiveTab] = useState<'invoices' | 'structures'>('invoices');
 
   const isStaff = user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN' || user?.role === 'FINANCE';
 
-  const { data: summary, isLoading: isLoadingSummary, isError: isErrorSummary } = useFinanceSummary({
+  const { data: myStudentId, isLoading: isLoadingMyStudent } = useMyStudentId();
+
+  const { data: summary, isLoading: isLoadingSummary, refetch: refetchSummary } = useFinanceSummary({
     enabled: isStaff,
   });
-  const { data: fees, isLoading: isLoadingFees, isError: isErrorFees } = useAllStudentFees({
+  const { data: fees, isLoading: isLoadingFees, isError: isErrorFees, refetch: refetchFees } = useAllStudentFees({
     enabled: isStaff,
   });
 
+  const derivedMetrics = useMemo(() => {
+    if (!fees || fees.length === 0) return null;
+    const gross = fees.reduce((acc, f) => acc + parseAmount(f.grossAmount), 0);
+    const paid = fees.reduce((acc, f) => acc + parseAmount(f.paidAmount), 0);
+    const outstanding = fees.reduce((acc, f) => acc + parseAmount(f.outstandingAmount), 0);
+    return { gross, paid, outstanding };
+  }, [fees]);
+
   if (!isStaff) {
-    return (
-      <div className="p-4 md:p-8 space-y-6">
-        <div className="bg-white border border-slate-200 rounded-2xl p-8 max-w-xl mx-auto text-center space-y-4 shadow-sm">
-          <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-700">
-            <ShieldAlert className="w-6 h-6 text-slate-600" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-slate-900">Student & Parent Finance Portal</h1>
-            <p className="text-slate-500 text-sm mt-2">
-              Institutional summary and management tools are restricted to authorized finance administration.
-              Your personal fee records, invoice breakdowns, and payments are available in your student profile.
-            </p>
-          </div>
-          <div className="pt-2">
-            <Button asChild className="bg-slate-900 text-white hover:bg-slate-800">
-              <Link to="/dashboard">Return to Dashboard</Link>
-            </Button>
+    if (isLoadingMyStudent) {
+      return (
+        <div className="p-4 md:p-8 flex items-center justify-center min-h-[400px]">
+          <div className="flex flex-col items-center justify-center space-y-3">
+            <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+            <p className="text-xs text-slate-500 font-medium">Loading personal fee records...</p>
           </div>
         </div>
+      );
+    }
+
+    if (!myStudentId) {
+      return (
+        <div className="p-4 md:p-8 space-y-6">
+          <div className="bg-white border border-slate-200 rounded-2xl p-8 max-w-xl mx-auto text-center space-y-4 shadow-sm">
+            <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-700">
+              <ShieldAlert className="w-6 h-6 text-slate-600" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-slate-900">
+                {user?.role === 'PARENT' ? 'No Ward Profile Linked' : 'No Student Profile Linked'}
+              </h1>
+              <p className="text-slate-500 text-sm mt-2">
+                We could not find an enrolled student record linked to your user account. Please contact the admissions or administration office.
+              </p>
+            </div>
+            <div className="pt-2">
+              <Button asChild className="bg-slate-900 text-white hover:bg-slate-800">
+                <Link to="/dashboard">Return to Dashboard</Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="p-4 md:p-8 space-y-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-1">
+              {user?.role === 'PARENT' ? 'Ward Fee Statement' : 'My Invoices & Fee Account'}
+            </h1>
+            <p className="text-slate-500 text-sm">
+              {user?.role === 'PARENT'
+                ? 'Review assigned academic fees, payment history, and pending balances for your ward.'
+                : 'Review your tuition invoices, component breakdowns, and payment history.'}
+            </p>
+          </div>
+        </div>
+
+        <StudentFeesTab studentId={myStudentId} />
       </div>
     );
   }
@@ -84,7 +133,7 @@ export default function FinanceDashboard() {
   return (
     <div className="p-4 md:p-8 space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 mb-1">Finance & Accounts</h1>
           <p className="text-slate-500 text-sm">Manage institutional revenue, assign fee structures, and track student dues.</p>
@@ -94,19 +143,46 @@ export default function FinanceDashboard() {
         </div>
       </div>
 
-      {/* Metric Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      {/* Navigation Tabs */}
+      <div className="flex border-b border-slate-200 space-x-8">
+        <button
+          onClick={() => setActiveTab('invoices')}
+          className={`pb-3 text-sm font-semibold tracking-wide transition-all border-b-2 ${
+            activeTab === 'invoices' ? 'border-black text-black font-bold' : 'border-transparent text-slate-400 hover:text-slate-700'
+          }`}
+        >
+          1. Student Invoices & Receivables
+        </button>
+        <button
+          onClick={() => setActiveTab('structures')}
+          className={`pb-3 text-sm font-semibold tracking-wide transition-all border-b-2 ${
+            activeTab === 'structures' ? 'border-black text-black font-bold' : 'border-transparent text-slate-400 hover:text-slate-700'
+          }`}
+        >
+          2. Fee Structures & Heads
+        </button>
+      </div>
+
+      {activeTab === 'structures' ? (
+        <FeeStructuresTab />
+      ) : (
+        <>
+          {/* Metric Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div className="bg-black text-white p-6 rounded-3xl shadow-sm relative overflow-hidden">
           <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center mb-6">
             <DollarSign className="w-5 h-5 text-white" />
           </div>
           <div className="text-slate-400 text-sm mb-1">Total Collected</div>
-          {isLoadingSummary ? (
+          {isLoadingSummary && !derivedMetrics ? (
              <Skeleton className="h-10 w-32 bg-slate-700 mb-4" />
-          ) : isErrorSummary ? (
-             <div className="text-sm font-bold text-red-400 mb-4 h-10 flex items-center">Failed to load</div>
+          ) : (summary?.totalCollected !== undefined || derivedMetrics?.paid !== undefined) ? (
+             <div className="text-3xl font-bold mb-4">{formatCurrency(summary?.totalCollected ?? derivedMetrics?.paid)}</div>
           ) : (
-             <div className="text-3xl font-bold mb-4">{formatCurrency(summary?.totalCollected)}</div>
+             <div className="text-xs text-red-400 mb-4 h-10 flex items-center space-x-1.5">
+               <span>Failed to load</span>
+               <button onClick={() => { refetchSummary(); refetchFees(); }} className="underline text-white font-bold ml-1">Retry</button>
+             </div>
           )}
           <div className="flex items-center text-xs text-slate-300 font-medium">
             <ArrowUpRight className="w-3 h-3 mr-1" />
@@ -119,12 +195,15 @@ export default function FinanceDashboard() {
             <Wallet className="w-5 h-5 text-slate-600" />
           </div>
           <div className="text-slate-500 text-sm mb-1">Pending Dues</div>
-          {isLoadingSummary ? (
+          {isLoadingSummary && !derivedMetrics ? (
              <Skeleton className="h-10 w-32 mb-4" />
-          ) : isErrorSummary ? (
-             <div className="text-sm font-bold text-red-500 mb-4 h-10 flex items-center">Failed to load</div>
+          ) : (summary?.totalOutstanding !== undefined || derivedMetrics?.outstanding !== undefined) ? (
+             <div className="text-3xl font-bold text-slate-900 mb-4">{formatCurrency(summary?.totalOutstanding ?? derivedMetrics?.outstanding)}</div>
           ) : (
-             <div className="text-3xl font-bold text-slate-900 mb-4">{formatCurrency(summary?.totalOutstanding)}</div>
+             <div className="text-xs text-red-500 mb-4 h-10 flex items-center space-x-1.5">
+               <span>Failed to load</span>
+               <button onClick={() => { refetchSummary(); refetchFees(); }} className="underline text-slate-800 font-bold ml-1">Retry</button>
+             </div>
           )}
           <div className="flex items-center text-xs text-slate-500 font-medium">
             <ArrowDownRight className="w-3 h-3 mr-1" />
@@ -137,12 +216,15 @@ export default function FinanceDashboard() {
             <TrendingDown className="w-5 h-5 text-slate-600" />
           </div>
           <div className="text-slate-500 text-sm mb-1">Gross Assigned Fees</div>
-          {isLoadingSummary ? (
+          {isLoadingSummary && !derivedMetrics ? (
              <Skeleton className="h-10 w-32 mb-4" />
-          ) : isErrorSummary ? (
-             <div className="text-sm font-bold text-red-500 mb-4 h-10 flex items-center">Failed to load</div>
+          ) : (summary?.totalGrossAssigned !== undefined || derivedMetrics?.gross !== undefined) ? (
+             <div className="text-3xl font-bold text-slate-900 mb-4">{formatCurrency(summary?.totalGrossAssigned ?? derivedMetrics?.gross)}</div>
           ) : (
-             <div className="text-3xl font-bold text-slate-900 mb-4">{formatCurrency(summary?.totalGrossAssigned)}</div>
+             <div className="text-xs text-red-500 mb-4 h-10 flex items-center space-x-1.5">
+               <span>Failed to load</span>
+               <button onClick={() => { refetchSummary(); refetchFees(); }} className="underline text-slate-800 font-bold ml-1">Retry</button>
+             </div>
           )}
           <div className="flex items-center text-xs text-slate-500 font-medium">
             <ArrowUpRight className="w-3 h-3 mr-1" />
@@ -199,8 +281,18 @@ export default function FinanceDashboard() {
               ))
             ) : isErrorFees ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center text-rose-600 font-medium">
-                  Failed to load student fees. Please check service connectivity.
+                <TableCell colSpan={7} className="h-28 text-center text-rose-600 font-medium">
+                  <div className="flex flex-col items-center justify-center space-y-2">
+                    <p>Failed to load student fees. Please check service connectivity.</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => refetchFees()}
+                      className="text-xs h-7 border-rose-200 text-rose-700 hover:bg-rose-50 inline-flex items-center"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5 mr-1" /> Retry
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ) : filteredFees.length === 0 ? (
@@ -268,6 +360,8 @@ export default function FinanceDashboard() {
           </TableBody>
         </Table>
       </div>
+        </>
+      )}
     </div>
   );
 }

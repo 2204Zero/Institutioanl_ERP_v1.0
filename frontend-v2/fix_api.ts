@@ -26,11 +26,11 @@ walk('./src', (filepath) => {
         if (p3.startsWith('api/v1/')) {
             return match; // already modified
         }
-        return \\(\/api/v1/\\\;
+        return `${p1}(${p2}/api/v1/${p3}${p2}`;
     });
 
     if (content !== original) {
         fs.writeFileSync(filepath, content, 'utf8');
-        console.log(\Updated \\);
+        console.log(`Updated ${filepath}`);
     }
 });

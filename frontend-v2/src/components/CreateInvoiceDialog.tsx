@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
-import { Loader2, PlusCircle, ReceiptText } from 'lucide-react';
+import { Loader2, PlusCircle, ReceiptText, Search, UserCheck, AlertCircle } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { apiClient } from '../config/api';
 import {
   Dialog,
   DialogContent,
@@ -32,12 +34,28 @@ import { Button } from './ui/button';
 import { useFeeStructures, useAssignFeeStructure, formatCurrency, parseAmount } from '../hooks/queries/useFinance';
 
 const assignFeeSchema = z.object({
-  studentId: z.string().min(1, 'Valid Student ID is required'),
-  feeStructureId: z.string().min(1, 'Please select a Fee Structure'),
-  academicYearId: z.string().min(1, 'Valid Academic Year ID is required'),
+  studentId: z.string().min(1, 'Please select a student'),
+  feeStructureId: z.string().min(1, 'Please select an approved fee structure'),
+  academicYearId: z.string().min(1, 'Please select an academic year'),
 });
 
 type FormValues = z.infer<typeof assignFeeSchema>;
+
+export function formatAcademicYearLabel(ay: any): string {
+  if (!ay) return 'N/A';
+  const name = (ay.name || '').trim();
+  if (/^AY[- ]?\d{10,}$/i.test(name)) {
+    if (ay.startDate && ay.endDate) {
+      const s = new Date(ay.startDate).getFullYear();
+      const e = new Date(ay.endDate).getFullYear();
+      if (!isNaN(s) && !isNaN(e) && s >= 2000 && s <= 2100) {
+        return `AY ${s}-${e} (Record #${ay.id})`;
+      }
+    }
+    return `Unverified Legacy Record #${ay.id}`;
+  }
+  return name || `Academic Year #${ay.id}`;
+}
 
 interface CreateInvoiceDialogProps {
   initialStudentId?: number;
@@ -47,10 +65,34 @@ interface CreateInvoiceDialogProps {
 
 export function CreateInvoiceDialog({ initialStudentId, trigger, onSuccess }: CreateInvoiceDialogProps) {
   const [open, setOpen] = useState(false);
+  const [studentSearch, setStudentSearch] = useState('');
+  
   const { data: feeStructures = [], isLoading: isLoadingStructures } = useFeeStructures({ enabled: open });
   const assignFeeMutation = useAssignFeeStructure();
 
-  const form = useForm<FormValues, any, FormValues>({
+  // Fetch Academic Years from real persisted records
+  const { data: academicYears = [], isLoading: isLoadingAY } = useQuery({
+    queryKey: ['academic-years'],
+    queryFn: async () => {
+      const res = await apiClient.get('/api/v1/academic-years');
+      return res.data || [];
+    },
+    enabled: open,
+  });
+
+  // Fetch Students for searchable selector
+  const { data: studentsResponse, isLoading: isLoadingStudents } = useQuery({
+    queryKey: ['students-selector'],
+    queryFn: async () => {
+      const res = await apiClient.get('/api/v1/students?size=200');
+      return res.data?.data?.content || res.data?.content || [];
+    },
+    enabled: open,
+  });
+
+  const students: any[] = studentsResponse || [];
+
+  const form = useForm<FormValues>({
     resolver: zodResolver(assignFeeSchema),
     defaultValues: {
       studentId: initialStudentId ? String(initialStudentId) : '',
@@ -66,11 +108,16 @@ export function CreateInvoiceDialog({ initialStudentId, trigger, onSuccess }: Cr
         feeStructureId: '',
         academicYearId: '',
       });
+      setStudentSearch('');
     }
   }, [open, initialStudentId, form]);
 
+  const selectedStudentId = form.watch('studentId');
   const selectedFeeStructureId = form.watch('feeStructureId');
   const selectedStructure = feeStructures.find(s => String(s.id) === String(selectedFeeStructureId));
+  const selectedStudent = students.find(st => String(st.id) === String(selectedStudentId));
+
+  const approvedStructures = feeStructures.filter(s => s.active);
 
   const totalGrossPreview = selectedStructure?.components?.reduce(
     (acc, curr) => acc + parseAmount(curr.amount),
@@ -84,6 +131,34 @@ export function CreateInvoiceDialog({ initialStudentId, trigger, onSuccess }: Cr
       form.setValue('academicYearId', String(match.academicYearId), { shouldValidate: true });
     }
   };
+
+  const isNumericSearch = /^\d+$/.test(studentSearch.trim());
+  const numericId = isNumericSearch ? parseInt(studentSearch.trim(), 10) : null;
+
+  const filteredStudents = useMemo(() => {
+    if (!studentSearch.trim()) return students.slice(0, 10);
+    const q = studentSearch.trim().toLowerCase();
+
+    return [...students]
+      .filter(st => {
+        if (numericId !== null && st.id === numericId) return true;
+        const fullName = `${st.firstName || ''} ${st.lastName || ''}`.toLowerCase();
+        const roll = (st.rollNumber || '').toLowerCase();
+        const enr = (st.enrollmentNumber || '').toLowerCase();
+        return fullName.includes(q) || roll.includes(q) || enr.includes(q);
+      })
+      .sort((a, b) => {
+        if (numericId !== null) {
+          if (a.id === numericId) return -1;
+          if (b.id === numericId) return 1;
+        }
+        if (a.enrollmentNumber?.toLowerCase() === q) return -1;
+        if (b.enrollmentNumber?.toLowerCase() === q) return 1;
+        if (a.rollNumber?.toLowerCase() === q) return -1;
+        if (b.rollNumber?.toLowerCase() === q) return 1;
+        return 0;
+      });
+  }, [students, studentSearch, numericId]);
 
   const onSubmit = async (data: FormValues) => {
     try {
@@ -119,59 +194,180 @@ export function CreateInvoiceDialog({ initialStudentId, trigger, onSuccess }: Cr
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[480px]">
+      <DialogContent className="sm:max-w-[540px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center text-lg font-bold text-slate-900">
             <ReceiptText className="w-5 h-5 mr-2 text-slate-700" />
-            Assign Fee Structure
+            Assign Fee Structure & Generate Invoice
           </DialogTitle>
           <DialogDescription className="text-xs text-slate-500">
-            Assign an approved institutional fee structure to generate a student fee record and invoice.
+            Assign an approved institutional fee structure to a student with clear selector lookups.
           </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-2">
-            <FormField<FormValues>
+            {/* Student Searchable Selector */}
+            <FormField
               control={form.control}
               name="studentId"
-              render={({ field }) => (
+              render={() => (
                 <FormItem>
-                  <FormLabel className="text-xs font-semibold text-slate-700">Student ID</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      placeholder="e.g. 101"
-                      disabled={!!initialStudentId}
-                      className="text-sm bg-slate-50 border-slate-200"
-                      {...field}
-                    />
-                  </FormControl>
+                  <FormLabel className="text-xs font-semibold text-slate-700">Target Student*</FormLabel>
+                  {selectedStudent ? (
+                    <div className="flex items-center justify-between p-3 bg-blue-50/60 rounded-lg border border-blue-200">
+                      <div className="flex items-center space-x-2.5">
+                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs shrink-0">
+                          <UserCheck className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="text-xs font-bold text-slate-900">{selectedStudent.firstName} {selectedStudent.lastName}</p>
+                            <span className="text-[10px] font-mono bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded font-semibold">
+                              #{selectedStudent.id}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-600 font-mono mt-0.5">
+                            {selectedStudent.enrollmentNumber ? `ENR: ${selectedStudent.enrollmentNumber}` : ''}
+                            {selectedStudent.enrollmentNumber && selectedStudent.rollNumber ? ' • ' : ''}
+                            {selectedStudent.rollNumber ? `Roll: ${selectedStudent.rollNumber}` : ''}
+                            {selectedStudent.department ? ` • ${selectedStudent.department}` : ''}
+                          </p>
+                        </div>
+                      </div>
+                      {!initialStudentId && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="text-xs text-slate-500 hover:text-slate-800 h-7 px-2"
+                          onClick={() => {
+                            form.setValue('studentId', '', { shouldValidate: true });
+                            setStudentSearch('');
+                          }}
+                        >
+                          Change Student
+                        </Button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="relative">
+                        <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-slate-400" />
+                        <Input
+                          placeholder="Search by student name, roll number, ENR, or ID..."
+                          className="pl-8 text-xs h-8 bg-white border-slate-200"
+                          value={studentSearch}
+                          onChange={(e) => setStudentSearch(e.target.value)}
+                          autoFocus
+                        />
+                        {studentSearch && (
+                          <button
+                            type="button"
+                            onClick={() => setStudentSearch('')}
+                            className="absolute right-2 top-2 text-slate-400 hover:text-slate-600 text-xs px-1"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="border border-slate-200 rounded-lg max-h-48 overflow-y-auto divide-y divide-slate-100 bg-white">
+                        {isLoadingStudents ? (
+                          <div className="p-4 text-center text-xs text-slate-400 flex items-center justify-center space-x-2">
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            <span>Loading student directory...</span>
+                          </div>
+                        ) : filteredStudents.length === 0 ? (
+                          <div className="p-4 text-center text-xs text-slate-500 space-y-1">
+                            <p className="font-semibold text-slate-700">No matching students found</p>
+                            <p className="text-[11px] text-slate-400">
+                              Try searching by student full name, roll number (e.g. ROLL-WS-001), canonical ENR, or internal ID.
+                            </p>
+                          </div>
+                        ) : (
+                          filteredStudents.map((st: any) => {
+                            const isExactMatch = (numericId !== null && st.id === numericId) ||
+                              st.enrollmentNumber?.toLowerCase() === studentSearch.trim().toLowerCase() ||
+                              st.rollNumber?.toLowerCase() === studentSearch.trim().toLowerCase();
+
+                            return (
+                              <div
+                                key={st.id}
+                                onClick={() => {
+                                  form.setValue('studentId', String(st.id), { shouldValidate: true });
+                                  setStudentSearch('');
+                                }}
+                                className={`p-2.5 flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors ${
+                                  isExactMatch ? 'bg-blue-50/50 border-l-2 border-blue-600' : ''
+                                }`}
+                              >
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-bold text-xs text-slate-900">{st.firstName} {st.lastName}</span>
+                                    <span className="text-[10px] font-mono text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                                      #{st.id}
+                                    </span>
+                                    {isExactMatch && (
+                                      <span className="text-[10px] font-semibold text-blue-700 bg-blue-100 px-1 rounded">
+                                        Exact Match
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-[11px] text-slate-500 font-mono mt-0.5">
+                                    {st.enrollmentNumber ? `[${st.enrollmentNumber}]` : ''} 
+                                    {st.rollNumber ? ` Roll: ${st.rollNumber}` : ''}
+                                    {st.department ? ` • ${st.department}` : ''}
+                                  </p>
+                                </div>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant={isExactMatch ? 'default' : 'outline'}
+                                  className="text-xs h-7 px-2.5"
+                                >
+                                  Select
+                                </Button>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                    </div>
+                  )}
                   <FormMessage className="text-xs text-red-600" />
                 </FormItem>
               )}
             />
 
-            <FormField<FormValues>
+            {/* Fee Structure Selector */}
+            <FormField
               control={form.control}
               name="feeStructureId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs font-semibold text-slate-700">Fee Structure</FormLabel>
-                  <Select
-                    disabled={isLoadingStructures}
-                    value={field.value}
-                    onValueChange={handleStructureChange}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="text-sm bg-slate-50 border-slate-200">
-                        <SelectValue placeholder={isLoadingStructures ? 'Loading structures...' : 'Select a fee structure'} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {feeStructures
-                        .filter(s => s.active)
-                        .map(structure => (
+                  <FormLabel className="text-xs font-semibold text-slate-700">Fee Structure*</FormLabel>
+                  {approvedStructures.length === 0 && !isLoadingStructures ? (
+                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start space-x-2">
+                      <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                      <div className="text-[11px] text-amber-800">
+                        <p className="font-semibold">No approved fee structures found.</p>
+                        <p className="mt-0.5">Please navigate to Finance &gt; Fee Structures to create and approve an active fee structure.</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <Select
+                      disabled={isLoadingStructures}
+                      value={field.value}
+                      onValueChange={handleStructureChange}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="text-xs bg-slate-50 border-slate-200">
+                          <SelectValue placeholder={isLoadingStructures ? 'Loading structures...' : 'Select an approved fee structure'} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent className="max-h-52">
+                        {approvedStructures.map(structure => (
                           <SelectItem key={structure.id} value={String(structure.id)}>
                             <div className="flex items-center justify-between gap-4">
                               <span className="font-medium text-slate-900">{structure.name}</span>
@@ -179,17 +375,19 @@ export function CreateInvoiceDialog({ initialStudentId, trigger, onSuccess }: Cr
                             </div>
                           </SelectItem>
                         ))}
-                    </SelectContent>
-                  </Select>
+                      </SelectContent>
+                    </Select>
+                  )}
                   <FormMessage className="text-xs text-red-600" />
                 </FormItem>
               )}
             />
 
+            {/* Component preview */}
             {selectedStructure && (
               <div className="rounded-lg border border-slate-200 bg-slate-50/80 p-3.5 space-y-2 text-xs">
                 <div className="flex justify-between items-center pb-1 border-b border-slate-200 font-semibold text-slate-700">
-                  <span>Structure Components</span>
+                  <span>Fee Components</span>
                   <span className="text-slate-900">{formatCurrency(totalGrossPreview)}</span>
                 </div>
                 {selectedStructure.components && selectedStructure.components.length > 0 ? (
@@ -207,22 +405,34 @@ export function CreateInvoiceDialog({ initialStudentId, trigger, onSuccess }: Cr
               </div>
             )}
 
-            <FormField<FormValues>
+            {/* Academic Year Dropdown */}
+            <FormField
               control={form.control}
               name="academicYearId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs font-semibold text-slate-700">Academic Year ID</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      placeholder="e.g. 1"
-                      className="text-sm bg-slate-50 border-slate-200"
-                      {...field}
-                    />
-                  </FormControl>
+                  <FormLabel className="text-xs font-semibold text-slate-700">Billing Academic Year*</FormLabel>
+                  <Select
+                    disabled={isLoadingAY}
+                    value={field.value || undefined}
+                    onValueChange={field.onChange}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="text-xs bg-slate-50 border-slate-200">
+                        <SelectValue placeholder={isLoadingAY ? 'Loading academic years...' : 'Select Academic Year'} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {academicYears.map((ay: any) => (
+                        <SelectItem key={ay.id} value={String(ay.id)}>
+                          <span className="font-semibold text-slate-900">{formatAcademicYearLabel(ay)}</span>
+                          {ay.isActive && <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded ml-2">Active</span>}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <p className="text-[11px] text-slate-500">
-                    Matches academic session for billing cycle.
+                    Prepopulated automatically from fee structure if defined, or selectable from institutional calendar.
                   </p>
                   <FormMessage className="text-xs text-red-600" />
                 </FormItem>
@@ -243,7 +453,7 @@ export function CreateInvoiceDialog({ initialStudentId, trigger, onSuccess }: Cr
                 type="submit"
                 size="sm"
                 className="bg-slate-900 hover:bg-slate-800 text-white font-semibold"
-                disabled={assignFeeMutation.isPending}
+                disabled={assignFeeMutation.isPending || approvedStructures.length === 0}
               >
                 {assignFeeMutation.isPending && (
                   <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />

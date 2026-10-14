@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 @Schema(description = "Request payload for updating student enrollment status")
+@com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
 public class StudentStatusUpdateDto {
 
     @Schema(description = "New student status", example = "SUSPENDED")
@@ -14,6 +15,7 @@ public class StudentStatusUpdateDto {
 
     @Schema(description = "Reason or remarks for the status change", example = "Disciplinary suspension pending review")
     @Size(max = 500, message = "Reason cannot exceed 500 characters")
+    @com.fasterxml.jackson.annotation.JsonAlias({"remarks", "comment"})
     private String reason;
 
     @Schema(description = "User or administrator making the change", example = "admin_user")
