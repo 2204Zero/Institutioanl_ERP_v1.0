@@ -5,10 +5,21 @@ services:
     build: ./backend
     container_name: edupulse_backend
     ports:
-      - "8080:8080"
+      - "8081:8081"
     environment:
       - JWT_SECRET=${JWT_SECRET}
       - JAVA_TOOL_OPTIONS=-Xms256m -Xmx512m
     volumes:
       - /mnt/edupulse-data:/var/lib/edupulse/data
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: edupulse_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
     restart: unless-stopped
