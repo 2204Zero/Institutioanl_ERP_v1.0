@@ -30,11 +30,13 @@ import com.erp.department.repository.DepartmentRepository;
 import com.erp.devjson.config.DevJsonProperties;
 import com.erp.devjson.core.JsonFileStorageEngine;
 import com.erp.devjson.model.AcademicJsonModels.*;
+import com.erp.devjson.model.AdmissionJsonModels.*;
 import com.erp.devjson.model.FacultyJsonModels.FacultyRecord;
 import com.erp.devjson.model.GuardianJsonModels.GuardianRecord;
 import com.erp.devjson.model.StudentJsonModels.*;
 import com.erp.devjson.model.TimetableJsonModels.TimetableSlotRecord;
 import com.erp.devjson.model.UserJsonModels.*;
+import com.erp.admission.application.entity.ApplicationStatus;
 import com.erp.faculty.entity.Faculty;
 import com.erp.faculty.repository.FacultyRepository;
 import com.erp.guardian.entity.Guardian;
@@ -91,6 +93,18 @@ public class DevJsonDataHydrator {
     private final com.erp.attendance.repository.StudentAttendanceRecordRepository attendanceRecordRepository;
     @Autowired(required = false)
     private CourseRegistrationRepository courseRegistrationRepository;
+    @Autowired(required = false)
+    private com.erp.institution.repository.InstitutionRepository institutionRepository;
+    @Autowired(required = false)
+    private com.erp.campus.repository.CampusRepository campusRepository;
+    @Autowired(required = false)
+    private com.erp.admission.applicant.repository.ApplicantRepository applicantRepository;
+    @Autowired(required = false)
+    private com.erp.admission.application.repository.AdmissionApplicationRepository admissionApplicationRepository;
+    @Autowired(required = false)
+    private com.erp.admission.document.repository.ApplicantDocumentRepository applicantDocumentRepository;
+    @Autowired(required = false)
+    private com.erp.student.repository.StudentDocumentRepository studentDocumentRepository;
 
     @Autowired
     public DevJsonDataHydrator(
@@ -147,8 +161,23 @@ public class DevJsonDataHydrator {
     @EventListener(ApplicationReadyEvent.class)
     public void hydrateOnStartup() {
         if (!Files.exists(storageDir)) {
-            log.info("DevJson storage directory {} does not exist yet. Skipping hydration.", storageDir);
-            return;
+            try {
+                Files.createDirectories(storageDir);
+                log.info("Created missing dev-json storage directory at {}", storageDir);
+            } catch (Exception e) {
+                log.error("CRITICAL: Configured dev-json storage directory {} does not exist and cannot be created: {}", storageDir, e.getMessage());
+                throw new IllegalStateException("Configured dev-json storage directory cannot be initialized: " + storageDir, e);
+            }
+        }
+
+        if (!Files.isDirectory(storageDir)) {
+            log.error("CRITICAL: Configured dev-json storage path {} is not a directory.", storageDir);
+            throw new IllegalStateException("Configured dev-json storage path is not a directory: " + storageDir);
+        }
+
+        if (!Files.isWritable(storageDir)) {
+            log.error("CRITICAL: Configured dev-json storage directory {} is not writable.", storageDir);
+            throw new IllegalStateException("Configured dev-json storage directory is not writable: " + storageDir);
         }
 
         try {
@@ -825,6 +854,174 @@ public class DevJsonDataHydrator {
                             receipt.setStudentId(pay.getStudentId());
                             receipt.setStatus(pay.getStatus());
                             receiptRepository.save(receipt);
+                        }
+                    }
+                }
+            }
+
+            // Hydrate Rooms
+            Path roomFile = storageDir.resolve("rooms.json");
+            if (Files.exists(roomFile) && roomRepository != null) {
+                List<RoomRecord> roomRecords = storageEngine.readList(roomFile, RoomRecord.class);
+                for (RoomRecord rr : roomRecords) {
+                    boolean exists = roomRepository.findAll().stream().anyMatch(r -> r.getName() != null && r.getName().equalsIgnoreCase(rr.getName()));
+                    if (!exists) {
+                        com.erp.academic.room.entity.Room room = new com.erp.academic.room.entity.Room();
+                        room.setName(rr.getName());
+                        room.setCapacity(rr.getCapacity() != null ? rr.getCapacity() : 30);
+                        room.setIsActive(rr.getIsActive() != null ? rr.getIsActive() : true);
+                        roomRepository.save(room);
+                    }
+                }
+            }
+
+            // Hydrate Institutions
+            Path instFile = storageDir.resolve("institutions.json");
+            if (Files.exists(instFile) && institutionRepository != null) {
+                List<InstitutionRecord> instRecords = storageEngine.readList(instFile, InstitutionRecord.class);
+                for (InstitutionRecord ir : instRecords) {
+                    boolean exists = institutionRepository.findAll().stream().anyMatch(i -> i.getCode() != null && i.getCode().equalsIgnoreCase(ir.getCode()));
+                    if (!exists) {
+                        com.erp.institution.entity.Institution inst = new com.erp.institution.entity.Institution();
+                        inst.setName(ir.getName());
+                        inst.setCode(ir.getCode());
+                        if (ir.getCreatedAt() != null) inst.setCreatedAt(ir.getCreatedAt());
+                        if (ir.getUpdatedAt() != null) inst.setUpdatedAt(ir.getUpdatedAt());
+                        institutionRepository.save(inst);
+                    }
+                }
+            }
+
+            // Hydrate Campuses
+            Path cmpFile = storageDir.resolve("campuses.json");
+            if (Files.exists(cmpFile) && campusRepository != null) {
+                List<CampusRecord> cmpRecords = storageEngine.readList(cmpFile, CampusRecord.class);
+                for (CampusRecord cr : cmpRecords) {
+                    boolean exists = campusRepository.findAll().stream().anyMatch(c -> c.getName() != null && c.getName().equalsIgnoreCase(cr.getName()));
+                    if (!exists) {
+                        com.erp.campus.entity.Campus cmp = new com.erp.campus.entity.Campus();
+                        cmp.setName(cr.getName());
+                        cmp.setAddress(cr.getAddress());
+                        cmp.setInstitutionId(cr.getInstitutionId());
+                        if (cr.getCreatedAt() != null) cmp.setCreatedAt(cr.getCreatedAt());
+                        if (cr.getUpdatedAt() != null) cmp.setUpdatedAt(cr.getUpdatedAt());
+                        campusRepository.save(cmp);
+                    }
+                }
+            }
+
+            // Hydrate Applicants
+            Path appFile = storageDir.resolve("applicants.json");
+            if (Files.exists(appFile) && applicantRepository != null) {
+                List<ApplicantRecord> appRecords = storageEngine.readList(appFile, ApplicantRecord.class);
+                for (ApplicantRecord ar : appRecords) {
+                    boolean exists = applicantRepository.findAll().stream().anyMatch(a -> a.getEmail() != null && a.getEmail().equalsIgnoreCase(ar.getEmail()));
+                    if (!exists) {
+                        com.erp.admission.applicant.entity.Applicant applicant = new com.erp.admission.applicant.entity.Applicant();
+                        applicant.setFirstName(ar.getFirstName());
+                        applicant.setLastName(ar.getLastName());
+                        applicant.setEmail(ar.getEmail());
+                        applicant.setPhone(ar.getPhone());
+                        applicant.setDateOfBirth(ar.getDateOfBirth());
+                        applicant.setGender(ar.getGender());
+                        applicant.setAddress(ar.getAddress());
+                        if (ar.getCreatedAt() != null) applicant.setCreatedAt(ar.getCreatedAt());
+                        applicantRepository.save(applicant);
+                    }
+                }
+            }
+
+            // Hydrate Admission Applications
+            Path applnFile = storageDir.resolve("admission_applications.json");
+            if (Files.exists(applnFile) && admissionApplicationRepository != null && applicantRepository != null) {
+                List<AdmissionApplicationRecord> applnRecords = storageEngine.readList(applnFile, AdmissionApplicationRecord.class);
+                for (AdmissionApplicationRecord aar : applnRecords) {
+                    boolean exists = admissionApplicationRepository.findAll().stream().anyMatch(aa -> aa.getApplicationNumber() != null && aa.getApplicationNumber().equalsIgnoreCase(aar.getApplicationNumber()));
+                    if (!exists) {
+                        com.erp.admission.applicant.entity.Applicant applicant = aar.getApplicantId() != null ? applicantRepository.findById(aar.getApplicantId()).orElse(null) : null;
+                        Program program = aar.getProgramId() != null ? programRepository.findById(aar.getProgramId()).orElse(null) : null;
+                        AcademicYear academicYear = aar.getAcademicYearId() != null ? academicYearRepository.findById(aar.getAcademicYearId()).orElse(null) : null;
+
+                        com.erp.admission.application.entity.AdmissionApplication appln = new com.erp.admission.application.entity.AdmissionApplication();
+                        appln.setApplicationNumber(aar.getApplicationNumber());
+                        appln.setApplicant(applicant);
+                        appln.setProgram(program);
+                        appln.setAcademicYear(academicYear);
+                        if (aar.getStatus() != null) {
+                            try {
+                                appln.setStatus(ApplicationStatus.valueOf(aar.getStatus()));
+                            } catch (Exception ignored) {
+                                appln.setStatus(ApplicationStatus.SUBMITTED);
+                            }
+                        }
+                        appln.setMeritScore(aar.getMeritScore());
+                        appln.setReviewerRemarks(aar.getReviewerRemarks());
+                        if (aar.getSubmittedAt() != null) appln.setSubmittedAt(aar.getSubmittedAt());
+                        if (aar.getCreatedAt() != null) appln.setCreatedAt(aar.getCreatedAt());
+                        admissionApplicationRepository.save(appln);
+                    }
+                }
+            }
+
+            // Hydrate Applicant Documents
+            Path appDocFile = storageDir.resolve("applicant_documents.json");
+            if (Files.exists(appDocFile) && applicantDocumentRepository != null && applicantRepository != null) {
+                List<ApplicantDocumentRecord> appDocRecords = storageEngine.readList(appDocFile, ApplicantDocumentRecord.class);
+                for (ApplicantDocumentRecord adr : appDocRecords) {
+                    if (adr.getApplicantId() != null) {
+                        com.erp.admission.applicant.entity.Applicant applicant = applicantRepository.findById(adr.getApplicantId()).orElse(null);
+                        if (applicant != null) {
+                            boolean exists = applicantDocumentRepository.findByApplicantId(applicant.getId()).stream()
+                                    .anyMatch(d -> d.getDocumentType() != null && d.getDocumentType().equalsIgnoreCase(adr.getDocumentType()));
+                            if (!exists) {
+                                com.erp.admission.document.entity.ApplicantDocument ad = com.erp.admission.document.entity.ApplicantDocument.builder()
+                                        .applicant(applicant)
+                                        .documentType(adr.getDocumentType())
+                                        .fileUrl(adr.getFileUrl())
+                                        .verificationStatus(adr.getVerificationStatus() != null ? adr.getVerificationStatus() : "PENDING")
+                                        .remarks(adr.getRemarks())
+                                        .uploadedAt(adr.getUploadedAt() != null ? adr.getUploadedAt() : java.time.Instant.now())
+                                        .verifiedAt(adr.getVerifiedAt())
+                                        .build();
+                                applicantDocumentRepository.save(ad);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Hydrate Student Documents
+            Path stuDocFile = storageDir.resolve("student_documents.json");
+            if (Files.exists(stuDocFile) && studentDocumentRepository != null && studentRepository != null) {
+                List<StudentDocumentRecord> stuDocRecords = storageEngine.readList(stuDocFile, StudentDocumentRecord.class);
+                for (StudentDocumentRecord sdr : stuDocRecords) {
+                    if (sdr.getStudentId() != null) {
+                        Student student = studentRepository.findById(sdr.getStudentId()).orElse(null);
+                        if (student != null) {
+                            com.erp.student.entity.DocumentType dt;
+                            try {
+                                dt = sdr.getDocumentType() != null ? com.erp.student.entity.DocumentType.valueOf(sdr.getDocumentType()) : com.erp.student.entity.DocumentType.MARKSHEET;
+                            } catch (Exception ex) {
+                                dt = com.erp.student.entity.DocumentType.MARKSHEET;
+                            }
+                            final com.erp.student.entity.DocumentType finalDt = dt;
+                            boolean exists = studentDocumentRepository.findByStudentId(student.getId()).stream()
+                                    .anyMatch(d -> d.getDocumentType() == finalDt && d.getFileName() != null && d.getFileName().equalsIgnoreCase(sdr.getFileName()));
+                            if (!exists) {
+                                com.erp.student.entity.StudentDocument sd = new com.erp.student.entity.StudentDocument(
+                                        student,
+                                        dt,
+                                        sdr.getFileName(),
+                                        sdr.getOriginalFileName() != null ? sdr.getOriginalFileName() : sdr.getFileName(),
+                                        sdr.getFileType() != null ? sdr.getFileType() : "application/octet-stream",
+                                        sdr.getFileSize() != null ? sdr.getFileSize() : 0L,
+                                        sdr.getStoragePath()
+                                );
+                                if (sdr.getUploadedAt() != null) {
+                                    sd.setUploadedAt(sdr.getUploadedAt());
+                                }
+                                studentDocumentRepository.save(sd);
+                            }
                         }
                     }
                 }

@@ -42,4 +42,22 @@ public class AdmissionJsonModels {
         private Instant submittedAt;
         private Instant createdAt;
     }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
+    public static class ApplicantDocumentRecord {
+        private Long id;
+        private Long applicantId;
+        private String documentType;
+        private String fileUrl;
+        @Builder.Default
+        private String verificationStatus = "PENDING";
+        private String remarks;
+        @Builder.Default
+        private Instant uploadedAt = Instant.now();
+        private Instant verifiedAt;
+    }
 }

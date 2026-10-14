@@ -177,4 +177,35 @@ public final class AcademicJsonModels {
         @Builder.Default
         private Boolean isActive = true;
     }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
+    public static class InstitutionRecord {
+        private Long id;
+        private String name;
+        private String code;
+        @Builder.Default
+        private Instant createdAt = Instant.now();
+        @Builder.Default
+        private Instant updatedAt = Instant.now();
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
+    public static class CampusRecord {
+        private Long id;
+        private String name;
+        private String address;
+        private Long institutionId;
+        @Builder.Default
+        private Instant createdAt = Instant.now();
+        @Builder.Default
+        private Instant updatedAt = Instant.now();
+    }
 }

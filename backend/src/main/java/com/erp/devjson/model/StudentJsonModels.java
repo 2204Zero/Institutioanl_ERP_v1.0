@@ -58,4 +58,21 @@ public final class StudentJsonModels {
         private LocalDate effectiveDate;
         private LocalDateTime changedAt;
     }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class StudentDocumentRecord {
+        private Long id;
+        private Long studentId;
+        private String documentType;
+        private String fileName;
+        private String originalFileName;
+        private String fileType;
+        private Long fileSize;
+        private String storagePath;
+        private LocalDateTime uploadedAt;
+    }
 }

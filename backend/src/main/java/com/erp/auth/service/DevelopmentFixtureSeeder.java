@@ -24,6 +24,9 @@ public class DevelopmentFixtureSeeder {
     private final com.erp.student.repository.StudentRepository studentRepository;
     private final com.erp.guardian.repository.GuardianRepository guardianRepository;
 
+    @org.springframework.beans.factory.annotation.Value("${erp.devjson.seed-fixtures:true}")
+    private boolean seedFixturesEnabled;
+
     public DevelopmentFixtureSeeder(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this(userRepository, passwordEncoder, null, null);
     }
@@ -42,6 +45,10 @@ public class DevelopmentFixtureSeeder {
     @EventListener(ApplicationReadyEvent.class)
     @Transactional
     public void seedTestUsers() {
+        if (!seedFixturesEnabled) {
+            log.info("Development user fixture seeding is disabled (erp.devjson.seed-fixtures=false).");
+            return;
+        }
         seedUser("admin", "Admin@123", "admin@erp.com", Role.ADMIN);
         seedUser("faculty", "Faculty@123", "faculty@erp.com", Role.FACULTY);
         seedUser("student", "Student@123", "student@erp.com", Role.STUDENT);

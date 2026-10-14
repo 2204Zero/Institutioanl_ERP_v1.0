@@ -1,0 +1,66 @@
+# ==============================================================================
+# EduPulse AWS EC2 JSON-Only Deployment Compose
+# ==============================================================================
+# Target Environment: Single Ubuntu Server EC2 instance running Docker Engine.
+# Architecture: Backend running in JSON-only persistence mode ('dev-json').
+# Persistence: EBS-backed host directory mounted at /var/lib/edupulse/data.
+# External DBs: ZERO (PostgreSQL, Redis, RabbitMQ, and MinIO are NOT used).
+# ==============================================================================
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: edupulse-backend:latest
+    container_name: edupulse_backend
+    restart: unless-stopped
+    ports:
+      # Map container port 8081 to host (recommended: bind to 127.0.0.1 if using reverse proxy like Nginx)
+      - "${HOST_BIND_IP:-0.0.0.0}:${BACKEND_PORT:-8081}:8081"
+    environment:
+      # Explicit activation of JSON-only persistence runtime profile
+      SPRING_PROFILES_ACTIVE: "dev-json"
+
+      # Persistent storage root mounted from host EBS volume
+      ERP_DEVJSON_STORAGE_DIR: "/var/lib/edupulse/data"
+
+      # Uploaded student/applicant documents and photos stored under persistent root
+      APP_STORAGE_DOCUMENT_DIR: "/var/lib/edupulse/data/uploads"
+
+      # Prevent auto-injecting dev fixtures on an empty mounted volume
+      ERP_DEVJSON_SEED_FIXTURES: "${ERP_DEVJSON_SEED_FIXTURES:-false}"
+
+      # Mandatory production security secret (fail-fast if not provided in environment)
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET environment variable is required}
+
+      # Optional initial Super Admin bootstrapping (executed only once if no superadmin exists)
+      BOOTSTRAP_SUPERADMIN_ENABLED: "${BOOTSTRAP_SUPERADMIN_ENABLED:-false}"
+      BOOTSTRAP_SUPERADMIN_USERNAME: "${BOOTSTRAP_SUPERADMIN_USERNAME:-superadmin}"
+      BOOTSTRAP_SUPERADMIN_EMAIL: "${BOOTSTRAP_SUPERADMIN_EMAIL:-superadmin@erp.com}"
+      BOOTSTRAP_SUPERADMIN_PASSWORD: "${BOOTSTRAP_SUPERADMIN_PASSWORD:-}"
+
+      # Graceful shutdown coordination
+      SERVER_SHUTDOWN: "graceful"
+    volumes:
+      # EBS volume mounted on EC2 host at /mnt/edupulse-data mapped to container data directory
+      - type: bind
+        source: ${EDUPULSE_DATA_HOST_PATH:-/mnt/edupulse-data}
+        target: /var/lib/edupulse/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 45s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
+    deploy:
+      resources:
+        limits:
+          memory: 2048M
+        reservations:
+          memory: 1024M

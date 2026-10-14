@@ -126,6 +126,21 @@ public class StudentDocumentServiceImpl implements StudentDocumentService {
 
         try {
             Path filePath = Paths.get(document.getStoragePath()).normalize();
+            if (!Files.exists(filePath)) {
+                if (document.getFileName() != null && Files.exists(this.storageLocation.resolve(document.getFileName()))) {
+                    filePath = this.storageLocation.resolve(document.getFileName()).normalize();
+                } else if (document.getStoragePath() != null) {
+                    String cleanPath = document.getStoragePath();
+                    int lastSlash = Math.max(cleanPath.lastIndexOf('/'), cleanPath.lastIndexOf('\\'));
+                    if (lastSlash >= 0) {
+                        String baseName = cleanPath.substring(lastSlash + 1);
+                        Path candidate = this.storageLocation.resolve(baseName).normalize();
+                        if (Files.exists(candidate)) {
+                            filePath = candidate;
+                        }
+                    }
+                }
+            }
             Resource resource = new UrlResource(filePath.toUri());
 
             if (resource.exists() && resource.isReadable()) {
@@ -153,6 +168,9 @@ public class StudentDocumentServiceImpl implements StudentDocumentService {
 
         try {
             Path filePath = Paths.get(document.getStoragePath());
+            if (!Files.exists(filePath) && document.getFileName() != null) {
+                filePath = this.storageLocation.resolve(document.getFileName());
+            }
             Files.deleteIfExists(filePath);
         } catch (IOException ignored) {
             // Logged if needed, proceed with DB record deletion

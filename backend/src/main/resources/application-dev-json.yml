@@ -1,4 +1,9 @@
+server:
+  shutdown: graceful
+
 spring:
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
   datasource:
     url: jdbc:h2:mem:erp_json_dev;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;NON_KEYWORDS=VALUE
     driver-class-name: org.h2.Driver
@@ -6,7 +11,7 @@ spring:
     password: 
   h2:
     console:
-      enabled: true
+      enabled: false
       path: /h2-console
       settings:
         web-allow-others: false
@@ -22,23 +27,29 @@ spring:
 logging:
   level:
     com.erp: INFO
-    com.erp.devjson: DEBUG
+    com.erp.devjson: INFO
     org.springframework.web: INFO
 
 flyway:
   enabled: false
 
 jwt:
-  secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+  secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
 
 bootstrap:
   superadmin:
-    enabled: true
-    username: superadmin
-    email: superadmin@erp.com
-    password: Admin@123
+    enabled: ${BOOTSTRAP_SUPERADMIN_ENABLED:true}
+    username: ${BOOTSTRAP_SUPERADMIN_USERNAME:superadmin}
+    email: ${BOOTSTRAP_SUPERADMIN_EMAIL:superadmin@erp.com}
+    password: ${BOOTSTRAP_SUPERADMIN_PASSWORD:Admin@123}
 
 erp:
   devjson:
     enabled: true
-    storage-dir: data/dev-json
+    storage-dir: ${ERP_DEVJSON_STORAGE_DIR:data/dev-json}
+    seed-fixtures: ${ERP_DEVJSON_SEED_FIXTURES:true}
+
+app:
+  storage:
+    document-dir: ${APP_STORAGE_DOCUMENT_DIR:${erp.devjson.storage-dir}/uploads}
+

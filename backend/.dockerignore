@@ -12,10 +12,15 @@
 *.jks
 *.crt
 
+# Local Datasets & Uploads (Never bake into Docker image!)
+data/
+uploads/
+
 # Build outputs
 target/
 *.jar
 *.war
+*.class
 
 # Logs & Temp files
 logs/
@@ -24,10 +29,20 @@ tmp/
 temp/
 scratch/
 
-# Database dumps & backups
+# Database dumps, migrations, scripts
 *.dump
+*.sql
 *.sql.gz
 *.bak
+*.cjs
+*.py
+*.ps1
+*.bat
+*.txt
+
+# Legacy / Non-build trees
+java security/
+src_delombok/
 
 # IDE & OS metadata
 .idea/

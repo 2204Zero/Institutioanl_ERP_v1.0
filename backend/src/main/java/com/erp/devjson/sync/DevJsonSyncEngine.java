@@ -88,6 +88,10 @@ public class DevJsonSyncEngine implements PostInsertEventListener, PostUpdateEve
     private final JsonEntityStore<ApplicantRecord> applicantStore;
     private final JsonEntityStore<AdmissionApplicationRecord> applicationStore;
     private final JsonEntityStore<RoomRecord> roomStore;
+    private final JsonEntityStore<StudentDocumentRecord> studentDocumentStore;
+    private final JsonEntityStore<ApplicantDocumentRecord> applicantDocumentStore;
+    private final JsonEntityStore<InstitutionRecord> institutionStore;
+    private final JsonEntityStore<CampusRecord> campusStore;
 
     @Autowired
     public DevJsonSyncEngine(DevJsonProperties properties) {
@@ -120,6 +124,10 @@ public class DevJsonSyncEngine implements PostInsertEventListener, PostUpdateEve
         this.applicantStore = new JsonEntityStore<>(storageDir.resolve("applicants.json"), ApplicantRecord.class, storageEngine, ApplicantRecord::getId, ApplicantRecord::setId);
         this.applicationStore = new JsonEntityStore<>(storageDir.resolve("admission_applications.json"), AdmissionApplicationRecord.class, storageEngine, AdmissionApplicationRecord::getId, AdmissionApplicationRecord::setId);
         this.roomStore = new JsonEntityStore<>(storageDir.resolve("rooms.json"), RoomRecord.class, storageEngine, RoomRecord::getId, RoomRecord::setId);
+        this.studentDocumentStore = new JsonEntityStore<>(storageDir.resolve("student_documents.json"), StudentDocumentRecord.class, storageEngine, StudentDocumentRecord::getId, StudentDocumentRecord::setId);
+        this.applicantDocumentStore = new JsonEntityStore<>(storageDir.resolve("applicant_documents.json"), ApplicantDocumentRecord.class, storageEngine, ApplicantDocumentRecord::getId, ApplicantDocumentRecord::setId);
+        this.institutionStore = new JsonEntityStore<>(storageDir.resolve("institutions.json"), InstitutionRecord.class, storageEngine, InstitutionRecord::getId, InstitutionRecord::setId);
+        this.campusStore = new JsonEntityStore<>(storageDir.resolve("campuses.json"), CampusRecord.class, storageEngine, CampusRecord::getId, CampusRecord::setId);
     }
 
     @Override
@@ -451,6 +459,48 @@ public class DevJsonSyncEngine implements PostInsertEventListener, PostUpdateEve
                         .capacity(rm.getCapacity())
                         .isActive(rm.getIsActive() != null ? rm.getIsActive() : true)
                         .build());
+            } else if (entity instanceof com.erp.student.entity.StudentDocument sd) {
+                Long stuId = sd.getStudent() != null ? sd.getStudent().getId() : null;
+                studentDocumentStore.save(StudentDocumentRecord.builder()
+                        .id(sd.getId())
+                        .studentId(stuId)
+                        .documentType(sd.getDocumentType() != null ? sd.getDocumentType().name() : null)
+                        .fileName(sd.getFileName())
+                        .originalFileName(sd.getOriginalFileName())
+                        .fileType(sd.getFileType())
+                        .fileSize(sd.getFileSize())
+                        .storagePath(sd.getStoragePath())
+                        .uploadedAt(sd.getUploadedAt())
+                        .build());
+            } else if (entity instanceof com.erp.admission.document.entity.ApplicantDocument ad) {
+                Long appId = ad.getApplicant() != null ? ad.getApplicant().getId() : null;
+                applicantDocumentStore.save(ApplicantDocumentRecord.builder()
+                        .id(ad.getId())
+                        .applicantId(appId)
+                        .documentType(ad.getDocumentType())
+                        .fileUrl(ad.getFileUrl())
+                        .verificationStatus(ad.getVerificationStatus())
+                        .remarks(ad.getRemarks())
+                        .uploadedAt(ad.getUploadedAt())
+                        .verifiedAt(ad.getVerifiedAt())
+                        .build());
+            } else if (entity instanceof com.erp.institution.entity.Institution inst) {
+                institutionStore.save(InstitutionRecord.builder()
+                        .id(inst.getId())
+                        .name(inst.getName())
+                        .code(inst.getCode())
+                        .createdAt(inst.getCreatedAt())
+                        .updatedAt(inst.getUpdatedAt())
+                        .build());
+            } else if (entity instanceof com.erp.campus.entity.Campus cmp) {
+                campusStore.save(CampusRecord.builder()
+                        .id(cmp.getId())
+                        .name(cmp.getName())
+                        .address(cmp.getAddress())
+                        .institutionId(cmp.getInstitutionId())
+                        .createdAt(cmp.getCreatedAt())
+                        .updatedAt(cmp.getUpdatedAt())
+                        .build());
             }
         } catch (Exception e) {
             log.error("DevJsonSyncEngine failed to sync entity {}: {}", entity.getClass().getSimpleName(), e.getMessage(), e);
@@ -485,6 +535,10 @@ public class DevJsonSyncEngine implements PostInsertEventListener, PostUpdateEve
         else if (entity instanceof Applicant) applicantStore.deleteById(id);
         else if (entity instanceof AdmissionApplication) applicationStore.deleteById(id);
         else if (entity instanceof com.erp.academic.room.entity.Room) roomStore.deleteById(id);
+        else if (entity instanceof com.erp.student.entity.StudentDocument) studentDocumentStore.deleteById(id);
+        else if (entity instanceof com.erp.admission.document.entity.ApplicantDocument) applicantDocumentStore.deleteById(id);
+        else if (entity instanceof com.erp.institution.entity.Institution) institutionStore.deleteById(id);
+        else if (entity instanceof com.erp.campus.entity.Campus) campusStore.deleteById(id);
     }
 
     public Path getStorageDir() { return storageDir; }
@@ -493,4 +547,8 @@ public class DevJsonSyncEngine implements PostInsertEventListener, PostUpdateEve
     public JsonEntityStore<PaymentRecord> getPaymentStore() { return paymentStore; }
     public JsonEntityStore<StudentFeeRecord> getStudentFeeStore() { return studentFeeStore; }
     public JsonEntityStore<ReceiptRecord> getReceiptStore() { return receiptStore; }
+    public JsonEntityStore<StudentDocumentRecord> getStudentDocumentStore() { return studentDocumentStore; }
+    public JsonEntityStore<ApplicantDocumentRecord> getApplicantDocumentStore() { return applicantDocumentStore; }
+    public JsonEntityStore<InstitutionRecord> getInstitutionStore() { return institutionStore; }
+    public JsonEntityStore<CampusRecord> getCampusStore() { return campusStore; }
 }

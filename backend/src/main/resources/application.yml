@@ -20,7 +20,7 @@ spring:
 # Storage configuration
 app:
   storage:
-    document-dir: uploads/documents
+    document-dir: ${APP_STORAGE_DOCUMENT_DIR:uploads/documents}
 
 # SpringDoc OpenAPI / Swagger Configuration
 springdoc:
