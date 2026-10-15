@@ -60,14 +60,13 @@ export default function AdminUsersList() {
               <tr>
                 <th className="px-3 py-2 border-r border-slate-200/50">Username</th>
                 <th className="px-3 py-2 border-r border-slate-200/50">Email</th>
-                <th className="px-3 py-2 border-r border-slate-200/50">Assigned Role</th>
-                <th className="px-3 py-2 text-right">Actions</th>
+                <th className="px-3 py-2">Assigned Role</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-[13px]">
               {isLoading ? (
                 <tr>
-                  <td colSpan={4} className="px-4 py-8 text-center">
+                  <td colSpan={3} className="px-4 py-8 text-center">
                     <Loader2 className="w-5 h-5 animate-spin text-slate-400 mx-auto" />
                   </td>
                 </tr>
@@ -83,7 +82,7 @@ export default function AdminUsersList() {
                         <span>{user.email}</span>
                       </div>
                     </td>
-                    <td className="px-3 py-2 border-r border-slate-100/50">
+                    <td className="px-3 py-2">
                       <div className="flex items-center space-x-1.5">
                         <ShieldAlert className="w-3 h-3 text-slate-400" />
                         <span className="bg-slate-100 text-slate-700 px-1.5 py-0.5 text-[11px] font-bold tracking-wide uppercase">
@@ -91,14 +90,11 @@ export default function AdminUsersList() {
                         </span>
                       </div>
                     </td>
-                    <td className="px-3 py-2 text-right">
-                      <span className="text-[11px] text-slate-400 italic">No actions available</span>
-                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={4} className="px-3 py-8 text-center text-slate-500">
+                  <td colSpan={3} className="px-3 py-8 text-center text-slate-500">
                     No users found matching your criteria.
                   </td>
                 </tr>

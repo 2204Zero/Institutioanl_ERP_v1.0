@@ -12,7 +12,8 @@ import {
   User, 
   FileText, 
   UserPlus, 
-  LogIn 
+  LogIn,
+  DollarSign
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -28,9 +29,15 @@ export default function Login() {
   const [mode, setMode] = useState<'ERP' | 'APPLICANT'>(initialMode);
   const [applicantSubMode, setApplicantSubMode] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
 
+  const roleParam = searchParams.get('role')?.toUpperCase();
+  const initialRole: 'ADMIN' | 'FACULTY' | 'STUDENT' | 'PARENT' | 'FINANCE' =
+    (roleParam === 'FACULTY' || roleParam === 'STUDENT' || roleParam === 'PARENT' || roleParam === 'FINANCE')
+      ? roleParam
+      : 'ADMIN';
+
   // Institutional ERP Form State
-  const [activeTab, setActiveTab] = useState<'ADMIN' | 'FACULTY' | 'STUDENT' | 'PARENT' | 'FINANCE'>('ADMIN');
-  const [username, setUsername] = useState('');
+  const [activeTab, setActiveTab] = useState<'ADMIN' | 'FACULTY' | 'STUDENT' | 'PARENT' | 'FINANCE'>(initialRole);
+  const [username, setUsername] = useState(searchParams.get('username') || '');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -51,8 +58,22 @@ export default function Login() {
   useEffect(() => {
     const tabParam = searchParams.get('tab');
     const roleParam = searchParams.get('role');
+    const userParam = searchParams.get('username');
     if (tabParam === 'applicant' || roleParam?.toLowerCase() === 'applicant') {
       setMode('APPLICANT');
+    } else {
+      if (tabParam === 'erp' || roleParam) {
+        setMode('ERP');
+      }
+      if (roleParam) {
+        const upper = roleParam.toUpperCase();
+        if (['ADMIN', 'FACULTY', 'STUDENT', 'PARENT', 'FINANCE'].includes(upper)) {
+          setActiveTab(upper as any);
+        }
+      }
+      if (userParam) {
+        setUsername(userParam);
+      }
     }
   }, [searchParams]);
 
@@ -252,7 +273,7 @@ export default function Login() {
                   { id: 'FACULTY', label: 'Faculty', icon: Users },
                   { id: 'STUDENT', label: 'Student', icon: GraduationCap },
                   { id: 'PARENT', label: 'Parent', icon: User },
-                  { id: 'FINANCE', label: 'Finance', icon: Shield },
+                  { id: 'FINANCE', label: 'Finance', icon: DollarSign },
                 ].map((tab) => (
                   <button
                     key={tab.id}

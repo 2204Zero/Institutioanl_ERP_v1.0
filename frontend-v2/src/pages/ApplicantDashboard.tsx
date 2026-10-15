@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuthStore } from '../store/useAuthStore';
 import { apiClient } from '../config/api';
 import { PageFrame } from '../components/ui/PageFrame';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/card';
@@ -97,6 +98,7 @@ interface ApplicantDashboardData {
 export default function ApplicantDashboard() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const logout = useAuthStore((state) => state.logout);
 
   const [activeTab, setActiveTab] = useState<'applications' | 'inquiries'>('applications');
   const [isNewAppOpen, setIsNewAppOpen] = useState(false);
@@ -207,33 +209,6 @@ export default function ApplicantDashboard() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <PageFrame title="Applicant Portal" description="Loading your admissions status...">
-        <div className="flex h-64 items-center justify-center">
-          <Clock className="w-8 h-8 animate-spin text-primary" />
-        </div>
-      </PageFrame>
-    );
-  }
-
-  if (error || !dashboard) {
-    return (
-      <PageFrame title="Applicant Portal" description="Admission profile error">
-        <div className="p-8 text-center bg-white border border-slate-200 rounded-xl space-y-3">
-          <AlertCircle className="w-10 h-10 text-amber-500 mx-auto" />
-          <h2 className="text-base font-bold text-slate-800">No Applicant Profile Found</h2>
-          <p className="text-xs text-slate-500 max-w-md mx-auto">
-            We could not find an associated applicant record for your account. If you registered recently, please submit an inquiry or apply online.
-          </p>
-          <Button onClick={() => window.location.href = '/admissions'} size="sm" className="mt-2">
-            Visit Admissions Portal
-          </Button>
-        </div>
-      </PageFrame>
-    );
-  }
-
   const [revealedCredentials, setRevealedCredentials] = useState<{
     studentTemporaryPassword?: string;
     guardianTemporaryPassword?: string;
@@ -265,10 +240,12 @@ export default function ApplicantDashboard() {
     }
   };
 
-  const { applicant, applications = [], inquiries = [], isEnrolled, enrollmentNumber, studentId, accountAccess } = dashboard;
+  const rawApplications = dashboard?.applications;
+  const rawInquiries = dashboard?.inquiries;
 
   const sortedApplications = useMemo(() => {
-    return [...applications].sort((a, b) => {
+    if (!rawApplications || !Array.isArray(rawApplications)) return [];
+    return [...rawApplications].sort((a, b) => {
       const timeA = (a.submittedAt ? new Date(a.submittedAt).getTime() : 0) ||
                     (a.createdAt ? new Date(a.createdAt).getTime() : 0) ||
                     (a.submissionDate ? new Date(a.submissionDate).getTime() : 0);
@@ -278,16 +255,46 @@ export default function ApplicantDashboard() {
       if (timeB !== timeA) return timeB - timeA;
       return (b.id || 0) - (a.id || 0);
     });
-  }, [applications]);
+  }, [rawApplications]);
 
   const sortedInquiries = useMemo(() => {
-    return [...inquiries].sort((a, b) => {
+    if (!rawInquiries || !Array.isArray(rawInquiries)) return [];
+    return [...rawInquiries].sort((a, b) => {
       const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
       const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
       if (timeB !== timeA) return timeB - timeA;
       return (b.id || 0) - (a.id || 0);
     });
-  }, [inquiries]);
+  }, [rawInquiries]);
+
+  if (isLoading) {
+    return (
+      <PageFrame title="Applicant Portal" description="Loading your admissions status...">
+        <div className="flex h-64 items-center justify-center">
+          <Clock className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </PageFrame>
+    );
+  }
+
+  if (error || !dashboard) {
+    return (
+      <PageFrame title="Applicant Portal" description="Admission profile error">
+        <div className="p-8 text-center bg-white border border-slate-200 rounded-xl space-y-3">
+          <AlertCircle className="w-10 h-10 text-amber-500 mx-auto" />
+          <h2 className="text-base font-bold text-slate-800">No Applicant Profile Found</h2>
+          <p className="text-xs text-slate-500 max-w-md mx-auto">
+            We could not find an associated applicant record for your account. If you registered recently, please submit an inquiry or apply online.
+          </p>
+          <Button onClick={() => window.location.href = '/admissions'} size="sm" className="mt-2">
+            Visit Admissions Portal
+          </Button>
+        </div>
+      </PageFrame>
+    );
+  }
+
+  const { applicant, isEnrolled, enrollmentNumber, studentId, accountAccess } = dashboard;
 
   return (
     <PageFrame
@@ -419,7 +426,11 @@ export default function ApplicantDashboard() {
                   <div className="pt-1">
                     <Button 
                       variant="outline" 
-                      onClick={() => navigate('/login')}
+                      onClick={() => {
+                        const userParam = accountAccess?.studentLoginIdentifier || enrollmentNumber || '';
+                        logout();
+                        navigate(`/login?role=STUDENT${userParam ? `&username=${encodeURIComponent(userParam)}` : ''}`);
+                      }}
                       className="w-full text-xs font-bold border-emerald-300 text-emerald-800 hover:bg-emerald-50 h-8.5 rounded-lg flex items-center justify-center gap-1.5"
                     >
                       Open ERP Sign In (Student Role) <ArrowUpRight className="w-3.5 h-3.5" />
@@ -511,7 +522,11 @@ export default function ApplicantDashboard() {
                   <div className="pt-1">
                     <Button 
                       variant="outline" 
-                      onClick={() => navigate('/login')}
+                      onClick={() => {
+                        const userParam = accountAccess?.guardianLoginIdentifier || '';
+                        logout();
+                        navigate(`/login?role=PARENT${userParam ? `&username=${encodeURIComponent(userParam)}` : ''}`);
+                      }}
                       className="w-full text-xs font-bold border-blue-300 text-blue-800 hover:bg-blue-50 h-8.5 rounded-lg flex items-center justify-center gap-1.5"
                     >
                       Open ERP Sign In (Parent Role) <ArrowUpRight className="w-3.5 h-3.5" />
@@ -576,13 +591,11 @@ export default function ApplicantDashboard() {
               <FileText className="w-3.5 h-3.5 inline mr-1.5" />
               Formal Applications ({sortedApplications.length})
             </button>
+            {/* Counselor Inquiries tab button - hidden from frontend view */}
             <button
               onClick={() => setActiveTab('inquiries')}
-              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
-                activeTab === 'inquiries'
-                  ? 'bg-blue-600 text-white shadow-xs'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-              }`}
+              className="hidden"
+              aria-hidden="true"
             >
               <HelpCircle className="w-3.5 h-3.5 inline mr-1.5" />
               Counselor Inquiries ({sortedInquiries.length})
@@ -671,7 +684,7 @@ export default function ApplicantDashboard() {
         {/* INQUIRIES TAB */}
         {activeTab === 'inquiries' && (
           <div className="space-y-4">
-            {inquiries.length === 0 ? (
+            {sortedInquiries.length === 0 ? (
               <div className="p-12 text-center bg-white border border-slate-200 rounded-xl space-y-3">
                 <HelpCircle className="w-10 h-10 text-slate-300 mx-auto" />
                 <h3 className="text-sm font-bold text-slate-800">No questions or inquiries logged</h3>
