@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuthStore } from '../store/useAuthStore';
 import { PageFrame } from '../components/ui/PageFrame';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { Button } from '../components/ui/button';
@@ -31,6 +32,8 @@ import {
 } from "../components/ui/table";
 
 export default function FinanceDashboardHome() {
+  const { user } = useAuthStore();
+  const financeName = user?.username || 'Finance';
   const { data: summary, isLoading: loadingSummary, isError: isErrorSummary } = useFinanceSummary();
   const { data: allFees, isLoading: loadingFees, isError: isErrorFees } = useAllStudentFees();
 
@@ -50,7 +53,7 @@ export default function FinanceDashboardHome() {
 
   return (
     <PageFrame
-      title="Institutional Treasury & Receivables"
+      title={`Institutional Treasury & Receivables — Welcome, ${financeName}`}
       description="Live financial ledger, revenue collections, and student receivables oversight."
     >
       {isErrorSummary && (

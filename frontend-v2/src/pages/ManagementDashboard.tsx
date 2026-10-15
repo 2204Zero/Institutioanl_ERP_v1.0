@@ -64,9 +64,11 @@ export default function ManagementDashboard() {
   const totalStudents = studentsData?.totalElements || 0;
   const pendingApps = appsData?.filter(a => a.status === 'SUBMITTED' || a.status === 'UNDER_REVIEW')?.length || 0;
 
+  const adminName = user?.username || (isSuperAdmin ? 'Super Admin' : 'Admin');
+
   return (
     <PageFrame 
-      title={isSuperAdmin ? "System Governance" : "Institutional Operations"} 
+      title={`${isSuperAdmin ? "System Governance" : "Institutional Operations"} — Welcome, ${adminName}`} 
       description={isSuperAdmin ? "Monitor system health, access control, and master configuration." : "Overview of daily operations, admissions, and student activities."}
     >
       <div className="grid gap-px md:grid-cols-2 lg:grid-cols-4 mb-8 bg-slate-200 border border-slate-200">

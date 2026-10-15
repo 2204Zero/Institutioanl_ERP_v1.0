@@ -82,6 +82,8 @@ interface AccountAccessSummary {
   guardianEmail?: string;
   guardianStatus?: string;
   guardianOneTimeSecretAvailable: boolean;
+  studentTemporaryPassword?: string;
+  guardianTemporaryPassword?: string;
 }
 
 interface ApplicantDashboardData {
@@ -227,6 +229,11 @@ export default function ApplicantDashboard() {
     try {
       const res = await apiClient.post(`/api/v1/admissions/public/applicant/applications/${appId}/disclose-credentials`);
       setRevealedCredentials(res.data);
+      if (res.data?.studentTemporaryPassword || res.data?.guardianTemporaryPassword) {
+        try {
+          sessionStorage.setItem(`revealed_creds_${appId}`, JSON.stringify(res.data));
+        } catch (_) {}
+      }
       queryClient.invalidateQueries({ queryKey: ['applicant-dashboard'] });
       if (res.data.alreadyConsumed) {
         toast.info(res.data.message || 'Credentials already disclosed.');
@@ -298,7 +305,7 @@ export default function ApplicantDashboard() {
 
   return (
     <PageFrame
-      title={`Applicant Portal — Welcome, ${applicant.firstName}`}
+      title={`Applicant Portal — Welcome, ${applicant.firstName || applicant.fullName || 'Applicant'}`}
       description="Track the status of your applications, inquiries, and admissions lifecycle"
     >
       <div className="space-y-6">
@@ -390,13 +397,13 @@ export default function ApplicantDashboard() {
                   <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-xl space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-bold text-slate-700 uppercase">Initial Password:</span>
-                      {revealedCredentials?.studentTemporaryPassword ? (
+                      {(revealedCredentials?.studentTemporaryPassword || accountAccess?.studentTemporaryPassword) ? (
                         <div className="flex items-center gap-1.5">
                           <span className="font-mono font-bold text-xs bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded border border-emerald-300">
-                            {revealedCredentials.studentTemporaryPassword}
+                            {revealedCredentials?.studentTemporaryPassword || accountAccess?.studentTemporaryPassword}
                           </span>
                           <button 
-                            onClick={() => copyToClipboard(revealedCredentials.studentTemporaryPassword!, 'Student Temporary Password')}
+                            onClick={() => copyToClipboard((revealedCredentials?.studentTemporaryPassword || accountAccess?.studentTemporaryPassword)!, 'Student Temporary Password')}
                             className="text-emerald-700 hover:text-emerald-900"
                           >
                             <Copy className="w-3.5 h-3.5" />
@@ -486,13 +493,13 @@ export default function ApplicantDashboard() {
                   <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-xl space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-bold text-slate-700 uppercase">Initial Password:</span>
-                      {revealedCredentials?.guardianTemporaryPassword ? (
+                      {(revealedCredentials?.guardianTemporaryPassword || accountAccess?.guardianTemporaryPassword) ? (
                         <div className="flex items-center gap-1.5">
                           <span className="font-mono font-bold text-xs bg-blue-100 text-blue-900 px-2 py-0.5 rounded border border-blue-300">
-                            {revealedCredentials.guardianTemporaryPassword}
+                            {revealedCredentials?.guardianTemporaryPassword || accountAccess?.guardianTemporaryPassword}
                           </span>
                           <button 
-                            onClick={() => copyToClipboard(revealedCredentials.guardianTemporaryPassword!, 'Guardian Temporary Password')}
+                            onClick={() => copyToClipboard((revealedCredentials?.guardianTemporaryPassword || accountAccess?.guardianTemporaryPassword)!, 'Guardian Temporary Password')}
                             className="text-blue-700 hover:text-blue-900"
                           >
                             <Copy className="w-3.5 h-3.5" />

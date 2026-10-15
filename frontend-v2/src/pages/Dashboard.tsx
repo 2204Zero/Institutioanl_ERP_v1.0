@@ -27,7 +27,7 @@ export default function Dashboard() {
       return <ApplicantDashboard />;
     default:
       return (
-        <PageFrame title="Dashboard" description="Welcome back.">
+        <PageFrame title={`Dashboard — Welcome, ${user?.username || 'User'}`} description="Welcome back.">
           <div className="flex h-64 items-center justify-center bg-white border border-slate-200">
             <p className="text-slate-500">Welcome to EduPulse ERP. Please select a navigation option from the menu.</p>
           </div>

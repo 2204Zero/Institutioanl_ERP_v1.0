@@ -74,9 +74,8 @@ Technical guidance and advisement for the project encompass enterprise backend f
 
 - **LinkedIn**: [https://www.linkedin.com/in/er-ram-babu-buri-85654b67/](https://www.linkedin.com/in/er-ram-babu-buri-85654b67/)
 - **ResearchGate**: [https://www.researchgate.net/profile/Ram-Babu-Buri](https://www.researchgate.net/profile/Ram-Babu-Buri)
-- **YouTube**: `[Add YouTube Channel URL]` *(Channel link pending team update)*
-- **Instagram**: `[Add Instagram Profile URL]` *(Profile link pending team update)*
-
+- **YouTube**: [https://youtube.com/@techvidyapeeth2024?si=O3jOLTN6ekgg4TDG]
+- **Instagram**: [https://www.instagram.com/errambabuburi?srtk=MWM1NTFhdzJ5enVweA==]
 ---
 
 ### Core Team Members & Project Contributors
@@ -893,12 +892,3 @@ This guide provides targeted diagnostics and non-destructive remedies for common
 
 ### License Status
 The repository currently operates under internal institutional copyright. Open-source license selection (e.g., MIT, Apache 2.0) is pending project owner determination.
-
-### Missing-Artifact & Owner-Action Register
-
-| Missing / Pending Item | Operational Purpose | Expected Format | Current Status | Owner Action Required |
-| :--- | :--- | :--- | :---: | :--- |
-| **Open Source License** | Legal distribution & reuse permissions | `LICENSE` file (e.g. MIT, Apache 2.0) | Pending Decision | Project owner to approve desired license terms |
-| **Main Demonstration Video URL** | Viva evaluation & reviewer walkthrough | Hosted URL (YouTube/Vimeo/Drive) | Pending Upload | Provide public/unlisted walkthrough video link |
-| **Individual Member Video Demos** | Individual viva evaluation per member | Hosted video links | Pending Upload | Team members to record & link module demos |
-| **External Professional Profiles** | GitHub / LinkedIn profiles for team | Verified profile URLs | Local Only | Maintainers to provide official profile URLs |

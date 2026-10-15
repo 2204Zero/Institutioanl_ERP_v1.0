@@ -6,7 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../config/api';
 import { 
   LayoutDashboard, Users, GraduationCap, CalendarCheck, Wallet, 
-  Building2, MapPin, Store, ShieldAlert, UserCheck, 
+  Store, ShieldAlert, UserCheck, 
   Menu, X, LogOut, ChevronDown, UserCircle, Bell,
   Check, KeyRound
 } from 'lucide-react';
@@ -159,12 +159,6 @@ export default function Layout() {
 
             <NavGroup title="System Setup">
               <NavItem path="/dashboard/admin/users" icon={ShieldAlert} label="Access Control" />
-              {role === 'SUPER_ADMIN' && (
-                <>
-                  <NavItem path="/dashboard/institutions" icon={Building2} label="Institution Config" />
-                  <NavItem path="/dashboard/campuses" icon={MapPin} label="Campuses" />
-                </>
-              )}
             </NavGroup>
           </>
         );

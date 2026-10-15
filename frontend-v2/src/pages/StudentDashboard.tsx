@@ -175,7 +175,7 @@ export default function StudentDashboard() {
 
   return (
     <PageFrame
-      title="Student Workspace"
+      title={`Student Workspace — Welcome, ${student.firstName || student.fullName || 'Student'}`}
       description={`Welcome back, ${student.firstName}. Here is your academic and account overview.`}
       breadcrumbs={[{ label: "Dashboard" }]}
     >

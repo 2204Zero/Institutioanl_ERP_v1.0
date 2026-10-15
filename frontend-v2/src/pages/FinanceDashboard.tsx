@@ -135,7 +135,9 @@ export default function FinanceDashboard() {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-1">Finance & Accounts</h1>
+          <h1 className="text-3xl font-bold text-slate-900 mb-1">
+            Finance & Accounts — Welcome, {user?.username || 'Finance'}
+          </h1>
           <p className="text-slate-500 text-sm">Manage institutional revenue, assign fee structures, and track student dues.</p>
         </div>
         <div className="flex items-center space-x-3">

@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useAuthStore } from '../store/useAuthStore';
 import { apiClient } from '../config/api';
 import { PageFrame } from '../components/ui/PageFrame';
 import { StatusBadge } from '../components/ui/StatusBadge';
@@ -59,6 +60,7 @@ interface WardDetailDto {
 }
 
 export default function ParentDashboard() {
+  const { user } = useAuthStore();
   const [selectedWardIndex, setSelectedWardIndex] = useState(0);
 
   // 1. Fetch parent guardian records (supports multi-ward families)
@@ -189,9 +191,11 @@ export default function ParentDashboard() {
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 5);
 
+  const parentName = wards[0]?.firstName || wards[0]?.fullName || user?.username || 'Parent';
+
   return (
     <PageFrame
-      title="Ward Overview"
+      title={`Ward Overview — Welcome, ${parentName}`}
       description="Monitor academic progress, classroom attendance, and billing for your ward(s)."
       breadcrumbs={[{ label: "Dashboard" }]}
     >

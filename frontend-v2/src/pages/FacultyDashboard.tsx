@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { useAuthStore } from '../store/useAuthStore';
 import { apiClient } from '../config/api';
 import { PageFrame } from '../components/ui/PageFrame';
 import { Link } from 'react-router-dom';
@@ -26,6 +27,16 @@ interface TimetableSlot {
 }
 
 export default function FacultyDashboard() {
+  const { user } = useAuthStore();
+  const { data: facultyProfile } = useQuery<{ firstName?: string; lastName?: string }>({
+    queryKey: ['faculty-profile-me'],
+    queryFn: async () => {
+      const res = await apiClient.get('/api/v1/faculty/me');
+      return res.data;
+    },
+    staleTime: 60000,
+  });
+
   const { data: sections, isLoading: loadingSections } = useQuery<Section[]>({
     queryKey: ['faculty-sections'],
     queryFn: async () => {
@@ -63,8 +74,12 @@ export default function FacultyDashboard() {
   // Group timetable by day
   const daysOfWeek = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
   
+  const facultyName = facultyProfile?.firstName
+    ? (facultyProfile.lastName ? `${facultyProfile.firstName} ${facultyProfile.lastName}` : facultyProfile.firstName)
+    : (user?.username || 'Faculty');
+
   return (
-    <PageFrame title="Faculty Dashboard">
+    <PageFrame title={`Faculty Dashboard — Welcome, ${facultyName}`}>
       <div className="grid gap-6 md:grid-cols-3">
         {/* Weekly Schedule (Takes up 2 columns on medium screens) */}
         <div className="md:col-span-2 space-y-4">
