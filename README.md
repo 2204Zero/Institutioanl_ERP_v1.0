@@ -91,12 +91,12 @@ Technical guidance and advisement for the project encompass enterprise backend f
 ### 12-Week Team Progress Reports, Research Paper, SRS & Deliverables
 
 - 🎥 **Project Demonstration Video**: [YouTube — EduPulse Project Walkthrough & System Demo](https://youtu.be/UPWaAykYZJg)
-- 📊 **Project Presentation Slides (PPT)**: [Google Slides / Presentation Link (Placeholder)](#)
+- 📊 **Project Presentation Slides (PPT)**: [Google Slides — EduPulse Project Presentation Slides](https://docs.google.com/presentation/d/1H_fmOHFl8ADTsqCK-QqD4Mlp8leAhin_/edit?usp=sharing&ouid=107702636253744643600&rtpof=true&sd=true)
 - 📄 **Complete Team Progress Reports (Weeks 01–12)**: [Google Drive Folder — Comprehensive Team Weekly Reports](https://drive.google.com/drive/folders/1qEcbbcQ26jBKeXZZCySOKK-qaf-Bnw73?usp=sharing)
 - 📑 **Project Research Paper**: [Google Docs — EduPulse Academic Research Paper](https://drive.google.com/file/d/1AAW-zOuC4NHQQw2-xJAAAUX4mWrgBaH9/view?usp=sharing)
 - 📋 **Software Requirements Specification (SRS)**: [Google Docs — EduPulse Software Requirements Specification (SRS)](https://docs.google.com/document/d/1DItdPC9wVLq4hNJcIpa7_gOUHRfnTDBj/edit?usp=sharing&ouid=107702636253744643600&rtpof=true&sd=true)
-- 🧪 **Unit Testing Report**: [Google Docs / Document Link (Placeholder)](#) *(Local Docs: [`docs/testing/unit-testing-report.md`](docs/testing/unit-testing-report.md) | [Word DOCX](docs/testing/Institutional_ERP_Unit_Testing_Report.docx))*
-- 🔬 **Integration Testing Report**: [Google Docs / Document Link (Placeholder)](#) *(Local Docs: [`docs/testing/integration-testing-report.md`](docs/testing/integration-testing-report.md) | [Word DOCX](docs/testing/Institutional_ERP_Integration_Testing_Report.docx))*
+- 🧪 **Unit Testing Report**: [Google Docs — Unit Testing Report](https://docs.google.com/document/d/19Y7HHr3T37iojrTb4Y_bdXfqDWVY3XEO/edit?usp=sharing&ouid=107702636253744643600&rtpof=true&sd=true) *(Local Docs: [`docs/testing/unit-testing-report.md`](docs/testing/unit-testing-report.md) | [Word DOCX](docs/testing/Institutional_ERP_Unit_Testing_Report.docx))*
+- 🔬 **Integration Testing Report**: [Google Docs — Integration Testing Report](https://docs.google.com/document/d/1qVADBOgrvrAptBkyHyi7wrdzds3c5ER5/edit?usp=sharing&ouid=107702636253744643600&rtpof=true&sd=true) *(Local Docs: [`docs/testing/integration-testing-report.md`](docs/testing/integration-testing-report.md) | [Word DOCX](docs/testing/Institutional_ERP_Integration_Testing_Report.docx))*
 
 ## 📑 Table of Contents
 
@@ -1034,8 +1034,8 @@ All technical documents and architecture reports are maintained in descriptive f
 - **Database Schema Design**: [`docs/database/schema-design.md`](docs/database/schema-design.md) — Relational entity relationships, Flyway migration sequence, and integrity constraints.
 - **Weekly Progress Reports & Sprint Logs**: [`docs/reports/weekly-progress-reports.md`](docs/reports/weekly-progress-reports.md) — Day-by-day contributor sprint logs (Days 01–06) and deliverable audits.
 - **Consolidated Master Test Report**: [`docs/testing/master-test-report.md`](docs/testing/master-test-report.md) — QA verification matrix, unit/integration pass rates, and browser audit ledger.
-- **Unit Testing Report (DOC-QA-UTR-2026-V1.0)**: [`docs/testing/unit-testing-report.md`](docs/testing/unit-testing-report.md) | [Word DOCX](docs/testing/Institutional_ERP_Unit_Testing_Report.docx) | [Online Docs Link (Placeholder)](#) — Exhaustive 19-suite, 66-method unit testing verification ledger.
-- **Integration Testing Report (DOC-QA-ITR-2026-V1.0)**: [`docs/testing/integration-testing-report.md`](docs/testing/integration-testing-report.md) | [Word DOCX](docs/testing/Institutional_ERP_Integration_Testing_Report.docx) | [Online Docs Link (Placeholder)](#) — Exhaustive 41-suite, 284-method multi-tier and PostgreSQL 17 engine testing report.
+- **Unit Testing Report (DOC-QA-UTR-2026-V1.0)**: [`docs/testing/unit-testing-report.md`](docs/testing/unit-testing-report.md) | [Word DOCX](docs/testing/Institutional_ERP_Unit_Testing_Report.docx) | [Google Docs](https://docs.google.com/document/d/19Y7HHr3T37iojrTb4Y_bdXfqDWVY3XEO/edit?usp=sharing&ouid=107702636253744643600&rtpof=true&sd=true) — Exhaustive 19-suite, 66-method unit testing verification ledger.
+- **Integration Testing Report (DOC-QA-ITR-2026-V1.0)**: [`docs/testing/integration-testing-report.md`](docs/testing/integration-testing-report.md) | [Word DOCX](docs/testing/Institutional_ERP_Integration_Testing_Report.docx) | [Google Docs](https://docs.google.com/document/d/1qVADBOgrvrAptBkyHyi7wrdzds3c5ER5/edit?usp=sharing&ouid=107702636253744643600&rtpof=true&sd=true) — Exhaustive 41-suite, 284-method multi-tier and PostgreSQL 17 engine testing report.
 - **REST API Specifications**: [`docs/API/student-api-spec.md`](docs/API/student-api-spec.md) — Endpoint schemas, request/response DTOs, and curl execution examples.
 - **Branch Management Registry**: [`docs/Branch-Registry.md`](docs/Branch-Registry.md) — Git workflow conventions, branch ownership, and contributor allocations.
 
@@ -1090,9 +1090,9 @@ Testing is decoupled into two complementary execution profiles:
 *For detailed test counts and logs, read [`docs/testing/master-test-report.md`](docs/testing/master-test-report.md).*
 
 ### 14.3 Formal QA Testing Reports & Documentation
-- 🧪 **Unit Testing Report (`DOC-QA-UTR-2026-V1.0`)**: [`docs/testing/unit-testing-report.md`](docs/testing/unit-testing-report.md) | [Word DOCX](docs/testing/Institutional_ERP_Unit_Testing_Report.docx) | [Online Docs Link (Placeholder)](#)  
+- 🧪 **Unit Testing Report (`DOC-QA-UTR-2026-V1.0`)**: [`docs/testing/unit-testing-report.md`](docs/testing/unit-testing-report.md) | [Word DOCX](docs/testing/Institutional_ERP_Unit_Testing_Report.docx) | [Google Docs](https://docs.google.com/document/d/19Y7HHr3T37iojrTb4Y_bdXfqDWVY3XEO/edit?usp=sharing&ouid=107702636253744643600&rtpof=true&sd=true)  
   *Exhaustive white-box component verification covering 19 test suites, 66 test methods, Mockito mocks, and MockMvc standalone web tests (100% pass rate).*
-- 🔬 **Integration Testing Report (`DOC-QA-ITR-2026-V1.0`)**: [`docs/testing/integration-testing-report.md`](docs/testing/integration-testing-report.md) | [Word DOCX](docs/testing/Institutional_ERP_Integration_Testing_Report.docx) | [Online Docs Link (Placeholder)](#)  
+- 🔬 **Integration Testing Report (`DOC-QA-ITR-2026-V1.0`)**: [`docs/testing/integration-testing-report.md`](docs/testing/integration-testing-report.md) | [Word DOCX](docs/testing/Institutional_ERP_Integration_Testing_Report.docx) | [Google Docs](https://docs.google.com/document/d/1qVADBOgrvrAptBkyHyi7wrdzds3c5ER5/edit?usp=sharing&ouid=107702636253744643600&rtpof=true&sd=true)  
   *Multi-tier end-to-end integration verification covering 41 test suites, 284 test methods, Spring Security RBAC filter chains, 20-thread concurrency locks, and dedicated PostgreSQL 17 engine suites (`postgres-it`) with `PostgresSafetyGuard` fail-fast validation (100% pass rate).*
 
 ---
