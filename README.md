@@ -37,8 +37,8 @@ Quality assurance is verified through a dual-profile test architecture comprisin
 | **Academic Designation** | Assistant Professor, Department of Computer Science & Engineering (CSE) |
 | **Institutional Affiliation** | Arya College of Engineering & I.T. (ACEIT), Jaipur, Rajasthan, India |
 | **Educational Qualification** | Master of Technology (M.Tech.) in Computer Science & Engineering |
-| **Stated Research Domain** | Machine Learning & Data Science *(Team-provided)* |
-| **Core Technical Stack** | Java, JSP & Servlets, Spring Boot, MySQL, Python *(Team-provided)* |
+| **Stated Research Domain** | Machine Learning & Data Science |
+| **Core Technical Stack** | Java, JSP & Servlets, Spring Boot, MySQL, Python |
 | **Professional Profiles** | [![LinkedIn](https://img.shields.io/badge/LinkedIn-Profile-0A66C2?logo=linkedin&logoColor=white)](https://www.linkedin.com/in/er-ram-babu-buri-85654b67/) [![ResearchGate](https://img.shields.io/badge/ResearchGate-Profile-00CCBB?logo=researchgate&logoColor=white)](https://www.researchgate.net/profile/Ram-Babu-Buri) |
 
 ### Areas of Technical Expertise
