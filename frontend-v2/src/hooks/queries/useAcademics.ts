@@ -5,9 +5,12 @@ export interface Program {
   id: number;
   code: string;
   name: string;
-  type: string;
-  durationYears: number;
-  totalSemesters: number;
+  type?: string;
+  degree?: string;
+  duration?: number;
+  durationYears?: number;
+  totalSemesters?: number;
+  departmentId?: number;
   isActive: boolean;
 }
 
@@ -136,6 +139,44 @@ export const useCreateCourseOffering = () => {
     mutationFn: async (data: { courseId: number; semesterId: number; maxCapacity: number }) => {
       const response = await apiClient.post<CourseOffering>('/api/v1/course-offerings', data);
       return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['course-offerings'] });
+    },
+  });
+};
+
+export const usePublishCourseOffering = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const response = await apiClient.patch<CourseOffering>(`/api/v1/course-offerings/${id}/publish`);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['course-offerings'] });
+    },
+  });
+};
+
+export const useUpdateCourseOffering = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: { maxCapacity?: number; isPublished?: boolean } }) => {
+      const response = await apiClient.put<CourseOffering>(`/api/v1/course-offerings/${id}`, data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['course-offerings'] });
+    },
+  });
+};
+
+export const useDeleteCourseOffering = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      await apiClient.delete(`/api/v1/course-offerings/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['course-offerings'] });
@@ -447,6 +488,79 @@ export const useCreateProgram = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['programs'] });
+    },
+  });
+};
+
+export const useUpdateProgram = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: { code: string; name: string; degree: string; departmentId: number; duration: number; isActive?: boolean } }) => {
+      const response = await apiClient.put<Program>(`/api/v1/programs/${id}`, data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['programs'] });
+    },
+  });
+};
+
+export const useDeleteProgram = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      await apiClient.delete(`/api/v1/programs/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['programs'] });
+    },
+  });
+};
+
+export const useDeleteCourse = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      await apiClient.delete(`/api/v1/courses/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['courses'] });
+    },
+  });
+};
+
+export const useDeleteBatch = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      await apiClient.delete(`/api/v1/batches/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['batches'] });
+    },
+  });
+};
+
+export const useDeleteSemester = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      await apiClient.delete(`/api/v1/semesters/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['semesters'] });
+    },
+  });
+};
+
+export const useDeleteSection = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      await apiClient.delete(`/api/v1/sections/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sections'] });
     },
   });
 };

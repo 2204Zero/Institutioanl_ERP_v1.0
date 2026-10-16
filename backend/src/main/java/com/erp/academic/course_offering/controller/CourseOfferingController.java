@@ -41,6 +41,22 @@ public class CourseOfferingController {
         return ResponseEntity.ok(mapper.toResponse(published));
     }
 
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('COURSE_OFFERING_UPDATE') or hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+    public ResponseEntity<CourseOfferingResponse> update(@PathVariable Long id, @RequestBody Map<String, Object> payload) {
+        Integer maxCapacity = payload.get("maxCapacity") != null ? ((Number) payload.get("maxCapacity")).intValue() : null;
+        Boolean isPublished = payload.get("isPublished") != null ? (Boolean) payload.get("isPublished") : null;
+        CourseOffering updated = service.updateCourseOffering(id, maxCapacity, isPublished);
+        return ResponseEntity.ok(mapper.toResponse(updated));
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('COURSE_OFFERING_DELETE') or hasRole('ADMIN') or hasRole('SUPER_ADMIN')")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        service.deleteCourseOffering(id);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'FACULTY', 'STUDENT')")
     public ResponseEntity<List<CourseOfferingResponse>> getAll() {

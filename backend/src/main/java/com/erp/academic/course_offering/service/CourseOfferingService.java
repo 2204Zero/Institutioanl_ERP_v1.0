@@ -64,6 +64,27 @@ public class CourseOfferingService {
         return courseOfferingRepository.save(offering);
     }
 
+    @Transactional
+    public CourseOffering updateCourseOffering(Long id, Integer maxCapacity, Boolean isPublished) {
+        CourseOffering offering = courseOfferingRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Course offering not found with id: " + id));
+        if (maxCapacity != null) {
+            offering.setMaxCapacity(maxCapacity);
+        }
+        if (isPublished != null) {
+            offering.setIsPublished(isPublished);
+        }
+        return courseOfferingRepository.save(offering);
+    }
+
+    @Transactional
+    public void deleteCourseOffering(Long id) {
+        if (!courseOfferingRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Course offering not found with id: " + id);
+        }
+        courseOfferingRepository.deleteById(id);
+    }
+
 
     @Transactional(readOnly = true)
     public List<CourseOfferingResponse> getAllCourseOfferings() {

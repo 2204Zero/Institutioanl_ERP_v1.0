@@ -88,19 +88,22 @@ Technical guidance and advisement for the project encompass enterprise backend f
 | **Lakshya Singhal** | Frontend Architect & Lead Hardening | [`lakshyasinghal08`](https://github.com/lakshyasinghal08)<br/>`lakshyasinghal92@gmail.com` | Enterprise frontend architecture across `src/` and `frontend-v2/` (React 19, Vite 8, TanStack Query v5, Zustand, Tailwind CSS); Centralized typed HTTP client (`apiClient`), Axios interceptors, correlation IDs, and token refresh queues (`DATA_LAYER_README.md`, `INTEGRATION_README.md`); Generic in-memory cache manager with TTL invalidation; Responsive administrative dashboard with KPI metrics and role-based route guards (`RoleGuard`); PostgreSQL integration test harness, concurrency hardening (`FinanceConcurrencyPostgresIT`), and fail-fast test security guards (`PostgresSafetyGuard`). |
 | **Prashant Jain** | Institutional & Campus Lead | [`prashantjain2718`](https://github.com/prashantjain2718)<br/>`prashantjain.code@gmail.com` | Institution metadata, accreditation records, and multi-campus relational hierarchy (`CampusController`, `InstitutionController`); Campus registration, facility details, and directory endpoints; Academic scheduling security evaluators and timetable constraint validation (`AcademicSchedulingSecurity.java`); Co-authored Git branch registry conventions (`docs/Branch-Registry.md`). |
 
-### 12-Week Team Progress Reports, Research Paper & SRS
+### 12-Week Team Progress Reports, Research Paper, SRS & Deliverables
 
 - 🎥 **Project Demonstration Video**: [YouTube — EduPulse Project Walkthrough & System Demo](https://youtu.be/UPWaAykYZJg)
+- 📊 **Project Presentation Slides (PPT)**: [Google Slides / Presentation Link (Placeholder)](#)
 - 📄 **Complete Team Progress Reports (Weeks 01–12)**: [Google Drive Folder — Comprehensive Team Weekly Reports](https://drive.google.com/drive/folders/1qEcbbcQ26jBKeXZZCySOKK-qaf-Bnw73?usp=sharing)
 - 📑 **Project Research Paper**: [Google Docs — EduPulse Academic Research Paper](https://drive.google.com/file/d/1AAW-zOuC4NHQQw2-xJAAAUX4mWrgBaH9/view?usp=sharing)
 - 📋 **Software Requirements Specification (SRS)**: [Google Docs — EduPulse Software Requirements Specification (SRS)](https://docs.google.com/document/d/1DItdPC9wVLq4hNJcIpa7_gOUHRfnTDBj/edit?usp=sharing&ouid=107702636253744643600&rtpof=true&sd=true)
+- 🧪 **Unit Testing Report**: [Google Docs / Document Link (Placeholder)](#) *(Local Docs: [`docs/testing/unit-testing-report.md`](docs/testing/unit-testing-report.md) | [Word DOCX](docs/testing/Institutional_ERP_Unit_Testing_Report.docx))*
+- 🔬 **Integration Testing Report**: [Google Docs / Document Link (Placeholder)](#) *(Local Docs: [`docs/testing/integration-testing-report.md`](docs/testing/integration-testing-report.md) | [Word DOCX](docs/testing/Institutional_ERP_Integration_Testing_Report.docx))*
 
 ## 📑 Table of Contents
 
 1. [Project Introduction & Identity](#1-project-introduction--identity)
    - [Project Mentor](#er-ram-babu-buri---project-mentor)
    - [Core Team Members & Project Contributors](#core-team-members--project-contributors)
-   - [12-Week Team Progress Reports, Research Paper & SRS](#12-week-team-progress-reports-research-paper--srs)
+   - [12-Week Team Progress Reports, Research Paper, SRS & Deliverables](#12-week-team-progress-reports-research-paper-srs--deliverables)
    - [Application Screenshots](#application-screenshots)
    - [Quick Start Guide](#quick-start-guide)
    - [Release Verification Summary](#release-verification-summary)
@@ -449,58 +452,246 @@ Status classifications strictly adhere to audited repository evidence:
 
 ## 7. System Architecture & UML Diagrams
 
-### 7.1 High-Level Modular Monolith Architecture
-The platform adopts a 4-Tier Modular Monolith design that guarantees ACID transactions and data consistency across operational modules:
+### 7.1 Multi-Tier Enterprise Architecture Diagram
+The platform adopts an enterprise 4-Tier Modular Monolith architecture that guarantees ACID transactions, strict domain boundaries, and data consistency across operational modules:
 
 ```mermaid
 graph TB
-    subgraph ClientLayer ["Client Layer (Port 5173)"]
-        UI["React 19 + Vite 8 SPA"]
-        Router["React Router DOM"]
-        State["TanStack Query v5 + Zustand"]
-        Client["Axios Client with JWT Interceptors"]
+    subgraph ClientLayer ["1. Presentation & Client Tier (Port 5173)"]
+        Browser["Modern Web Browser (Chrome, Firefox, Edge)"]
+        UI["Authoritative React 19 + Vite 8 SPA (frontend-v2)"]
+        Router["React Router DOM (Protected Routes & RoleGuard)"]
+        State["State Management: TanStack Query v5 + Zustand"]
+        Client["Centralized Axios ApiClient (JWT Interceptors & Queue)"]
+        Browser --> UI
+        UI --> Router
+        Router --> State
+        State --> Client
     end
 
-    subgraph SecurityLayer ["Security & Gateway (Port 8081)"]
-        Filter["JwtAuthenticationFilter"]
-        Entry["JwtAuthenticationEntryPoint"]
-        MethodSec["@EnableMethodSecurity"]
-        SessionMgr["Database Session Tracker"]
+    subgraph GatewayLayer ["2. Gateway & Security Perimeter (Port 8081)"]
+        Filter["JwtAuthenticationFilter (HMAC-SHA256 Token Validation)"]
+        Entry["JwtAuthenticationEntryPoint & AccessDeniedHandler"]
+        SecContext["SecurityContextHolder (Principal & GrantedAuthorities)"]
+        MethodSec["Method Security Interceptor (@PreAuthorize, IDOR Mitigation)"]
+        SessionMgr["Database Session Tracker (Session Revocation & Auditing)"]
+        Client -->|"HTTP/REST JSON + Bearer JWT"| Filter
+        Filter --> SecContext
+        Filter -.-> Entry
+        SecContext --> MethodSec
+        MethodSec --> SessionMgr
     end
 
-    subgraph ServiceLayer ["Modular Monolith Domain Services"]
-        SIS["Student Information Service"]
-        AuthSvc["Auth & User Management"]
-        CampusSvc["Campus & Institution Service"]
-        AcadSvc["Academic & Course Service"]
-        FinSvc["Finance & Billing Service"]
+    subgraph DomainLayer ["3. Modular Domain Services Tier"]
+        SIS["Student Information System (SIS)<br/>Profile, Guardians, Docs, Status History"]
+        AuthSvc["Auth & Identity Management<br/>Users, Roles, Password Recovery"]
+        CampusSvc["Campus & Institution Governance<br/>Campuses, Facilities, Departments"]
+        AcadSvc["Academics & Curriculum Engine<br/>Programs, Courses, Offerings, Sections"]
+        FacultySvc["Faculty & Staff Workspace<br/>Workload, Section Assignment, Profile"]
+        AttendanceSvc["Attendance Tracking Engine<br/>Digital Roll-Call, Sessions, Audit"]
+        FinSvc["Finance & Billing Service<br/>Invoices, Fee Structure, Idempotent Payments"]
+        MethodSec --> SIS
+        MethodSec --> AuthSvc
+        MethodSec --> CampusSvc
+        MethodSec --> AcadSvc
+        MethodSec --> FacultySvc
+        MethodSec --> AttendanceSvc
+        MethodSec --> FinSvc
     end
 
-    subgraph PersistenceLayer ["Persistence & Infrastructure (Port 5432)"]
-        Flyway["Flyway Migrations V1-V5"]
-        Postgres[("PostgreSQL 17/18 edupulse_erp")]
-        Redis[("Redis 7 Cache")]
-        MinIO[("MinIO Object Storage")]
-    end
+    subgraph PersistenceLayer ["4. Persistence, Database & Infrastructure Tier"]
+        Flyway["Flyway Migration Engine (V1 Baseline to V5 Patch)"]
+        HikariCP["HikariCP Managed Connection Pool"]
+        Postgres[("PostgreSQL 17 / 18 Primary RDBMS<br/>Port 5432: edupulse_erp")]
+        Redis[("Redis 7 Distributed Cache<br/>Port 6379: Tokens & Fast Lookup")]
+        RabbitMQ[("RabbitMQ 3 Message Broker<br/>Port 5672: Asynchronous Events")]
+        MinIO[("MinIO S3-Compatible Object Store<br/>Port 9000/9001: Archival Documents")]
 
-    UI --> Client
-    Client -->|"HTTP / REST + Bearer Token"| Filter
-    Filter --> MethodSec
-    MethodSec --> SIS
-    MethodSec --> AuthSvc
-    MethodSec --> CampusSvc
-    MethodSec --> AcadSvc
-    MethodSec --> FinSvc
-    SIS --> Flyway
-    AuthSvc --> SessionMgr
-    SessionMgr --> Postgres
-    SIS --> Postgres
-    FinSvc --> Postgres
-    AcadSvc --> Postgres
-    CampusSvc --> Postgres
+        SIS --> HikariCP
+        AuthSvc --> HikariCP
+        CampusSvc --> HikariCP
+        AcadSvc --> HikariCP
+        FacultySvc --> HikariCP
+        AttendanceSvc --> HikariCP
+        FinSvc --> HikariCP
+
+        HikariCP --> Postgres
+        Flyway -.->|Schema Versioning| Postgres
+        AuthSvc --> Redis
+        AttendanceSvc --> RabbitMQ
+        SIS --> MinIO
+    end
 ```
 
-### 7.2 End-to-End Request Lifecycle Sequence
+### 7.2 Enterprise Domain UML Class Diagram
+The class diagram below models core domain entities, primary and foreign key attributes, life-cycle enumerations, and inter-entity structural associations:
+
+```mermaid
+classDiagram
+    direction TB
+
+    class AppUser {
+        +Long id
+        +String username
+        +String email
+        +String passwordHash
+        +Boolean enabled
+        +Boolean mustChangePassword
+        +Set~String~ roles
+        +LocalDateTime createdAt
+        +checkPassword()
+        +hasRole(role)
+    }
+
+    class Student {
+        +Long id
+        +String rollNumber
+        +String firstName
+        +String lastName
+        +String email
+        +LocalDate dateOfBirth
+        +String bloodGroup
+        +StudentStatus status
+        +Long departmentId
+        +Long programId
+        +Long userId
+        +updateStatus()
+        +linkGuardian()
+    }
+
+    class Guardian {
+        +Long id
+        +Long studentId
+        +String name
+        +String relationship
+        +String phone
+        +String email
+        +Boolean isPrimary
+        +String occupation
+    }
+
+    class StudentDocument {
+        +Long id
+        +Long studentId
+        +String documentType
+        +String fileName
+        +String fileStoragePath
+        +String mimeType
+        +Long fileSize
+        +LocalDateTime uploadedAt
+    }
+
+    class StudentStatusHistory {
+        +Long id
+        +Long studentId
+        +StudentStatus previousStatus
+        +StudentStatus newStatus
+        +String reason
+        +String changedBy
+        +LocalDateTime changedAt
+    }
+
+    class Campus {
+        +Long id
+        +String campusCode
+        +String name
+        +String location
+        +String accreditation
+    }
+
+    class Department {
+        +Long id
+        +String departmentCode
+        +String name
+        +Long campusId
+    }
+
+    class AcademicProgram {
+        +Long id
+        +String programCode
+        +String name
+        +Integer totalCredits
+        +Long departmentId
+    }
+
+    class Course {
+        +Long id
+        +String courseCode
+        +String title
+        +Integer credits
+        +Long departmentId
+    }
+
+    class CourseOffering {
+        +Long id
+        +Long courseId
+        +Long semesterId
+        +String academicYear
+    }
+
+    class Section {
+        +Long id
+        +Long offeringId
+        +String sectionCode
+        +Integer maxCapacity
+        +Long facultyId
+        +Long roomId
+    }
+
+    class Faculty {
+        +Long id
+        +String employeeCode
+        +String fullName
+        +String designation
+        +Long departmentId
+        +Long userId
+    }
+
+    class FeePayment {
+        +Long id
+        +Long studentId
+        +BigDecimal amount
+        +String paymentMethod
+        +String idempotencyKey
+        +PaymentStatus status
+        +LocalDateTime paymentDate
+    }
+
+    class AttendanceSession {
+        +Long id
+        +Long sectionId
+        +LocalDate sessionDate
+        +String timeSlot
+        +Long facultyId
+    }
+
+    class AttendanceRecord {
+        +Long id
+        +Long sessionId
+        +Long studentId
+        +AttendanceStatus status
+        +String remarks
+    }
+
+    %% Relationships
+    AppUser "1" -- "0..1" Student : "provisions identity"
+    AppUser "1" -- "0..1" Faculty : "provisions identity"
+    Campus "1" *-- "1..*" Department : "houses"
+    Department "1" *-- "0..*" AcademicProgram : "administers"
+    Department "1" o-- "0..*" Course : "offers"
+    Department "1" *-- "0..*" Faculty : "employs"
+    Student "1" *-- "1..*" Guardian : "has"
+    Student "1" *-- "0..*" StudentDocument : "archives"
+    Student "1" *-- "0..*" StudentStatusHistory : "logs transition"
+    Course "1" *-- "0..*" CourseOffering : "schedules"
+    CourseOffering "1" *-- "1..*" Section : "subdivides"
+    Faculty "1" -- "0..*" Section : "instructs"
+    Student "1" -- "0..*" FeePayment : "remits"
+    Section "1" *-- "0..*" AttendanceSession : "conducts"
+    AttendanceSession "1" *-- "0..*" AttendanceRecord : "records roll-call"
+```
+
+### 7.3 End-to-End Request Lifecycle Sequence
 The sequence below illustrates a representative authenticated request flow (`GET /api/v1/students`):
 
 ```mermaid
@@ -541,7 +732,221 @@ sequenceDiagram
     end
 ```
 
-### 7.3 Visual Architecture Resources & Links
+### 7.4 Subsystem Component Interaction Diagram
+The component diagram below captures the decoupled interaction patterns between functional subsystems, showing event coordination and shared relational persistence:
+
+```mermaid
+graph LR
+    subgraph ClientSubsystem ["Client Subsystem"]
+        SPA["Web Portal (React 19)"]
+    end
+
+    subgraph AuthSubsystem ["Security & Identity Subsystem"]
+        JWT["Token Generator & Validator"]
+        RBAC["RBAC Enforcement Engine"]
+        SessionStore["Active Session Manager"]
+    end
+
+    subgraph AcademicSubsystem ["Academic & Curriculum Subsystem"]
+        Catalog["Course & Program Catalog"]
+        Timetable["Scheduling & Timetable Engine"]
+        Registration["Course Enrollment & Prerequisite Engine"]
+    end
+
+    subgraph SISSubsystem ["Student Information Subsystem (SIS)"]
+        Profiles["Student Profile Manager"]
+        Guardians["Guardian Directory"]
+        Docs["Multipart Document Repository"]
+        StatusFSM["Status Lifecycle State Machine"]
+    end
+
+    subgraph FacultySubsystem ["Faculty Subsystem"]
+        Roster["Teaching Roster & Workload"]
+        RollCall["Attendance Session Manager"]
+    end
+
+    subgraph FinanceSubsystem ["Finance & Ledger Subsystem"]
+        Billing["Fee Schedule Generator"]
+        PaymentEngine["Idempotent Payment Processor"]
+        AuditLedger["Financial Transaction Ledger"]
+    end
+
+    subgraph StorageSubsystem ["Infrastructure Persistence"]
+        DB[("PostgreSQL 17 Primary Database")]
+        Cache[("Redis 7 Cache")]
+        S3[("MinIO S3 Object Store")]
+    end
+
+    SPA -->|"REST API / JWT"| AuthSubsystem
+    SPA -->|"Data Queries"| SISSubsystem
+    SPA -->|"Schedules"| AcademicSubsystem
+    SPA -->|"Rosters"| FacultySubsystem
+    SPA -->|"Payments"| FinanceSubsystem
+
+    AuthSubsystem --> SessionStore
+    SessionStore --> Cache
+    SISSubsystem --> StatusFSM
+    SISSubsystem --> Docs
+    Docs --> S3
+    AcademicSubsystem --> Registration
+    Registration -.->|"Prerequisite Check"| Profiles
+    FacultySubsystem --> RollCall
+    RollCall --> Timetable
+    FinanceSubsystem --> PaymentEngine
+    PaymentEngine --> AuditLedger
+
+    AuthSubsystem --> DB
+    SISSubsystem --> DB
+    AcademicSubsystem --> DB
+    FacultySubsystem --> DB
+    FinanceSubsystem --> DB
+```
+
+### 7.5 Student Lifecycle State Machine Diagram
+The state chart below details the validated academic lifecycle state machine for students, including permissible status transitions and automated audit history recording:
+
+```mermaid
+stateDiagram-v2
+    [*] --> PROSPECTIVE : Application Submitted & Verified
+
+    PROSPECTIVE --> ACTIVE : Fee Paid & Official Enrollment (rollNumber Assigned)
+    
+    state ACTIVE {
+        [*] --> InGoodStanding
+        InGoodStanding --> AcademicWarning : GPA < 2.0 or Low Attendance (< 75%)
+        AcademicWarning --> InGoodStanding : Academic Performance Restored
+    }
+
+    ACTIVE --> PROBATION : Academic Deficiency / Disciplinary Review
+    PROBATION --> ACTIVE : Remediation Criteria Satisfied
+    PROBATION --> SUSPENDED : Unresolved Policy Violation
+
+    ACTIVE --> SUSPENDED : Severe Disciplinary / Financial Default
+    SUSPENDED --> ACTIVE : Reinstatement Approved by Super Admin
+
+    ACTIVE --> GRADUATED : Degree Requirements & Clearances Completed
+    GRADUATED --> ALUMNI : Convocation Formalized & Credentials Archived
+
+    SUSPENDED --> [*] : Expelled / Permanent Withdrawal
+    ALUMNI --> [*] : Archived Record
+```
+
+### 7.6 Database Entity-Relationship (ER) Schema Overview Diagram
+The entity-relationship diagram below summarizes the normalized relational database schema across primary entities and foreign key constraints:
+
+```mermaid
+erDiagram
+    USERS ||--o| STUDENTS : "provisions login"
+    USERS ||--o| FACULTY : "provisions login"
+    CAMPUSES ||--|{ DEPARTMENTS : "contains"
+    DEPARTMENTS ||--|{ PROGRAMS : "offers"
+    DEPARTMENTS ||--|{ COURSES : "curates"
+    DEPARTMENTS ||--|{ FACULTY : "employs"
+    PROGRAMS ||--|{ STUDENTS : "enrolls"
+    STUDENTS ||--|{ GUARDIANS : "linked with"
+    STUDENTS ||--o{ STUDENT_DOCUMENTS : "stores"
+    STUDENTS ||--o{ STUDENT_STATUS_HISTORY : "tracks"
+    COURSES ||--|{ COURSE_OFFERINGS : "scheduled in"
+    COURSE_OFFERINGS ||--|{ SECTIONS : "subdivided into"
+    FACULTY ||--o{ SECTIONS : "teaches"
+    STUDENTS ||--o{ COURSE_REGISTRATIONS : "registers"
+    SECTIONS ||--o{ COURSE_REGISTRATIONS : "seats"
+    SECTIONS ||--o{ ATTENDANCE_SESSIONS : "holds"
+    ATTENDANCE_SESSIONS ||--o{ ATTENDANCE_RECORDS : "evaluates"
+    STUDENTS ||--o{ ATTENDANCE_RECORDS : "marked in"
+    STUDENTS ||--o{ FEE_PAYMENTS : "remits"
+
+    USERS {
+        bigint id PK
+        varchar username UK
+        varchar email UK
+        varchar password_hash
+        boolean enabled
+    }
+    STUDENTS {
+        bigint id PK
+        varchar roll_number UK
+        varchar first_name
+        varchar last_name
+        varchar email UK
+        varchar status
+        bigint department_id FK
+        bigint program_id FK
+        bigint user_id FK
+    }
+    FACULTY {
+        bigint id PK
+        varchar employee_code UK
+        varchar full_name
+        varchar designation
+        bigint department_id FK
+        bigint user_id FK
+    }
+    GUARDIANS {
+        bigint id PK
+        bigint student_id FK
+        varchar name
+        varchar phone
+        varchar relationship
+    }
+    COURSES {
+        bigint id PK
+        varchar course_code UK
+        varchar title
+        integer credits
+        bigint department_id FK
+    }
+    SECTIONS {
+        bigint id PK
+        bigint offering_id FK
+        varchar section_code
+        integer max_capacity
+        bigint faculty_id FK
+    }
+    FEE_PAYMENTS {
+        bigint id PK
+        bigint student_id FK
+        decimal amount
+        varchar idempotency_key UK
+        varchar status
+    }
+```
+
+### 7.7 Deployment & Container Architecture Diagram
+The topology below depicts the production containerization layout defined in `edupulse/docker-compose.yml` and `docker-compose.prod.yml`:
+
+```mermaid
+graph TB
+    subgraph ExternalNetwork ["Public Internet / Campus WAN"]
+        ClientUser["Institutional User Browser"]
+    end
+
+    subgraph DockerHost ["Docker Engine Host (edupulse-network)"]
+        subgraph IngressTier ["Ingress & Web Tier"]
+            NginxProxy["Nginx Reverse Proxy / Vite SPA<br/>Exposed Port: 5173 / 80"]
+        end
+
+        subgraph AppTier ["Application Tier"]
+            SpringBootApp["Spring Boot 3.3.4 Backend Container<br/>Internal Port: 8081"]
+        end
+
+        subgraph DataTier ["Data & Caching Tier"]
+            PostgreSQL["PostgreSQL 17/18 Database Container<br/>Port: 5432 (Volume: pgdata)"]
+            RedisCache["Redis 7 In-Memory Cache Container<br/>Port: 6379 (Volume: redisdata)"]
+            RabbitMQBroker["RabbitMQ 3 Message Broker Container<br/>Ports: 5672, 15672 (Volume: mqdata)"]
+            MinIOStorage["MinIO S3 Object Storage Container<br/>Ports: 9000, 9001 (Volume: miniodata)"]
+        end
+    end
+
+    ClientUser -->|"HTTPS / TLS (Port 5173/443)"| NginxProxy
+    NginxProxy -->|"Internal Proxy /api"| SpringBootApp
+    SpringBootApp -->|"JDBC / HikariCP Pool"| PostgreSQL
+    SpringBootApp -->|"Redis Protocol"| RedisCache
+    SpringBootApp -->|"AMQP Protocol"| RabbitMQBroker
+    SpringBootApp -->|"S3 REST API"| MinIOStorage
+```
+
+### 7.8 Visual Architecture Resources & Links
 - **Comprehensive System Architecture Specification**: [`docs/architecture/system-architecture.md`](docs/architecture/system-architecture.md)
 - **Frontend Data Management Layer Architecture**: [`DATA_LAYER_README.md`](DATA_LAYER_README.md)
 - **Frontend–Backend Integration Sequence & JWT Queue**: [`INTEGRATION_README.md`](INTEGRATION_README.md)
@@ -629,6 +1034,8 @@ All technical documents and architecture reports are maintained in descriptive f
 - **Database Schema Design**: [`docs/database/schema-design.md`](docs/database/schema-design.md) — Relational entity relationships, Flyway migration sequence, and integrity constraints.
 - **Weekly Progress Reports & Sprint Logs**: [`docs/reports/weekly-progress-reports.md`](docs/reports/weekly-progress-reports.md) — Day-by-day contributor sprint logs (Days 01–06) and deliverable audits.
 - **Consolidated Master Test Report**: [`docs/testing/master-test-report.md`](docs/testing/master-test-report.md) — QA verification matrix, unit/integration pass rates, and browser audit ledger.
+- **Unit Testing Report (DOC-QA-UTR-2026-V1.0)**: [`docs/testing/unit-testing-report.md`](docs/testing/unit-testing-report.md) | [Word DOCX](docs/testing/Institutional_ERP_Unit_Testing_Report.docx) | [Online Docs Link (Placeholder)](#) — Exhaustive 19-suite, 66-method unit testing verification ledger.
+- **Integration Testing Report (DOC-QA-ITR-2026-V1.0)**: [`docs/testing/integration-testing-report.md`](docs/testing/integration-testing-report.md) | [Word DOCX](docs/testing/Institutional_ERP_Integration_Testing_Report.docx) | [Online Docs Link (Placeholder)](#) — Exhaustive 41-suite, 284-method multi-tier and PostgreSQL 17 engine testing report.
 - **REST API Specifications**: [`docs/API/student-api-spec.md`](docs/API/student-api-spec.md) — Endpoint schemas, request/response DTOs, and curl execution examples.
 - **Branch Management Registry**: [`docs/Branch-Registry.md`](docs/Branch-Registry.md) — Git workflow conventions, branch ownership, and contributor allocations.
 
@@ -681,6 +1088,12 @@ Testing is decoupled into two complementary execution profiles:
 - **Backend PostgreSQL IT**: Spins up a `postgres:17` service container and validates migrations and transactional integrity via `mvn verify -P postgres-it`.
 
 *For detailed test counts and logs, read [`docs/testing/master-test-report.md`](docs/testing/master-test-report.md).*
+
+### 14.3 Formal QA Testing Reports & Documentation
+- 🧪 **Unit Testing Report (`DOC-QA-UTR-2026-V1.0`)**: [`docs/testing/unit-testing-report.md`](docs/testing/unit-testing-report.md) | [Word DOCX](docs/testing/Institutional_ERP_Unit_Testing_Report.docx) | [Online Docs Link (Placeholder)](#)  
+  *Exhaustive white-box component verification covering 19 test suites, 66 test methods, Mockito mocks, and MockMvc standalone web tests (100% pass rate).*
+- 🔬 **Integration Testing Report (`DOC-QA-ITR-2026-V1.0`)**: [`docs/testing/integration-testing-report.md`](docs/testing/integration-testing-report.md) | [Word DOCX](docs/testing/Institutional_ERP_Integration_Testing_Report.docx) | [Online Docs Link (Placeholder)](#)  
+  *Multi-tier end-to-end integration verification covering 41 test suites, 284 test methods, Spring Security RBAC filter chains, 20-thread concurrency locks, and dedicated PostgreSQL 17 engine suites (`postgres-it`) with `PostgresSafetyGuard` fail-fast validation (100% pass rate).*
 
 ---
 

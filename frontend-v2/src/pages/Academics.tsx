@@ -11,7 +11,10 @@ import {
   LayoutList,
   Loader2,
   Building2,
-  CalendarDays
+  CalendarDays,
+  Pencil,
+  Trash2,
+  CheckCircle2
 } from 'lucide-react';
 import {
   Table,
@@ -21,6 +24,13 @@ import {
   TableHeader,
   TableRow
 } from '../components/ui/table';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator
+} from '../components/ui/dropdown-menu';
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
 import { Skeleton } from '../components/ui/skeleton';
@@ -39,9 +49,19 @@ import {
   useAssignFaculty,
   useDepartments,
   useCreateProgram,
+  useUpdateProgram,
+  useDeleteProgram,
   useCreateCourse,
+  useDeleteCourse,
   useCreateBatch,
-  type Course
+  useDeleteBatch,
+  useDeleteSemester,
+  useDeleteSection,
+  usePublishCourseOffering,
+  useDeleteCourseOffering,
+  type Course,
+  type Program,
+  type CourseOffering
 } from '../hooks/queries/useAcademics';
 import { formatAcademicYearLabel, formatProgramLabel } from '../lib/academicUtils';
 import { toast } from 'sonner';
@@ -51,6 +71,8 @@ import { useAuthStore } from '../store/useAuthStore';
 import { CreateDepartmentDialog } from '../components/academics/CreateDepartmentDialog';
 import { CreateAcademicYearDialog } from '../components/academics/CreateAcademicYearDialog';
 import { CoursePrerequisitesDialog } from '../components/academics/CoursePrerequisitesDialog';
+import { EditProgramDialog } from '../components/academics/EditProgramDialog';
+import { EditOfferingDialog } from '../components/academics/EditOfferingDialog';
 
 export default function Academics() {
   const [activeTab, setActiveTab] = useState('programs');
@@ -60,6 +82,8 @@ export default function Academics() {
   const [deptDialogOpen, setDeptDialogOpen] = useState(false);
   const [ayDialogOpen, setAyDialogOpen] = useState(false);
   const [selectedCourseForPrereqs, setSelectedCourseForPrereqs] = useState<Course | null>(null);
+  const [editingProgram, setEditingProgram] = useState<Program | null>(null);
+  const [editingOffering, setEditingOffering] = useState<CourseOffering | null>(null);
 
   const { user } = useAuthStore();
   const isAdmin = user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN';
@@ -75,11 +99,18 @@ export default function Academics() {
   const { data: facultyList = [] } = useFacultyList({ enabled: isAdmin });
 
   const createProgram = useCreateProgram();
+  const deleteProgram = useDeleteProgram();
   const createCourse = useCreateCourse();
+  const deleteCourse = useDeleteCourse();
   const createBatch = useCreateBatch();
+  const deleteBatch = useDeleteBatch();
   const createSemester = useCreateSemester();
+  const deleteSemester = useDeleteSemester();
   const createOffering = useCreateCourseOffering();
+  const publishOffering = usePublishCourseOffering();
+  const deleteOffering = useDeleteCourseOffering();
   const createSection = useCreateSection();
+  const deleteSection = useDeleteSection();
   const assignFaculty = useAssignFaculty();
 
   // Program Form State
@@ -278,14 +309,48 @@ export default function Academics() {
         <TableRow key={p.id}>
           <TableCell className="font-semibold px-6 py-4">{p.code}</TableCell>
           <TableCell className="px-6 py-4">{formatProgramLabel(p)}</TableCell>
-          <TableCell className="px-6 py-4 text-slate-600">{p.type}</TableCell>
-          <TableCell className="px-6 py-4 text-slate-600">{p.durationYears} Years</TableCell>
+          <TableCell className="px-6 py-4 text-slate-600">{p.type || p.degree || 'Degree'}</TableCell>
+          <TableCell className="px-6 py-4 text-slate-600">{p.durationYears || p.duration || 4} Years</TableCell>
           <TableCell className="px-6 py-4">
             <span className={`px-2 py-1 rounded text-xs font-bold ${p.isActive ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-700'}`}>
               {p.isActive ? 'ACTIVE' : 'INACTIVE'}
             </span>
           </TableCell>
-          <TableCell className="text-right px-6 py-4"><Button variant="ghost" size="icon"><MoreHorizontal className="w-4 h-4" /></Button></TableCell>
+          <TableCell className="text-right px-6 py-4">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" aria-label="Program actions" className="h-8 w-8 text-slate-400 hover:text-slate-700">
+                  <MoreHorizontal className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44 bg-white border border-slate-200 shadow-md">
+                <DropdownMenuItem
+                  className="cursor-pointer text-xs flex items-center gap-2"
+                  onClick={() => setEditingProgram(p)}
+                >
+                  <Pencil className="w-3.5 h-3.5 text-slate-500" />
+                  Edit Program
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="cursor-pointer text-xs text-red-600 focus:text-red-600 focus:bg-red-50 flex items-center gap-2"
+                  onClick={async () => {
+                    if (window.confirm(`Are you sure you want to delete program "${p.name}" (${p.code})?`)) {
+                      try {
+                        await deleteProgram.mutateAsync(p.id);
+                        toast.success('Program deleted successfully');
+                      } catch (err: any) {
+                        toast.error(err.response?.data?.message || 'Failed to delete program');
+                      }
+                    }
+                  }}
+                >
+                  <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                  Delete Program
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </TableCell>
         </TableRow>
       ));
     }
@@ -313,7 +378,31 @@ export default function Academics() {
               >
                 Prerequisites
               </Button>
-              <Button variant="ghost" size="icon"><MoreHorizontal className="w-4 h-4" /></Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" aria-label="Course actions" className="h-8 w-8 text-slate-400 hover:text-slate-700">
+                    <MoreHorizontal className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-40 bg-white border border-slate-200 shadow-md">
+                  <DropdownMenuItem
+                    className="cursor-pointer text-xs text-red-600 focus:text-red-600 focus:bg-red-50 flex items-center gap-2"
+                    onClick={async () => {
+                      if (window.confirm(`Delete course "${c.name}" (${c.code})?`)) {
+                        try {
+                          await deleteCourse.mutateAsync(c.id);
+                          toast.success('Course deleted successfully');
+                        } catch (err: any) {
+                          toast.error(err.response?.data?.message || 'Failed to delete course');
+                        }
+                      }
+                    }}
+                  >
+                    <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                    Delete Course
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </TableCell>
         </TableRow>
@@ -340,7 +429,33 @@ export default function Academics() {
                 {b.isActive ? 'ACTIVE' : 'INACTIVE'}
               </span>
             </TableCell>
-            <TableCell className="text-right px-6 py-4"><Button variant="ghost" size="icon"><MoreHorizontal className="w-4 h-4" /></Button></TableCell>
+            <TableCell className="text-right px-6 py-4">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" aria-label="Batch actions" className="h-8 w-8 text-slate-400 hover:text-slate-700">
+                    <MoreHorizontal className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-40 bg-white border border-slate-200 shadow-md">
+                  <DropdownMenuItem
+                    className="cursor-pointer text-xs text-red-600 focus:text-red-600 focus:bg-red-50 flex items-center gap-2"
+                    onClick={async () => {
+                      if (window.confirm(`Delete batch "${b.name}"?`)) {
+                        try {
+                          await deleteBatch.mutateAsync(b.id);
+                          toast.success('Batch deleted successfully');
+                        } catch (err: any) {
+                          toast.error(err.response?.data?.message || 'Failed to delete batch');
+                        }
+                      }
+                    }}
+                  >
+                    <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                    Delete Batch
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </TableCell>
           </TableRow>
         );
       });
@@ -359,7 +474,33 @@ export default function Academics() {
               {s.isActive ? 'ACTIVE' : 'INACTIVE'}
             </span>
           </TableCell>
-          <TableCell className="text-right px-6 py-4"><Button variant="ghost" size="icon"><MoreHorizontal className="w-4 h-4" /></Button></TableCell>
+          <TableCell className="text-right px-6 py-4">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" aria-label="Semester actions" className="h-8 w-8 text-slate-400 hover:text-slate-700">
+                  <MoreHorizontal className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-40 bg-white border border-slate-200 shadow-md">
+                <DropdownMenuItem
+                  className="cursor-pointer text-xs text-red-600 focus:text-red-600 focus:bg-red-50 flex items-center gap-2"
+                  onClick={async () => {
+                    if (window.confirm(`Delete semester "${s.name}"?`)) {
+                      try {
+                        await deleteSemester.mutateAsync(s.id);
+                        toast.success('Semester deleted successfully');
+                      } catch (err: any) {
+                        toast.error(err.response?.data?.message || 'Failed to delete semester');
+                      }
+                    }
+                  }}
+                >
+                  <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                  Delete Semester
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </TableCell>
         </TableRow>
       ));
     }
@@ -378,7 +519,57 @@ export default function Academics() {
               {o.isPublished ? 'PUBLISHED' : 'DRAFT'}
             </span>
           </TableCell>
-          <TableCell className="text-right px-6 py-4"><Button variant="ghost" size="icon"><MoreHorizontal className="w-4 h-4" /></Button></TableCell>
+          <TableCell className="text-right px-6 py-4">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" aria-label="Course offering actions" className="h-8 w-8 text-slate-400 hover:text-slate-700">
+                  <MoreHorizontal className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44 bg-white border border-slate-200 shadow-md">
+                <DropdownMenuItem
+                  className="cursor-pointer text-xs flex items-center gap-2"
+                  onClick={() => setEditingOffering(o)}
+                >
+                  <Pencil className="w-3.5 h-3.5 text-slate-500" />
+                  Edit Offering
+                </DropdownMenuItem>
+                {!o.isPublished && (
+                  <DropdownMenuItem
+                    className="cursor-pointer text-xs text-blue-600 focus:text-blue-600 focus:bg-blue-50 flex items-center gap-2"
+                    onClick={async () => {
+                      try {
+                        await publishOffering.mutateAsync(o.id);
+                        toast.success('Course offering published successfully');
+                      } catch (err: any) {
+                        toast.error(err.response?.data?.message || 'Failed to publish offering');
+                      }
+                    }}
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" />
+                    Publish Offering
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="cursor-pointer text-xs text-red-600 focus:text-red-600 focus:bg-red-50 flex items-center gap-2"
+                  onClick={async () => {
+                    if (window.confirm(`Delete course offering for "${o.course?.code || 'Course'}" (${o.semester?.name || 'Semester'})?`)) {
+                      try {
+                        await deleteOffering.mutateAsync(o.id);
+                        toast.success('Course offering deleted successfully');
+                      } catch (err: any) {
+                        toast.error(err.response?.data?.message || 'Failed to delete course offering');
+                      }
+                    }
+                  }}
+                >
+                  <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                  Delete Offering
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </TableCell>
         </TableRow>
       ));
     }
@@ -972,6 +1163,21 @@ export default function Academics() {
           if (!open) setSelectedCourseForPrereqs(null);
         }}
         isAdmin={isAdmin}
+      />
+      <EditProgramDialog
+        program={editingProgram}
+        departments={departments}
+        open={!!editingProgram}
+        onOpenChange={(open) => {
+          if (!open) setEditingProgram(null);
+        }}
+      />
+      <EditOfferingDialog
+        offering={editingOffering}
+        open={!!editingOffering}
+        onOpenChange={(open) => {
+          if (!open) setEditingOffering(null);
+        }}
       />
     </div>
   );
