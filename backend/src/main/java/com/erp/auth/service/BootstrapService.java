@@ -5,12 +5,13 @@ import com.erp.auth.model.Role;
 import com.erp.auth.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class BootstrapService {
@@ -32,13 +33,24 @@ public class BootstrapService {
     @Value("${bootstrap.superadmin.password:}")
     private String bootstrapPassword;
 
+    @Autowired
     public BootstrapService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
+    public BootstrapService(UserRepository userRepository, PasswordEncoder passwordEncoder,
+                            boolean bootstrapEnabled, String bootstrapUsername,
+                            String bootstrapEmail, String bootstrapPassword) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.bootstrapEnabled = bootstrapEnabled;
+        this.bootstrapUsername = bootstrapUsername;
+        this.bootstrapEmail = bootstrapEmail;
+        this.bootstrapPassword = bootstrapPassword;
+    }
+
     @EventListener(ApplicationReadyEvent.class)
-    @Transactional
     public void runBootstrap() {
         if (!bootstrapEnabled) {
             log.info("Super admin bootstrap is disabled. Normal application startup.");
@@ -74,7 +86,18 @@ public class BootstrapService {
                 true
         );
 
-        userRepository.save(superAdmin);
-        log.info("Successfully provisioned initial SUPER_ADMIN account: {}. Please disable bootstrap configuration in production.", bootstrapUsername);
+        try {
+            userRepository.saveAndFlush(superAdmin);
+            log.info("Successfully provisioned initial SUPER_ADMIN account: {}. Please disable bootstrap configuration in production.", bootstrapUsername);
+        } catch (DataIntegrityViolationException ex) {
+            boolean hasSuperAdminNow = userRepository.findAll().stream()
+                    .anyMatch(user -> user.getRole() == Role.SUPER_ADMIN);
+            if (hasSuperAdminNow) {
+                log.warn("Superadmin bootstrap encountered a concurrency race condition, but SUPER_ADMIN was successfully provisioned by a concurrent instance.");
+                return;
+            }
+            log.error("Bootstrap failed with data integrity violation and no SUPER_ADMIN exists.", ex);
+            throw ex;
+        }
     }
 }

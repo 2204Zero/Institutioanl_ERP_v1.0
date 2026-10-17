@@ -76,6 +76,7 @@ backend/data/
 .env.*
 !.env.example
 !.env.*.example
+.neon
 
 # Local scratch and utility scripts
 output.txt

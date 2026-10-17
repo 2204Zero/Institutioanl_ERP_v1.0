@@ -15,6 +15,7 @@ import com.erp.academic.semester.repository.SemesterRepository;
 import com.erp.common.exception.BusinessException;
 import com.erp.student.entity.Student;
 import com.erp.student.repository.StudentRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -64,15 +65,20 @@ public class CourseRegistrationPostgresIT extends AbstractPostgresIT {
     private Semester semester;
     private CourseOffering offering;
 
+    @AfterEach
+    void cleanUp() {
+        jdbcTemplate.execute("DELETE FROM course_registration WHERE student_id IN (SELECT id FROM students WHERE roll_number LIKE 'PG-STU-91%')");
+        jdbcTemplate.execute("DELETE FROM section_student WHERE student_id IN (SELECT id FROM students WHERE roll_number LIKE 'PG-STU-91%')");
+        jdbcTemplate.execute("DELETE FROM students WHERE roll_number LIKE 'PG-STU-91%'");
+        jdbcTemplate.execute("DELETE FROM section WHERE course_offering_id IN (SELECT id FROM course_offering WHERE course_id IN (SELECT id FROM course WHERE code = 'PG-CS910'))");
+        jdbcTemplate.execute("DELETE FROM course_offering WHERE course_id IN (SELECT id FROM course WHERE code = 'PG-CS910')");
+        jdbcTemplate.execute("DELETE FROM semester WHERE name = 'Fall 2026 PG'");
+        jdbcTemplate.execute("DELETE FROM course WHERE code = 'PG-CS910'");
+    }
+
     @BeforeEach
-    void cleanAndSetup() {
-        jdbcTemplate.execute("DELETE FROM course_registration WHERE student_id >= 9100");
-        jdbcTemplate.execute("DELETE FROM section_student WHERE student_id >= 9100");
-        jdbcTemplate.execute("DELETE FROM section WHERE id >= 9100");
-        jdbcTemplate.execute("DELETE FROM course_offering WHERE id >= 9100");
-        jdbcTemplate.execute("DELETE FROM semester WHERE id >= 9100");
-        jdbcTemplate.execute("DELETE FROM course WHERE id >= 9100");
-        jdbcTemplate.execute("DELETE FROM students WHERE id >= 9100");
+    void setup() {
+        cleanUp();
 
         course = new Course();
         course.setCode("PG-CS910");

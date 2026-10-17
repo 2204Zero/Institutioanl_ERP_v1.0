@@ -64,17 +64,6 @@ public class FacultyIdentityService {
                     return f.getId();
                 }
             }
-            // Auto-provision if authenticated with FACULTY role
-            if (principal.getRole() == com.erp.auth.model.Role.FACULTY) {
-                Faculty newFaculty = Faculty.builder()
-                        .firstName("Faculty")
-                        .lastName("Member")
-                        .officialEmail(principal.getEmail() != null ? principal.getEmail() : principal.getUsername() + "@erp.com")
-                        .userId(principal.getId())
-                        .isActive(true)
-                        .build();
-                return facultyRepository.save(newFaculty).getId();
-            }
         }
 
         String email = authentication.getName();

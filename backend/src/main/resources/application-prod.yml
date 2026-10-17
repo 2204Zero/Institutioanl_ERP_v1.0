@@ -1,21 +1,39 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/edupulse_erp
-    username: edupulse_admin
-    password: ${DB_PASSWORD}
+    url: ${SPRING_DATASOURCE_URL:${DATABASE_URL}}
+    username: ${SPRING_DATASOURCE_USERNAME:${DATABASE_USERNAME}}
+    password: ${SPRING_DATASOURCE_PASSWORD:${DATABASE_PASSWORD:${DB_PASSWORD}}}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      connection-timeout: 30000
+      maximum-pool-size: 10
+      minimum-idle: 2
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      data-source-properties:
+        sslmode: require
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: validate
     show-sql: false
+    open-in-view: false
   flyway:
     enabled: true
     baseline-on-migrate: false
+    locations: classpath:db/migration
 
 logging:
   level:
     org.flywaydb: INFO
+    org.springframework.jdbc: INFO
 
 jwt:
   secret: ${JWT_SECRET}
+
+bootstrap:
+  superadmin:
+    enabled: ${BOOTSTRAP_SUPERADMIN_ENABLED:false}
+    username: ${BOOTSTRAP_SUPERADMIN_USERNAME:}
+    email: ${BOOTSTRAP_SUPERADMIN_EMAIL:}
+    password: ${BOOTSTRAP_SUPERADMIN_PASSWORD:}

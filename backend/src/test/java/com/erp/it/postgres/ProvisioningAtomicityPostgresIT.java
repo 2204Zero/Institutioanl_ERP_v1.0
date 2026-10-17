@@ -45,6 +45,14 @@ public class ProvisioningAtomicityPostgresIT extends AbstractPostgresIT {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    @org.junit.jupiter.api.BeforeEach
+    @org.junit.jupiter.api.AfterEach
+    void cleanFixtures() {
+        jdbcTemplate.execute("DELETE FROM faculty WHERE official_email = 'watson@erp.com'");
+        jdbcTemplate.execute("DELETE FROM users WHERE username = 'drwatson'");
+        jdbcTemplate.execute("DELETE FROM users WHERE username = 'phantom_user'");
+    }
+
     @Test
     @WithMockUser(username = "admin", authorities = {"USER_MANAGE"})
     @DisplayName("D.1: Successful provisioning creates AppUser and Faculty records atomically in PostgreSQL")
